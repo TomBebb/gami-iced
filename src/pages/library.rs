@@ -1,6 +1,6 @@
 use iced::alignment::Vertical;
-use iced::widget::{combo_box, row};
-use iced::Element;
+use iced::widget::{button, combo_box, row, svg, Svg};
+use iced::{ContentFit, Element};
 use std::fmt;
 
 #[derive(Copy, Clone, Debug)]
@@ -13,7 +13,7 @@ impl LibraryViewType {
     const ALL: [LibraryViewType; 3] = [Self::List, Self::Table, Self::Grid];
 }
 impl fmt::Display for LibraryViewType {
-    fn fmt(self: &Self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(self: &Self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::List => "List",
             Self::Table => "Table",
@@ -38,16 +38,28 @@ impl Default for LibraryPage {
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
     ViewSelected(LibraryViewType),
+    ShowAddDialog,
 }
 
 impl LibraryPage {
     pub fn view(&self) -> Element<Message> {
-        row![combo_box(
-            &self.view_types,
-            "Pick a view type",
-            Some(&self.view_type),
-            Message::ViewSelected,
-        )]
+        row![
+            combo_box(
+                &self.view_types,
+                "Pick a view type",
+                Some(&self.view_type),
+                Message::ViewSelected,
+            ),
+            button(
+                Svg::new(svg::Handle::from_memory(include_bytes!(
+                    "../icons/tabler--plus.svg"
+                )))
+                .content_fit(ContentFit::Contain)
+            )
+            .width(30)
+            .on_press(Message::ShowAddDialog)
+        ]
+        .spacing(3)
         .align_y(Vertical::Center)
         .into()
     }
@@ -55,6 +67,9 @@ impl LibraryPage {
         match message {
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
+            }
+            Message::ShowAddDialog => {
+                println!("Show Add Dialog");
             }
         }
     }
