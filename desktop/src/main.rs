@@ -29,6 +29,7 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::NavView(v) => {
+                self.nav.update(v);
                 match v {
                     widgets::nav_view::Message::NavSelected(index) => {
                         self.page = match index {
@@ -45,7 +46,6 @@ impl App {
                         }
                     }
                 }
-                self.nav.update(v)
             }
             Message::Page(p) => return self.page.update(p).map(Message::Page),
         }
