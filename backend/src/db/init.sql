@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS "games"
     TEXT
     NOT
     NULL,
+    "install_status"
+    INT
+    NOT
+    NULL,
     "library_type"
     TEXT
     NOT
