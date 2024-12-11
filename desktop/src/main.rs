@@ -1,3 +1,4 @@
+use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
@@ -35,6 +36,12 @@ impl App {
                             1 => AppPage::Library(LibraryPage::new()),
                             2 => AppPage::Settings,
                             _ => unimplemented!(),
+                        };
+                        if let AppPage::Library(inner_lib) = &mut self.page {
+                            return inner_lib
+                                .update(library::Message::ReloadCache)
+                                .map(PageMessage::Library)
+                                .map(Message::Page);
                         }
                     }
                 }
