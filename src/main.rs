@@ -1,9 +1,10 @@
-use crate::widgets::counter::Counter;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
 use iced::Element;
-use widgets::app_page::{AppPage, PageMessage};
+use pages::app_page::{AppPage, PageMessage};
+use pages::counter::Counter;
 
+mod pages;
 mod widgets;
 
 #[derive(Copy, Clone, Debug)]

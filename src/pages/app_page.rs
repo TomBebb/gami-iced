@@ -1,11 +1,11 @@
-use crate::widgets;
-use crate::widgets::counter::Counter;
+use crate::pages;
+use crate::pages::counter::Counter;
 use iced::widget::text;
 use iced::Element;
 
 #[derive(Debug, Copy, Clone)]
 pub enum PageMessage {
-    Counter(widgets::counter::CounterMessage),
+    Counter(pages::counter::CounterMessage),
 }
 
 #[derive(Clone, Debug)]
