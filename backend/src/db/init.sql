@@ -38,6 +38,10 @@ CREATE TABLE IF NOT EXISTS "games"
     TEXT,
     PRIMARY
     KEY
+    "install_status"
+    INT NOT NULL,
+    PRIMARY
+    KEY
 (
     "id"
     AUTOINCREMENT
