@@ -1,3 +1,4 @@
+use crate::pages::library::LibraryPage;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
 use iced::Element;
@@ -30,7 +31,7 @@ impl App {
                     widgets::nav_view::Message::NavSelected(index) => {
                         self.page = match index {
                             0 => AppPage::Counter(Counter::default()),
-                            1 => AppPage::Library,
+                            1 => AppPage::Library(LibraryPage::default()),
                             2 => AppPage::Settings,
                             _ => unimplemented!(),
                         }
