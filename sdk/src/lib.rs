@@ -14,7 +14,7 @@ pub use models::*;
 pub const BASE_DATA_DIR: LazyCell<PathBuf> = LazyCell::new(|| {
     dirs::data_dir()
         .expect("No data directory set!")
-        .join("gamite")
+        .join("gami")
 });
 pub type BoxFuture<'a, T = ()> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
