@@ -133,13 +133,21 @@ impl LibraryPage {
                     Message::ViewSelected,
                 ),
                 button(
-                    Svg::new(svg::Handle::from_memory(include_bytes!(
+                    Svg::new(Handle::from_memory(include_bytes!(
                         "../icons/tabler--plus.svg"
                     )))
                     .content_fit(ContentFit::Contain)
                 )
                 .width(30)
-                .on_press(Message::ShowAddDialog)
+                .on_press(Message::ShowAddDialog),
+                button(
+                    Svg::new(Handle::from_memory(include_bytes!(
+                        "../icons/tabler--refresh.svg"
+                    )))
+                    .content_fit(ContentFit::Contain)
+                )
+                .width(30)
+                .on_press(Message::ReloadCache)
             ]
             .spacing(3)
             .align_y(Vertical::Center),
@@ -148,7 +156,7 @@ impl LibraryPage {
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::ReloadCache | Message::ShowAddDialog => {
+            Message::ReloadCache => {
                 return Task::perform(db::ops::get_games(), Message::CacheReloaded)
             }
             Message::ViewSelected(view_type) => {
