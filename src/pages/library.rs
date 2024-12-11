@@ -48,12 +48,20 @@ impl Default for LibraryPage {
         Self {
             view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
             view_type: LibraryViewType::List,
-            games: vec![LibraryGame {
-                install_status: InstallStatus::Installed,
-                library_type: "steam".into(),
-                name: "Atelier Sophie The Alchemist of the Mysterious Book DX".into(),
-                library_id: "1502970".into(),
-            }],
+            games: vec![
+                LibraryGame {
+                    install_status: InstallStatus::Installed,
+                    library_type: "steam".into(),
+                    name: "Atelier Sophie The Alchemist of the Mysterious Book DX".into(),
+                    library_id: "1502970".into(),
+                },
+                LibraryGame {
+                    install_status: InstallStatus::Installed,
+                    library_type: "steam".into(),
+                    name: "Shantae and the Seven Sirens".into(),
+                    library_id: "1191630".into(),
+                },
+            ],
         }
     }
 }
@@ -61,10 +69,10 @@ impl Default for LibraryPage {
 pub enum Message {
     ViewSelected(LibraryViewType),
     ShowAddDialog,
-    GameAction(GameActionKind, LibraryGame),
+    GameAction(GameAction, LibraryGame),
 }
 #[derive(Debug, Clone, Copy)]
-enum GameActionKind {
+pub enum GameAction {
     Play,
     Install,
     Uninstall,
@@ -72,39 +80,39 @@ enum GameActionKind {
     Edit,
 }
 #[derive(Debug, Clone, Copy)]
-struct GameAction {
+struct GameActionData {
     name: &'static str,
     icon: &'static [u8],
-    kind: GameActionKind,
+    kind: GameAction,
 }
-const PLAY_ACTION: GameAction = GameAction {
+const PLAY_ACTION: GameActionData = GameActionData {
     name: "Play",
     icon: include_bytes!("../icons/tabler--play.svg"),
-    kind: GameActionKind::Play,
+    kind: GameAction::Play,
 };
-const INSTALL_ACTION: GameAction = GameAction {
+const INSTALL_ACTION: GameActionData = GameActionData {
     name: "Install",
     icon: include_bytes!("../icons/tabler--plus.svg"),
-    kind: GameActionKind::Install,
+    kind: GameAction::Install,
 };
-const UNINSTALL_ACTION: GameAction = GameAction {
+const UNINSTALL_ACTION: GameActionData = GameActionData {
     name: "Uninstall",
     icon: include_bytes!("../icons/tabler--minus.svg"),
-    kind: GameActionKind::Uninstall,
+    kind: GameAction::Uninstall,
 };
-const DELETE_ACTION: GameAction = GameAction {
+const DELETE_ACTION: GameActionData = GameActionData {
     name: "Delete",
     icon: include_bytes!("../icons/tabler--x.svg"),
-    kind: GameActionKind::Delete,
+    kind: GameAction::Delete,
 };
-const EDIT_ACTION: GameAction = GameAction {
+const EDIT_ACTION: GameActionData = GameActionData {
     name: "Edit",
     icon: include_bytes!("../icons/tabler--edit.svg"),
-    kind: GameActionKind::Edit,
+    kind: GameAction::Edit,
 };
-const fn get_actions(status: InstallStatus) -> &'static [GameAction] {
+const fn get_actions(status: InstallStatus) -> &'static [GameActionData] {
     match status {
-        InstallStatus::Installed => &[PLAY_ACTION, EDIT_ACTION, DELETE_ACTION],
+        InstallStatus::Installed => &[PLAY_ACTION, UNINSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
         _ => &[INSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
     }
 }
@@ -123,7 +131,7 @@ impl LibraryPage {
                     .width(Fill)
                     .into()
             }))
-            .width(100)
+            .width(120)
             .into()
         })
         .into()
@@ -162,6 +170,18 @@ impl LibraryPage {
         match message {
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
+            }
+            Message::GameAction(GameAction::Play, game) if game.library_type == "steam" => {
+                //TODO: use addon
+                open::that(&format!("steam://rungameid/{}", game.library_id)).unwrap();
+            }
+            Message::GameAction(GameAction::Install, game) if game.library_type == "steam" => {
+                //TODO: use addon
+                open::that(&format!("steam://install/{}", game.library_id)).unwrap();
+            }
+            Message::GameAction(GameAction::Uninstall, game) if game.library_type == "steam" => {
+                //TODO: use addon
+                open::that(&format!("steam://uninstall/{}", game.library_id)).unwrap();
             }
             v => println!("{:?}", v),
         }
