@@ -103,7 +103,9 @@ const EDIT_ACTION: GameActionData = GameActionData {
 };
 const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
     match status {
-        GameInstallStatus::Installed => &[PLAY_ACTION, UNINSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
+        GameInstallStatus::Installed => {
+            &[PLAY_ACTION, UNINSTALL_ACTION, EDIT_ACTION, DELETE_ACTION]
+        }
         _ => &[INSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
     }
 }
