@@ -1,15 +1,15 @@
 mod game;
 mod game_genres;
 mod genre;
-mod ops;
+pub mod ops;
 
 pub use game::Game;
 use gami_sdk::BASE_DATA_DIR;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection};
 use std::cell::LazyCell;
-use std::path::PathBuf;
 use std::fs;
-const DB_FILE: LazyCell<PathBuf> = LazyCell::new(|| BASE_DATA_DIR.join("gamite.db"));
+use std::path::PathBuf;
+const DB_FILE: LazyCell<PathBuf> = LazyCell::new(|| BASE_DATA_DIR.join("data.db"));
 pub(crate) const DB_OPTIONS: LazyCell<ConnectOptions> = LazyCell::new(|| {
     let mut opt = ConnectOptions::new(format!("sqlite:{}?mode=rwc", DB_FILE.to_string_lossy()));
     opt.max_connections(100)

@@ -1,7 +1,7 @@
 use crate::pages::library::LibraryPage;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
-use iced::Element;
+use iced::{Element, Task};
 use pages::app_page::{AppPage, PageMessage};
 use pages::counter::Counter;
 use tokio::runtime::Builder;
@@ -25,14 +25,14 @@ impl App {
         let page = self.page.view().map(Message::Page);
         iced::widget::row![nav, page]
     }
-    pub fn update(&mut self, message: Message) {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::NavView(v) => {
                 match v {
                     widgets::nav_view::Message::NavSelected(index) => {
                         self.page = match index {
                             0 => AppPage::Counter(Counter::default()),
-                            1 => AppPage::Library(LibraryPage::default()),
+                            1 => AppPage::Library(LibraryPage::new()),
                             2 => AppPage::Settings,
                             _ => unimplemented!(),
                         }
@@ -40,8 +40,10 @@ impl App {
                 }
                 self.nav.update(v)
             }
-            Message::Page(p) => self.page.update(p),
+            Message::Page(p) => return self.page.update(p).map(Message::Page),
         }
+
+        Task::none()
     }
 }
 pub fn main() -> iced::Result {

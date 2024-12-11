@@ -1,10 +1,12 @@
+use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::widget::{button, column, combo_box, row, scrollable, svg, text, Container, Svg};
-use iced::{ContentFit, Element, Fill, Theme};
+use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;
+
 #[derive(Copy, Clone, Debug)]
 pub enum LibraryViewType {
     List,
@@ -30,37 +32,14 @@ pub struct LibraryPage {
     games: Vec<GameData>,
 }
 
-impl Default for LibraryPage {
-    fn default() -> Self {
-        Self {
-            view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
-            view_type: LibraryViewType::List,
-            games: vec![
-                GameData {
-                    id: 0,
-                    install_status: GameInstallStatus::Installed,
-                    library_type: "steam".into(),
-                    name: "Atelier Sophie The Alchemist of the Mysterious Book DX".into(),
-                    library_id: "1502970".into(),
-                    ..Default::default()
-                },
-                GameData {
-                    id: 2,
-                    install_status: GameInstallStatus::Installed,
-                    library_type: "steam".into(),
-                    name: "Shantae and the Seven Sirens".into(),
-                    library_id: "1191630".into(),
-                    ..Default::default()
-                },
-            ],
-        }
-    }
-}
 #[derive(Debug, Clone)]
 pub enum Message {
     ViewSelected(LibraryViewType),
     ShowAddDialog,
     GameAction(GameAction, GameData),
+
+    ReloadCache,
+    CacheReloaded(Vec<GameData>),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum GameAction {
@@ -110,6 +89,14 @@ const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
     }
 }
 impl LibraryPage {
+    pub fn new() -> Self {
+        let me = Self {
+            view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
+            view_type: LibraryViewType::List,
+            games: Vec::new(),
+        };
+        me
+    }
     fn game_menu<'a>(
         &'a self,
         game: &'a GameData,
@@ -159,11 +146,15 @@ impl LibraryPage {
         );
         column![toolbar, scrollable(column(items))].into()
     }
-    pub fn update(&mut self, message: Message) {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::ReloadCache | Message::ShowAddDialog => {
+                return Task::perform(db::ops::get_games(), Message::CacheReloaded)
+            }
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
             }
+            Message::CacheReloaded(cache) => self.games = cache,
             Message::GameAction(GameAction::Play, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://rungameid/{}", game.library_id)).unwrap();
@@ -178,5 +169,7 @@ impl LibraryPage {
             }
             v => println!("{:?}", v),
         }
+
+        Task::none()
     }
 }

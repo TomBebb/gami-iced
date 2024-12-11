@@ -1,7 +1,7 @@
 use crate::pages;
 use crate::pages::counter::Counter;
 use iced::widget::text;
-use iced::Element;
+use iced::{Element, Task};
 
 #[derive(Debug, Clone)]
 pub enum PageMessage {
@@ -30,11 +30,14 @@ impl AppPage {
             AppPage::Settings => Element::from(text("TODO settings")),
         }
     }
-    pub fn update(&mut self, message: PageMessage) {
+    pub fn update(&mut self, message: PageMessage) -> Task<PageMessage> {
         match (self, message) {
             (AppPage::Counter(counter), PageMessage::Counter(v)) => counter.update(v),
-            (AppPage::Library(lib), PageMessage::Library(v)) => lib.update(v),
+            (AppPage::Library(lib), PageMessage::Library(v)) => {
+                return lib.update(v).map(PageMessage::Library);
+            }
             _ => unimplemented!(),
         }
+        Task::none()
     }
 }

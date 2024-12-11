@@ -1,7 +1,8 @@
 use chrono::NaiveDateTime;
-use gami_sdk::{GameInstallStatus, IsGameLibraryRef};
+use gami_sdk::{GameData, GameInstallStatus, IsGameLibraryRef};
 use sea_orm::entity::prelude::*;
 use sea_orm::{DeriveActiveEnum, DeriveEntityModel, EnumIter};
+use std::time::{Duration, SystemTime};
 #[derive(EnumIter, DeriveActiveEnum, Copy, Clone, Debug, PartialEq, Eq)]
 #[sea_orm(rs_type = "u8", db_type = "Integer")]
 #[repr(u8)]
@@ -48,6 +49,28 @@ pub struct Model {
     pub hero_url: Option<String>,
     pub library_type: String,
     pub library_id: String,
+}
+fn naive_to_system(naive: NaiveDateTime) -> SystemTime {
+    SystemTime::UNIX_EPOCH + Duration::from_secs(naive.and_utc().timestamp() as u64)
+}
+impl Into<GameData> for Model {
+    fn into(self) -> GameData {
+        GameData {
+            id: self.id,
+            name: self.name,
+            library_type: self.library_type,
+            library_id: self.library_id,
+            install_status: self.install_status.into(),
+            header_url: self.header_url,
+            description: self.description,
+            hero_url: self.hero_url,
+            icon_url: self.icon_url,
+            last_played: self.last_played.map(naive_to_system),
+            logo_url: self.logo_url,
+            release_date: self.release_date.map(naive_to_system),
+            play_time_secs: self.play_time_secs,
+        }
+    }
 }
 impl Default for Game {
     fn default() -> Self {
