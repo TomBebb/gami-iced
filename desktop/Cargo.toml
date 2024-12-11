@@ -8,3 +8,6 @@ iced = { version = "0.13.1", features = ["svg", "advanced"] }
 iced_aw = { version = "0.11.0", default-features = false, features = ["context_menu"] }
 open = "5.3.1"
 gami-sdk = { path = "../sdk" }
+gami-backend = { path = "../backend" }
+tokio = { version = "1.42.0", features = ["rt-multi-thread"] }
+env_logger = "0.11.5"

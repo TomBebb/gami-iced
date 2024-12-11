@@ -4,6 +4,7 @@ use iced::widget::Row;
 use iced::Element;
 use pages::app_page::{AppPage, PageMessage};
 use pages::counter::Counter;
+use tokio::runtime::Builder;
 
 mod pages;
 mod widgets;
@@ -44,5 +45,8 @@ impl App {
     }
 }
 pub fn main() -> iced::Result {
+    env_logger::init();
+    let runtime = Builder::new_multi_thread().enable_all().build().unwrap();
+    runtime.block_on(gami_backend::db::init());
     iced::run("A cool counter", App::update, App::view)
 }
