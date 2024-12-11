@@ -1,23 +1,10 @@
+use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::widget::{button, column, combo_box, row, scrollable, svg, text, Container, Svg};
 use iced::{ContentFit, Element, Fill, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;
-
-#[derive(Clone, Debug, Copy)]
-pub enum InstallStatus {
-    Installed,
-    InLibrary,
-    InProgress,
-}
-#[derive(Clone, Debug)]
-pub struct LibraryGame {
-    install_status: InstallStatus,
-    name: String,
-    library_id: String,
-    library_type: String,
-}
 #[derive(Copy, Clone, Debug)]
 pub enum LibraryViewType {
     List,
@@ -40,7 +27,7 @@ impl fmt::Display for LibraryViewType {
 pub struct LibraryPage {
     view_types: combo_box::State<LibraryViewType>,
     view_type: LibraryViewType,
-    games: Vec<LibraryGame>,
+    games: Vec<GameData>,
 }
 
 impl Default for LibraryPage {
@@ -49,17 +36,21 @@ impl Default for LibraryPage {
             view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
             view_type: LibraryViewType::List,
             games: vec![
-                LibraryGame {
-                    install_status: InstallStatus::Installed,
+                GameData {
+                    id: 0,
+                    install_status: GameInstallStatus::Installed,
                     library_type: "steam".into(),
                     name: "Atelier Sophie The Alchemist of the Mysterious Book DX".into(),
                     library_id: "1502970".into(),
+                    ..Default::default()
                 },
-                LibraryGame {
-                    install_status: InstallStatus::Installed,
+                GameData {
+                    id: 2,
+                    install_status: GameInstallStatus::Installed,
                     library_type: "steam".into(),
                     name: "Shantae and the Seven Sirens".into(),
                     library_id: "1191630".into(),
+                    ..Default::default()
                 },
             ],
         }
@@ -69,7 +60,7 @@ impl Default for LibraryPage {
 pub enum Message {
     ViewSelected(LibraryViewType),
     ShowAddDialog,
-    GameAction(GameAction, LibraryGame),
+    GameAction(GameAction, GameData),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum GameAction {
@@ -110,16 +101,16 @@ const EDIT_ACTION: GameActionData = GameActionData {
     icon: include_bytes!("../icons/tabler--edit.svg"),
     kind: GameAction::Edit,
 };
-const fn get_actions(status: InstallStatus) -> &'static [GameActionData] {
+const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
     match status {
-        InstallStatus::Installed => &[PLAY_ACTION, UNINSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
+        GameInstallStatus::Installed => &[PLAY_ACTION, UNINSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
         _ => &[INSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
     }
 }
 impl LibraryPage {
     fn game_menu<'a>(
         &'a self,
-        game: &'a LibraryGame,
+        game: &'a GameData,
         underlay: Element<'a, Message>,
     ) -> Element<'a, Message> {
         let actions = get_actions(game.install_status);
