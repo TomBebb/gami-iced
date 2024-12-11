@@ -1,3 +1,5 @@
+use iced::alignment::Vertical;
+use iced::widget::{button, row, text, Row};
 #[derive(Default, Clone, Debug)]
 pub struct Counter {
     value: i32,
@@ -7,8 +9,6 @@ pub enum CounterMessage {
     Increment,
     Decrement,
 }
-use iced::alignment::Vertical;
-use iced::widget::{button, row, text, Row};
 
 impl Counter {
     pub fn view(&self) -> Row<CounterMessage> {
