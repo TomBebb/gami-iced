@@ -1,8 +1,8 @@
+use crate::widgets::counter::Counter;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
 use iced::Element;
 use widgets::app_page::{AppPage, PageMessage};
-use crate::widgets::counter::Counter;
 
 mod widgets;
 
@@ -24,18 +24,19 @@ impl App {
     }
     pub fn update(&mut self, message: Message) {
         match message {
-            Message::NavView(v) =>{
+            Message::NavView(v) => {
                 match v {
-                    widgets::nav_view::Message::NavSelected(index) => 
-                    self.page = match index {
-                        0 => AppPage::Counter(Counter::default()),
-                        1 => AppPage::Library,
-                        2 => AppPage::Settings,
-                        _ => unimplemented!()
+                    widgets::nav_view::Message::NavSelected(index) => {
+                        self.page = match index {
+                            0 => AppPage::Counter(Counter::default()),
+                            1 => AppPage::Library,
+                            2 => AppPage::Settings,
+                            _ => unimplemented!(),
+                        }
                     }
                 }
                 self.nav.update(v)
-            },
+            }
             Message::Page(p) => self.page.update(p),
         }
     }
