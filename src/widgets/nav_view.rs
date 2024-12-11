@@ -1,6 +1,6 @@
 use iced::widget::svg::Handle;
-use iced::widget::{button, row, text, Column, Space, Svg};
-use iced::{Element, Fill, Length};
+use iced::widget::{button, row, text, Column, Svg};
+use iced::{Alignment, ContentFit, Element, Fill, Theme};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Message {
@@ -33,12 +33,11 @@ impl NavView {
     pub fn view(&self) -> Column<Message> {
         Column::with_children(PAGES.into_iter().enumerate().map(
             |(index, &PageInfo { name, icon })| {
-                let svg = Svg::new(Handle::from_memory(icon)).height(40);
+                let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
                 Element::from(
                     button(Element::from(row![
-                        text(name),
-                        Space::new(Fill, Length::Shrink),
-                        svg
+                        svg.content_fit(ContentFit::Contain).width(30),
+                        text(name).align_x(Alignment::End).width(Fill),
                     ]))
                     .width(Fill)
                     .on_press_maybe(if self.active_item == index {
@@ -49,7 +48,7 @@ impl NavView {
                 )
             },
         ))
-        .width(100)
+        .width(160)
     }
     pub fn update(&mut self, message: Message) {
         match message {
