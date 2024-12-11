@@ -8,7 +8,7 @@ use pages::counter::Counter;
 mod pages;
 mod widgets;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 enum Message {
     Page(PageMessage),
     NavView(widgets::nav_view::Message),

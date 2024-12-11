@@ -3,7 +3,7 @@ use crate::pages::counter::Counter;
 use iced::widget::text;
 use iced::Element;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum PageMessage {
     Counter(pages::counter::CounterMessage),
     Library(pages::library::Message),
@@ -34,7 +34,7 @@ impl AppPage {
         match (self, message) {
             (AppPage::Counter(counter), PageMessage::Counter(v)) => counter.update(v),
             (AppPage::Library(lib), PageMessage::Library(v)) => lib.update(v),
-            _ => panic!("Unregistered update: {:?}", message,),
+            _ => unimplemented!(),
         }
     }
 }
