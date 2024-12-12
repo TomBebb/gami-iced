@@ -2,9 +2,8 @@ mod kv;
 
 use crate::kv::ast::KvValue;
 use crate::kv::parser::full_parse;
-use async_stream::stream;
 use gami_sdk::GameInstallStatus::Queued;
-use gami_sdk::{register_plugin, BaseAddon, BoxFuture, BoxStream, GameLibrary, PluginRegistrar};
+use gami_sdk::{register_plugin, BaseAddon, BoxFuture, GameLibrary, PluginRegistrar};
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use log::*;
 use once_cell::sync::Lazy;
@@ -54,9 +53,10 @@ impl BaseAddon for SteamLibrary {
     }
 }
 impl GameLibrary for SteamLibrary {
-    fn scan(&self) -> BoxStream<'static, ScannedGameLibraryMetadata> {
+    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>> {
         debug!("APPS_PATH: {:?}", &*APPS_PATH);
-        Box::pin(stream! {
+        let mut res = Vec::with_capacity(8);
+        Box::pin(async move {
             let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
             while let Some(entry) = reader.next_entry().await.unwrap() {
                 let path: PathBuf = entry.path();
@@ -77,29 +77,27 @@ impl GameLibrary for SteamLibrary {
                     continue;
                 };
 
-                let get_obj_text = |key:&str| {
-                    match obj[key] {
-                        KvValue::String(ref s) => s.as_str(),
-                        _ => panic!("Steam KSV: Expected an string at key: {}", key),
-                    }
+                let get_obj_text = |key: &str| match obj[key] {
+                    KvValue::String(ref s) => s.as_str(),
+                    _ => panic!("Steam KSV: Expected an string at key: {}", key),
                 };
-                let get_obj_text_opt = |key:&str| {
-                    match obj.get(key) {
-                        Some(KvValue::String(ref s)) => Some(s.as_str()),
-                        Some(_) => panic!("Steam KSV: Expected an string at key: {}", key),
-                        None => None,
-                    }
+                let get_obj_text_opt = |key: &str| match obj.get(key) {
+                    Some(KvValue::String(ref s)) => Some(s.as_str()),
+                    Some(_) => panic!("Steam KSV: Expected an string at key: {}", key),
+                    None => None,
                 };
 
-                let get_obj_unix_opt= |key:&str| {
+                let get_obj_unix_opt = |key: &str| {
                     if let Some(raw) = get_obj_text_opt(key) {
                         let parsed: u64 = raw.parse().unwrap();
                         Some(from_epoch(parsed))
-                    }else{None}
+                    } else {
+                        None
+                    }
                 };
                 let bytes_to_dl = get_obj_text_opt("BytesToDownload");
                 let bytes_dl = get_obj_text_opt("BytesDownloaded");
-                yield ScannedGameLibraryMetadata {
+                res.push(ScannedGameLibraryMetadata {
                     library_id: get_obj_text("appid").into(),
                     name: get_obj_text("name").into(),
                     last_played: get_obj_unix_opt("LastPlayed"),
@@ -112,8 +110,9 @@ impl GameLibrary for SteamLibrary {
                         GameInstallStatus::Installing
                     },
                     ..Default::default()
-                }
+                })
             }
+            res
         })
     }
     fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
@@ -126,6 +125,7 @@ impl GameLibrary for SteamLibrary {
         wrapped_run_cmd("uninstall", game)
     }
     fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus> {
+        // TODO
         Box::pin(async { GameInstallStatus::Installing })
     }
 }

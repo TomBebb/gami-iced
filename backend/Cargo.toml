@@ -9,3 +9,4 @@ gami-sdk = { path = "../sdk" }
 chrono = "0.4.39"
 libloading = "0.8.6"
 log = "0.4.22"
+tokio-stream = "0.1.17"

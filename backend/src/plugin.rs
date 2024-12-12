@@ -8,13 +8,13 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// A proxy object which wraps a [`Function`] and makes sure it can't outlive
 /// the library it came from.
 pub struct GameLibraryProxy {
     pub inner: Box<dyn GameLibrary>,
-    pub _lib: Rc<Library>,
+    pub _lib: Arc<Library>,
 }
 impl BaseAddon for GameLibraryProxy {
     fn get_id(&self) -> &'static str {
@@ -26,7 +26,7 @@ impl GameLibrary for GameLibraryProxy {
         self.inner.launch(game)
     }
 
-    fn scan(&self) -> BoxStream<'static, ScannedGameLibraryMetadata> {
+    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>> {
         self.inner.scan()
     }
 
@@ -46,7 +46,7 @@ impl GameLibrary for GameLibraryProxy {
 #[derive(Default)]
 pub struct ExternalAddons {
     game_libs: HashMap<String, GameLibraryProxy>,
-    libraries: Vec<Rc<Library>>,
+    libraries: Vec<Arc<Library>>,
 }
 
 impl ExternalAddons {
@@ -57,18 +57,16 @@ impl ExternalAddons {
     pub fn get_keys(&self) -> Vec<&str> {
         self.game_libs.keys().map(String::as_str).collect()
     }
-    pub fn get_game_library(&self, name: &str) -> Result<&GameLibraryProxy, String> {
-        self.game_libs
-            .get(name)
-            .ok_or_else(|| format!("\"{}\" not found", name))
+    pub fn get_game_library(&self, name: &str) -> Option<&GameLibraryProxy> {
+        self.game_libs.get(name)
     }
-    
+
     pub unsafe fn auto_load_addons(&mut self) -> io::Result<()> {
         log::info!("Automatically loading addons");
-        for res in std::fs::read_dir(&*ADDONS_DIR)? { 
+        for res in std::fs::read_dir(&*ADDONS_DIR)? {
             let path = res?.path();
             println!("Loading {}", path.display());
-            self.load( &path)?;
+            self.load(&path)?;
         }
         Ok(())
     }
@@ -84,7 +82,7 @@ impl ExternalAddons {
     /// behaviour.
     pub unsafe fn load<P: AsRef<OsStr>>(&mut self, library_path: P) -> io::Result<()> {
         // load the library into memory
-        let library = Rc::new(Library::new(library_path).unwrap());
+        let library = Arc::new(Library::new(library_path).unwrap());
 
         // get a pointer to the plugin_declaration symbol.
         let decl = library
@@ -99,7 +97,7 @@ impl ExternalAddons {
             return Err(io::Error::new(io::ErrorKind::Other, "Version mismatch"));
         }
 
-        let mut registrar = PluginRegistrar::new(Rc::clone(&library));
+        let mut registrar = PluginRegistrar::new(Arc::clone(&library));
 
         (decl.register)(&mut registrar);
 
@@ -113,11 +111,11 @@ impl ExternalAddons {
 }
 struct PluginRegistrar {
     game_libs: HashMap<String, GameLibraryProxy>,
-    lib: Rc<Library>,
+    lib: Arc<Library>,
 }
 
 impl PluginRegistrar {
-    fn new(lib: Rc<Library>) -> PluginRegistrar {
+    fn new(lib: Arc<Library>) -> PluginRegistrar {
         PluginRegistrar {
             lib,
             game_libs: HashMap::default(),
@@ -129,7 +127,7 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
     fn register_library(&mut self, name: &str, lib: Box<dyn GameLibrary>) {
         let proxy = GameLibraryProxy {
             inner: lib,
-            _lib: Rc::clone(&self.lib),
+            _lib: Arc::clone(&self.lib),
         };
         self.game_libs.insert(name.to_string(), proxy);
     }

@@ -1,4 +1,4 @@
-use crate::{BoxFuture, BoxStream, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
+use crate::{BoxFuture, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 
 pub struct PluginDeclaration {
     pub rustc_version: &'static str,
@@ -15,9 +15,9 @@ pub trait BaseAddon {
     //   const TYPE: &'static str;
 }
 
-pub trait GameLibrary: BaseAddon {
+pub trait GameLibrary: BaseAddon + Send {
     fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn scan(&self) -> BoxStream<'static, ScannedGameLibraryMetadata>;
+    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>>;
     fn install(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
     fn uninstall(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
     fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus>;

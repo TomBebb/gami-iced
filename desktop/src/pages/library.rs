@@ -37,7 +37,7 @@ pub enum Message {
     ViewSelected(LibraryViewType),
     ShowAddDialog,
     GameAction(GameAction, GameData),
-
+    RefreshGames,
     ReloadCache,
     CacheReloaded(Vec<GameData>),
 }
@@ -147,7 +147,7 @@ impl LibraryPage {
                     .content_fit(ContentFit::Contain)
                 )
                 .width(30)
-                .on_press(Message::ReloadCache)
+                .on_press(Message::RefreshGames)
             ]
             .spacing(3)
             .align_y(Vertical::Center),
@@ -156,6 +156,9 @@ impl LibraryPage {
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::RefreshGames => {
+                return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
+            }
             Message::ReloadCache => {
                 return Task::perform(db::ops::get_games(), Message::CacheReloaded)
             }

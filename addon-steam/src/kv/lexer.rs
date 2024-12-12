@@ -48,9 +48,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use tokio_stream::StreamExt;
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
+    use tokio_stream::StreamExt;
 
     macro_rules! assert_next_token_eq {
         ($tokens:expr, $val:expr) => {
@@ -63,7 +63,7 @@ mod tests {
         };
     }
     #[tokio::test]
-    async fn test_empty_lex() {
+    pub async fn test_empty_lex() {
         let mut raw = tokio_test::io::Builder::new().read(b"").build();
         let lexer = KvLexer::new(&mut raw);
         let tokens = lexer.tokens();
