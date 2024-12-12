@@ -1,0 +1,24 @@
+{
+  "name": "@gami/addon-steam",
+  "version": "0.1.0",
+  "description": "",
+  "module": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsup -c"
+  },
+  "devDependencies": {
+    "@gami/sdk": "link:../sdk",
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TomBebb/gami-iced.git"
+  },
+  "private": true,
+  "dependencies": {
+    "@node-steam/vdf": "^2.2.0"
+  }
+}

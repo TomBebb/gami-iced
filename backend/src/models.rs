@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::time::{Duration, SystemTime};
-use url::Url;
 
 pub trait IsGameLibraryRef {
     fn get_name(&self) -> &str;
@@ -50,7 +49,7 @@ impl Default for GameInstallStatus {
     }
 }
 
-#[derive(Default, Debug, Clone, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ScannedGameLibraryMetadata {
     pub name: String,
     pub library_type: String,
@@ -58,8 +57,10 @@ pub struct ScannedGameLibraryMetadata {
 
     pub last_played: Option<SystemTime>,
     pub install_status: GameInstallStatus,
+
+    #[serde_as(as = "DurationSeconds<u64>")]
     pub playtime: Duration,
-    pub icon_url: Option<Url>,
+    pub icon_url: Option<String>,
 }
 impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     fn get_name(&self) -> &str {

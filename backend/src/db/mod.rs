@@ -4,7 +4,7 @@ mod genre;
 pub mod ops;
 
 pub use game::Game;
-use gami_sdk::BASE_DATA_DIR;
+use crate::BASE_DATA_DIR;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection};
 use std::cell::LazyCell;
 use std::fs;
