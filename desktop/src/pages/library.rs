@@ -2,7 +2,7 @@ use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, combo_box, row, scrollable, svg, text, Container, Svg};
+use iced::widget::{button, column, combo_box, row, scrollable, text, Container, Svg};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;

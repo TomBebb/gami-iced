@@ -1,11 +1,13 @@
 use gami_sdk::{
     BaseAddon, BoxFuture, BoxStream, GameInstallStatus, GameLibrary, GameLibraryRef,
-    PluginDeclaration, ScannedGameLibraryMetadata,
+    PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use libloading::Library;
+use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 /// A proxy object which wraps a [`Function`] and makes sure it can't outlive
@@ -59,6 +61,16 @@ impl ExternalAddons {
         self.game_libs
             .get(name)
             .ok_or_else(|| format!("\"{}\" not found", name))
+    }
+    
+    pub unsafe fn auto_load_addons(&mut self) -> io::Result<()> {
+        log::info!("Automatically loading addons");
+        for res in std::fs::read_dir(&*ADDONS_DIR)? { 
+            let path = res?.path();
+            println!("Loading {}", path.display());
+            self.load( &path)?;
+        }
+        Ok(())
     }
 
     /// Load a plugin library and add all contained functions to the internal
@@ -122,3 +134,4 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
         self.game_libs.insert(name.to_string(), proxy);
     }
 }
+pub const ADDONS_DIR: LazyCell<PathBuf> = LazyCell::new(|| BASE_DATA_DIR.join("addons"));

@@ -1,2 +1,2 @@
 pub mod db;
-mod plugin;
+pub mod plugin;
