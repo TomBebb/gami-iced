@@ -1,4 +1,11 @@
-import {GameInstallStatus, GameLibraryRef, openUrl, registerAddon, ScannedGameLibraryMetadata} from "@gami/sdk";
+import {
+    GameInstallStatus,
+    GameLibraryRef,
+    getConfig,
+    openUrl,
+    registerAddon,
+    ScannedGameLibraryMetadata
+} from "@gami/sdk";
 import {parse} from "@node-steam/vdf";
 import {readdir, readFile} from "fs/promises";
 import * as path from "node:path";
@@ -39,7 +46,18 @@ function runSteamCmd(cmd: string, ref: GameLibraryRef,): Promise<void> {
 
 const steamPath = "/home/tom/.steam/steam";
 const appPath = path.join(steamPath, "steamapps")
-
+const config = getConfig('steam', {
+    apiKey: {
+        type: "text",
+        name: "API Key",
+        hint: "Obtain from [Steam API Dev page](https://steamcommunity.com/dev/apikey)"
+    },
+    steamId: {
+        type: "number",
+        name: "Steam ID",
+        hint: "In decimal format. Obtain from [an online tool](https://www.steamidfinder.com)"
+    }
+})
 registerAddon({
     type: "library",
     id: "steam",
