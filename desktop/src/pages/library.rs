@@ -117,13 +117,18 @@ impl LibraryPage {
         .into()
     }
     pub fn view(&self) -> Element<Message> {
-        let items: Vec<Element<Message>> = self
-            .games
-            .iter()
-            .map(|game| (game, Element::from(row![text(&game.name)].width(Fill))))
-            .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
-            .collect();
-
+        let items: Element<Message> = match self.view_type {
+            LibraryViewType::List => scrollable(column(
+                self.games
+                    .iter()
+                    .map(|game| (game, Element::from(row![text(&game.name)].width(Fill))))
+                    .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
+                    .collect::<Vec<Element<Message>>>(),
+            ))
+            .into(),
+            LibraryViewType::Table => text("TODO: Table").into(),
+            LibraryViewType::Grid => text("TODO: GRID").into(),
+        };
         let toolbar = Element::from(
             row![
                 combo_box(
@@ -152,7 +157,7 @@ impl LibraryPage {
             .spacing(3)
             .align_y(Vertical::Center),
         );
-        column![toolbar, scrollable(column(items))].into()
+        column![toolbar, items].into()
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
