@@ -7,9 +7,5 @@ edition = "2021"
 sea-orm = { version = "1.1.1", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros", "chrono"] }
 chrono = "0.4.39"
 log = "0.4.22"
-serde = "1.0.216"
-deno = { version = "2.1.4" }
-serde_with = "3.11.0"
 open = "5.3.1"
-reqwest = "0.12.9"
 quickjs_runtime = "0.14.4"
