@@ -5,7 +5,7 @@
   "module": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsup -c"
+    "build": "tsup"
   },
   "devDependencies": {
     "@gami/sdk": "link:../sdk",

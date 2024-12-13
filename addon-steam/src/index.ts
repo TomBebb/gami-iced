@@ -37,9 +37,10 @@ function runSteamCmd(cmd: string, ref: GameLibraryRef,): Promise<void> {
     return Promise.resolve();
 }
 
-const appPath = "/home/tom/.steam/steam/steamapps"
+const steamPath = "/home/tom/.steam/steam";
+const appPath = path.join(steamPath, "steamapps")
 
-export default registerAddon({
+registerAddon({
     type: "library",
     id: "steam",
     name: "Steam",
@@ -53,13 +54,15 @@ export default registerAddon({
             if (!scanPath.endsWith(".acf")) continue;
             const {AppState: app} = await readSteamInfo(path.join(appPath, scanPath));
             items.push({
+                iconUrl: `file://${steamPath.replace('\\', '/')}/appcache/librarycache/${app.appid}_icon.jpg`,
+                playtime: 0,
                 name: app.name,
-                library_id: app.appid.toString(),
-                library_type: "steam",
-
+                libraryId: app.appid.toString(),
+                libraryType: "steam",
+                installStatus: app.BytesDownloaded === app.BytesToDownload && app.BytesDownloaded > 0 ? GameInstallStatus.Installed : GameInstallStatus.Installing
             })
         }
-        return Promise.resolve([])
+        return items
     },
     check_install_status(game: GameLibraryRef): Promise<GameInstallStatus> {
         return Promise.resolve(GameInstallStatus.InLibrary) as Promise<GameInstallStatus>;

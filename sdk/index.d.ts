@@ -21,15 +21,13 @@ export declare const enum GameInstallStatus {
     Queued = "Queued",
 }
 
-export interface ScannedGameLibraryMetadata {
+export interface ScannedGameLibraryMetadata extends GameLibraryRef {
     name: string,
-    library_type: string
-    library_id: string
 
-    last_played?: Date
-    install_status: GameInstallStatus
+    lastPlayed?: Date
+    installStatus: GameInstallStatus
     playtime: number
-    icon_url?: string,
+    iconUrl?: string,
 }
 
 export interface GameLibrary extends GameAddonBase {
