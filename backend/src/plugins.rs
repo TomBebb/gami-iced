@@ -1,0 +1,90 @@
+use rquickjs::{AsyncContext, AsyncRuntime, Ctx, FromJs, IntoJs, Module, Value};
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Either<TA, TB> {
+    A(TA),
+    B(TB),
+}
+impl<'js, TA, TB> FromJs<'js> for Either<TA, TB>
+where
+    TA: FromJs<'js>,
+    TB: FromJs<'js>,
+{
+    fn from_js(ctx: &Ctx<'js>, value: Value<'js>) -> rquickjs::Result<Self> {
+        TA::from_js(ctx, value.clone())
+            .map(Either::A)
+            .or_else(|_| TB::from_js(ctx, value).map(Either::B))
+    }
+}
+
+impl<'js, TA, TB> IntoJs<'js> for Either<TA, TB>
+where
+    TA: IntoJs<'js>,
+    TB: IntoJs<'js>,
+{
+    fn into_js(self, ctx: &Ctx<'js>) -> rquickjs::Result<Value<'js>> {
+        match self {
+            Either::A(a) => a.into_js(ctx),
+            Either::B(b) => b.into_js(ctx),
+        }
+    }
+}
+#[rquickjs::module(rename_vars = "camelCase", rename = "@gami/sdk")]
+mod stuff {
+    #[rquickjs::module(rename_vars = "camelCase")]
+    mod utils {
+        #[rquickjs::function]
+        fn open_url(url: String) -> Result<(), rquickjs::Error> {
+            open::that(url).map_err(|e| rquickjs::Error::new_from_js_message("", "", e.to_string()))
+        }
+    }
+
+    #[rquickjs::module(rename_vars = "camelCase")]
+    mod http {
+        use reqwest::{Method, Request, Url};
+        use rquickjs::class::Trace;
+        use rquickjs::JsLifetime;
+        use std::collections::HashMap;
+        use std::str::FromStr;
+        #[rquickjs::class(rename_all = "camelCase")]
+        #[derive(Debug, JsLifetime, Clone, Trace)]
+        pub struct FetchOptions {
+            pub body: String,
+            pub method: String,
+            pub headers: HashMap<String, String>,
+        }
+
+        #[rquickjs::function]
+        async fn fetch_text(
+            url: String,
+            options: Option<FetchOptions>,
+        ) -> Result<String, rquickjs::Error> {
+            Request::new(
+                options
+                    .and_then(|o| Method::from_str(&o.method).ok())
+                    .unwrap_or(Method::GET),
+                Url::parse(&url).unwrap(),
+            );
+            let res = reqwest::get(url)
+                .await
+                .map_err(|e| rquickjs::Error::Unknown)?;
+            Ok(res
+                .text()
+                .await
+                .map_err(|e| rquickjs::Error::new_from_js_message("", "", e.to_string()))?)
+        }
+    }
+}
+pub struct PluginsRuntime {
+    context: AsyncContext,
+}
+impl PluginsRuntime {
+    async fn new(runtime: &AsyncRuntime) -> PluginsRuntime {
+        let ctx = AsyncContext::builder().build_async(runtime).await.unwrap();
+        ctx.with(|ctx| {
+            Module::declare_def::<js_stuff, _>(ctx.clone(), "@gami/sdk").unwrap();
+        })
+        .await;
+        Self { context: ctx }
+    }
+}
