@@ -13,6 +13,6 @@ pub mod fs {
     }
     #[rquickjs::function]
     pub async fn read_file(path: String) -> rquickjs::Result<String> {
-        Ok( read_to_string(&path).await?)
+        Ok(read_to_string(&path).await?)
     }
 }

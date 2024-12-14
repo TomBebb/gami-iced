@@ -1,4 +1,4 @@
-use rquickjs::{AsyncContext, AsyncRuntime, Ctx, FromJs, IntoJs, Module, Value};
+use rquickjs::{AsyncContext, AsyncRuntime, Ctx, FromJs, IntoJs, Value};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Either<TA, TB> {
@@ -36,52 +36,6 @@ where
         }
     }
 }
-#[rquickjs::module(rename_vars = "camelCase", rename = "@gami/sdk")]
-mod stuff {
-    #[rquickjs::module(rename_vars = "camelCase")]
-    mod utils {
-        #[rquickjs::function]
-        fn open_url(url: String) -> Result<(), rquickjs::Error> {
-            open::that(url).map_err(|e| rquickjs::Error::new_from_js_message("", "", e.to_string()))
-        }
-    }
-
-    #[rquickjs::module(rename_vars = "camelCase")]
-    mod http {
-        use reqwest::{Method, Request, Url};
-        use rquickjs::class::Trace;
-        use rquickjs::JsLifetime;
-        use std::collections::HashMap;
-        use std::str::FromStr;
-        #[rquickjs::class(rename_all = "camelCase")]
-        #[derive(Debug, JsLifetime, Clone, Trace)]
-        pub struct FetchOptions {
-            pub body: String,
-            pub method: String,
-            pub headers: HashMap<String, String>,
-        }
-
-        #[rquickjs::function]
-        async fn fetch_text(
-            url: String,
-            options: Option<FetchOptions>,
-        ) -> Result<String, rquickjs::Error> {
-            Request::new(
-                options
-                    .and_then(|o| Method::from_str(&o.method).ok())
-                    .unwrap_or(Method::GET),
-                Url::parse(&url).unwrap(),
-            );
-            let res = reqwest::get(url)
-                .await
-                .map_err(|e| rquickjs::Error::Unknown)?;
-            Ok(res
-                .text()
-                .await
-                .map_err(|e| rquickjs::Error::new_from_js_message("", "", e.to_string()))?)
-        }
-    }
-}
 pub struct PluginsRuntime {
     context: AsyncContext,
 }
@@ -89,8 +43,7 @@ impl PluginsRuntime {
     async fn new(runtime: &AsyncRuntime) -> PluginsRuntime {
         let ctx = AsyncContext::builder().build_async(runtime).await.unwrap();
         ctx.with(|ctx| {
-            Module::declare_def::<js_stuff, _>(ctx.clone(), "@gami/sdk").unwrap();
-            super::modules::setup(ctx.clone());
+            super::modules::setup(ctx);
         })
         .await;
         Self { context: ctx }
