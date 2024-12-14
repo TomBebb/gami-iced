@@ -68,8 +68,5 @@ export interface GameAddonBase {
     id: string,
 }
 
-export type GamiAddon = ({
-    type: "library"
-} & GameLibrary) | ({ type: "metadata" } & GameLibrary)
 
-export function registerAddon(addon: GamiAddon): void;
+export function registerLibrary(addon: GameLibrary): void;
