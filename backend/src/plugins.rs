@@ -1,6 +1,7 @@
-use rquickjs::{Context, Ctx, FromJs, IntoJs, Runtime, Value};
+use rquickjs::{Context, Ctx, FromJs, Function, IntoJs, Runtime, Value};
 use std::path::Path;
 use tokio::fs;
+use crate::modules::{js_sdk, open_url};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Either<TA, TB> {
@@ -39,20 +40,43 @@ where
     }
 }
 pub struct PluginsRuntime {
-    context: Context,
+    pub context: Context,
+}
+fn print(s: String) {
+    println!("{s}");
 }
 impl PluginsRuntime {
     pub(crate) fn new(runtime: &Runtime) -> PluginsRuntime {
         log::debug!("Initializing plugins runtime");
-        let ctx = Context::builder().build(runtime).unwrap();
+        let ctx = Context::full(runtime).unwrap();
         log::debug!("Initializing modules");
         ctx.with(|ctx| {
-            super::modules::setup(ctx);
+            let global = ctx.globals();
+            
+            global.set("openUrl", Function::new(ctx.clone(), open_url)).unwrap();
+            global
+                .set(
+                    "__print",
+                    Function::new(ctx.clone(), print)
+                        .unwrap()
+                        .with_name("__print")
+                        .unwrap(),
+                )
+                .unwrap();
+            ctx.eval::<(), _>(
+                r#"
+globalThis.console = {
+  log(...v) {
+    globalThis.__print(`${v.join(" ")}`)
+  }
+}
+"#,
+            )
+            .unwrap();
         });
         log::debug!("Initialized modules");
         Self { context: ctx }
     }
-
     pub async fn load(&self, path: &Path) -> rquickjs::Result<()> {
         log::debug!("Loading {:?}", path);
         let content = fs::read_to_string(path).await?;

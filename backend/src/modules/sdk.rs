@@ -2,9 +2,9 @@
 pub mod sdk {
     use crate::models::GameLibrary;
     #[rquickjs::module(rename_vars = "camelCase")]
-    mod utils {
+    pub mod utils {
         #[rquickjs::function]
-        fn open_url(url: String) -> Result<(), rquickjs::Error> {
+        pub fn open_url(url: String) -> Result<(), rquickjs::Error> {
             open::that(url).map_err(|e| rquickjs::Error::new_from_js_message("", "", e.to_string()))
         }
     }

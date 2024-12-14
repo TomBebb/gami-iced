@@ -1,7 +1,7 @@
+use crate::models::GameData;
 use crate::{db, PLUGINS};
 use db::game::Entity as GameEntity;
 use sea_orm::EntityTrait;
-use crate::models::GameData;
 
 pub async fn sync_library() {
     let my_plugin = &*PLUGINS;
@@ -13,7 +13,7 @@ pub async fn sync_library() {
             }
         }
     }
-    
+
      */
 }
 pub async fn get_games() -> Vec<GameData> {
