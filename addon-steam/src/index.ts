@@ -2,13 +2,14 @@ import {
     GameInstallStatus,
     GameLibraryRef,
     getConfig,
-    openUrl,
     registerAddon,
-    ScannedGameLibraryMetadata
+    ScannedGameLibraryMetadata,
+    utils
 } from "@gami/sdk";
 import {parse} from "@node-steam/vdf";
 import {readdir, readFile} from "fs/promises";
 import * as path from "node:path";
+import openUrl = utils.openUrl;
 
 interface AppState {
     appid: number;

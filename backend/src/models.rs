@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use rquickjs::{Ctx, IntoJs, Value};
 use std::fmt;
 use std::time::{Duration, SystemTime};
 
@@ -35,13 +35,30 @@ impl fmt::Display for GameLibraryRef {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
 pub enum GameInstallStatus {
     Installed,
     Installing,
     InLibrary,
     Queued,
+    Uninstalling,
+}
+
+impl<'js> IntoJs<'js> for GameInstallStatus {
+    fn into_js(self, ctx: &Ctx<'js>) -> rquickjs::Result<Value<'js>> {
+        rquickjs::String::from_str(
+            ctx.clone(),
+            match self {
+                Self::Installed => "Installed",
+                Self::Installing => "Installing",
+                Self::InLibrary => "InLibrary",
+                Self::Queued => "Queued",
+                Self::Uninstalling => "Uninstalling",
+            },
+        )
+        .map(Value::from_string)
+    }
 }
 impl Default for GameInstallStatus {
     fn default() -> Self {
@@ -49,7 +66,7 @@ impl Default for GameInstallStatus {
     }
 }
 
-#[derive(Default, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Eq, PartialEq)]
 pub struct ScannedGameLibraryMetadata {
     pub name: String,
     pub library_type: String,
@@ -58,7 +75,6 @@ pub struct ScannedGameLibraryMetadata {
     pub last_played: Option<SystemTime>,
     pub install_status: GameInstallStatus,
 
-    #[serde_as(as = "DurationSeconds<u64>")]
     pub playtime: Duration,
     pub icon_url: Option<String>,
 }
@@ -75,7 +91,7 @@ impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct GameData {
     pub id: i32,
     pub name: String,

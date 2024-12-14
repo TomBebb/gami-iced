@@ -1,8 +1,9 @@
+use crate::models::{GameInstallStatus, IsGameLibraryRef};
 use chrono::NaiveDateTime;
-use gami_sdk::{GameData, GameInstallStatus, IsGameLibraryRef};
 use sea_orm::entity::prelude::*;
 use sea_orm::{DeriveActiveEnum, DeriveEntityModel, EnumIter};
 use std::time::{Duration, SystemTime};
+
 #[derive(EnumIter, DeriveActiveEnum, Copy, Clone, Debug, PartialEq, Eq)]
 #[sea_orm(rs_type = "u8", db_type = "Integer")]
 #[repr(u8)]
@@ -11,6 +12,7 @@ pub enum DbGameInstallStatus {
     Installing = 1,
     InLibrary = 2,
     Queued = 3,
+    Uninstalling = 4,
 }
 impl From<GameInstallStatus> for DbGameInstallStatus {
     fn from(value: GameInstallStatus) -> Self {
@@ -19,6 +21,7 @@ impl From<GameInstallStatus> for DbGameInstallStatus {
             GameInstallStatus::Installing => Self::Installing,
             GameInstallStatus::InLibrary => Self::InLibrary,
             GameInstallStatus::Queued => Self::Queued,
+            GameInstallStatus::Uninstalling => Self::Uninstalling,
         }
     }
 }
@@ -29,6 +32,7 @@ impl Into<GameInstallStatus> for DbGameInstallStatus {
             Self::Installing => GameInstallStatus::Installing,
             Self::InLibrary => GameInstallStatus::InLibrary,
             Self::Queued => GameInstallStatus::Queued,
+            Self::Uninstalling => GameInstallStatus::Uninstalling,
         }
     }
 }

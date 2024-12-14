@@ -10,15 +10,20 @@ export interface FetchArgs {
     body: string
 }
 
-export function fetchText(url: string, args?: FetchArgs): Promise<FetchArgs>;
+declare namespace http {
+    export function fetchText(url: string, args?: FetchArgs): Promise<string>;
+}
 
-export function openUrl(url: string): void;
+declare namespace utils {
+    export function openUrl(url: string): void;
+}
 
 export declare const enum GameInstallStatus {
     Installed = "Installed",
     Installing = "Installing",
     InLibrary = "InLibrary",
     Queued = "Queued",
+    Uninstalling = "Uninstalling"
 }
 
 export interface ScannedGameLibraryMetadata extends GameLibraryRef {
@@ -67,4 +72,4 @@ export type GamiAddon = ({
     type: "library"
 } & GameLibrary) | ({ type: "metadata" } & GameLibrary)
 
-export function registerAddon(addon: GamiAddon)
+export function registerAddon(addon: GamiAddon): void;

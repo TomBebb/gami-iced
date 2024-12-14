@@ -8,4 +8,6 @@ sea-orm = { version = "1.1.1", features = ["sqlx-sqlite", "runtime-tokio-native-
 chrono = "0.4.39"
 log = "0.4.22"
 open = "5.3.1"
-quickjs_runtime = "0.14.4"
+rquickjs = { version = "0.8.1", features = ["array-buffer", "loader", "futures", "macro"] }
+reqwest = "0.12.9"
+dirs = "5.0.1"
