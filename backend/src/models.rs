@@ -1,4 +1,5 @@
-use rquickjs::{Ctx, IntoJs, Value};
+use rquickjs::class::{Trace, Tracer};
+use rquickjs::{Ctx, FromJs, IntoJs, JsLifetime, Value};
 use std::fmt;
 use std::time::{Duration, SystemTime};
 
@@ -60,23 +61,39 @@ impl<'js> IntoJs<'js> for GameInstallStatus {
         .map(Value::from_string)
     }
 }
+impl<'a> FromJs<'a> for GameInstallStatus {
+    fn from_js(ctx: &Ctx<'a>, value: Value<'a>) -> rquickjs::Result<Self> {
+        let v = value.as_string().expect("GameInstallStatus::from_js expected a string");
+        Ok(match v.to_string()?.as_str() {
+             "Installed" => Self::Installed,
+            "Installing" => Self::Installing,
+            "InLibrary" => Self::InLibrary,
+            "Queued" => Self::Queued,
+            "Uninstalling" => Self::Uninstalling,
+            _ => {
+                unimplemented!()
+            }
+        })
+    }
+}
 impl Default for GameInstallStatus {
     fn default() -> Self {
         GameInstallStatus::InLibrary
     }
 }
-
-#[derive(Default, Debug, Clone, Eq, PartialEq)]
+#[rquickjs::class(rename_all = "camelCase")]
+#[derive(Default, Debug, Clone, Eq, PartialEq, JsLifetime)]
 pub struct ScannedGameLibraryMetadata {
     pub name: String,
     pub library_type: String,
     pub library_id: String,
-
     pub last_played: Option<SystemTime>,
     pub install_status: GameInstallStatus,
-
     pub playtime: Duration,
     pub icon_url: Option<String>,
+}
+impl<'js> Trace<'js> for ScannedGameLibraryMetadata {
+    fn trace<'a>(&self, _tracer: Tracer<'a, 'js>) {}
 }
 impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     fn get_name(&self) -> &str {
@@ -91,7 +108,8 @@ impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[rquickjs::class(rename_all = "camelCase")]
+#[derive(Clone, Debug, PartialEq, Eq, Default, JsLifetime)]
 pub struct GameData {
     pub id: i32,
     pub name: String,
@@ -106,4 +124,8 @@ pub struct GameData {
     pub hero_url: Option<String>,
     pub library_type: String,
     pub library_id: String,
+}
+
+impl<'js> Trace<'js> for GameData {
+    fn trace<'a>(&self, _tracer: Tracer<'a, 'js>) {}
 }
