@@ -5,6 +5,7 @@ use crate::models::GameData;
 
 pub async fn sync_library() {
     let my_plugin = &*PLUGINS;
+    /*
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
             for item in lib.scan().await {
@@ -12,6 +13,8 @@ pub async fn sync_library() {
             }
         }
     }
+    
+     */
 }
 pub async fn get_games() -> Vec<GameData> {
     println!("Getting games");

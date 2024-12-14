@@ -1,4 +1,6 @@
 use rquickjs::{Context, Ctx, FromJs, IntoJs, Runtime, Value};
+use std::path::Path;
+use tokio::fs;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Either<TA, TB> {
@@ -41,10 +43,21 @@ pub struct PluginsRuntime {
 }
 impl PluginsRuntime {
     pub(crate) fn new(runtime: &Runtime) -> PluginsRuntime {
+        log::debug!("Initializing plugins runtime");
         let ctx = Context::builder().build(runtime).unwrap();
+        log::debug!("Initializing modules");
         ctx.with(|ctx| {
             super::modules::setup(ctx);
         });
+        log::debug!("Initialized modules");
         Self { context: ctx }
+    }
+
+    pub async fn load(&self, path: &Path) -> rquickjs::Result<()> {
+        log::debug!("Loading {:?}", path);
+        let content = fs::read_to_string(path).await?;
+        self.context.with(|ctx| ctx.eval(content))?;
+        log::debug!("Loaded {:?}", path);
+        Ok(())
     }
 }
