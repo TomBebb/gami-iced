@@ -36,7 +36,7 @@ interface AppState {
 type GameKv = { AppState: AppState };
 
 async function readSteamInfo(path: string): Promise<GameKv> {
-    const content = await readFile(path, 'utf-8')
+    const content = await readFile(path, 'binary')
     return parse(content)
 }
 

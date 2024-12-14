@@ -1,10 +1,11 @@
-use crate::plugin::ExternalAddons;
+use crate::plugins::ExternalAddons;
 use std::cell::LazyCell;
 use std::path::PathBuf;
 
 pub mod db;
 pub mod models;
-pub mod plugin;
+mod modules;
+pub mod plugins;
 
 pub const BASE_DATA_DIR: LazyCell<PathBuf> = LazyCell::new(|| {
     dirs::data_dir()

@@ -1631,6 +1631,7 @@ dependencies = [
  "reqwest",
  "rquickjs",
  "sea-orm",
+ "tokio",
 ]
 
 [[package]]

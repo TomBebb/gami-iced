@@ -3,8 +3,8 @@ mod game_genres;
 mod genre;
 pub mod ops;
 
-pub use game::Game;
 use crate::BASE_DATA_DIR;
+pub use game::Game;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection};
 use std::cell::LazyCell;
 use std::fs;

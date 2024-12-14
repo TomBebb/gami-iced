@@ -4,14 +4,14 @@ export interface GameLibraryRef {
     name: string
 }
 
-export interface FetchArgs {
+export interface FetchOptions {
     method: "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS" | "PATCH"
     headers: Record<string, string>
     body: string
 }
 
 declare namespace http {
-    export function fetchText(url: string, args?: FetchArgs): Promise<string>;
+    export function fetchText(url: string, args?: FetchOptions): Promise<string>;
 }
 
 declare namespace utils {

@@ -5,6 +5,13 @@ pub enum Either<TA, TB> {
     A(TA),
     B(TB),
 }
+
+impl<TA, TB> From<TA> for Either<TA, TB> {
+    fn from(value: TA) -> Self {
+        Self::A(value)
+    }
+}
+
 impl<'js, TA, TB> FromJs<'js> for Either<TA, TB>
 where
     TA: FromJs<'js>,
@@ -83,6 +90,7 @@ impl PluginsRuntime {
         let ctx = AsyncContext::builder().build_async(runtime).await.unwrap();
         ctx.with(|ctx| {
             Module::declare_def::<js_stuff, _>(ctx.clone(), "@gami/sdk").unwrap();
+            super::modules::setup(ctx.clone());
         })
         .await;
         Self { context: ctx }

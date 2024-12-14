@@ -11,3 +11,4 @@ open = "5.3.1"
 rquickjs = { version = "0.8.1", features = ["array-buffer", "loader", "futures", "macro"] }
 reqwest = "0.12.9"
 dirs = "5.0.1"
+tokio = "1.42.0"
