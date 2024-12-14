@@ -37,7 +37,7 @@ pub mod sdk {
             );
             let res = reqwest::get(url)
                 .await
-                .map_err(|e| rquickjs::Error::Unknown)?;
+                .map_err(|_e| rquickjs::Error::Unknown)?;
             Ok(res
                 .text()
                 .await

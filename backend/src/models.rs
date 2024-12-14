@@ -62,7 +62,7 @@ impl<'js> IntoJs<'js> for GameInstallStatus {
     }
 }
 impl<'a> FromJs<'a> for GameInstallStatus {
-    fn from_js(ctx: &Ctx<'a>, value: Value<'a>) -> rquickjs::Result<Self> {
+    fn from_js(_ctx: &Ctx<'a>, value: Value<'a>) -> rquickjs::Result<Self> {
         let v = value
             .as_string()
             .expect("GameInstallStatus::from_js expected a string");
