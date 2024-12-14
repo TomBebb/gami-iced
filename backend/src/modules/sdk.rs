@@ -1,5 +1,6 @@
 #[rquickjs::module(rename_vars = "camelCase", rename = "@gami/sdk")]
 pub mod sdk {
+    use crate::models::GameLibrary;
     #[rquickjs::module(rename_vars = "camelCase")]
     mod utils {
         #[rquickjs::function]
@@ -42,5 +43,10 @@ pub mod sdk {
                 .await
                 .map_err(|e| rquickjs::Error::new_from_js_message("", "", e.to_string()))?)
         }
+    }
+
+    #[rquickjs::function]
+    fn register_library(lib: GameLibrary) {
+        println!("Register library: {:?}", lib);
     }
 }

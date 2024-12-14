@@ -40,7 +40,7 @@ pub struct PluginsRuntime {
     context: AsyncContext,
 }
 impl PluginsRuntime {
-    async fn new(runtime: &AsyncRuntime) -> PluginsRuntime {
+    pub(crate) async fn new(runtime: &AsyncRuntime) -> PluginsRuntime {
         let ctx = AsyncContext::builder().build_async(runtime).await.unwrap();
         ctx.with(|ctx| {
             super::modules::setup(ctx);
