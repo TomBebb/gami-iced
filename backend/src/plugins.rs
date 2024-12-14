@@ -1,4 +1,4 @@
-use rquickjs::{AsyncContext, AsyncRuntime, Ctx, FromJs, IntoJs, Value};
+use rquickjs::{Context, Ctx, FromJs, IntoJs, Runtime, Value};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Either<TA, TB> {
@@ -37,15 +37,14 @@ where
     }
 }
 pub struct PluginsRuntime {
-    context: AsyncContext,
+    context: Context,
 }
 impl PluginsRuntime {
-    pub(crate) async fn new(runtime: &AsyncRuntime) -> PluginsRuntime {
-        let ctx = AsyncContext::builder().build_async(runtime).await.unwrap();
+    pub(crate) fn new(runtime: &Runtime) -> PluginsRuntime {
+        let ctx = Context::builder().build(runtime).unwrap();
         ctx.with(|ctx| {
             super::modules::setup(ctx);
-        })
-        .await;
+        });
         Self { context: ctx }
     }
 }
