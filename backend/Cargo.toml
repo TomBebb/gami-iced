@@ -12,3 +12,4 @@ rquickjs = { version = "0.8.1", features = ["array-buffer", "loader", "futures",
 reqwest = "0.12.9"
 dirs = "5.0.1"
 tokio = "1.42.0"
+async-once-cell = "0.5.4"

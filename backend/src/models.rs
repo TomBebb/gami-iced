@@ -63,9 +63,11 @@ impl<'js> IntoJs<'js> for GameInstallStatus {
 }
 impl<'a> FromJs<'a> for GameInstallStatus {
     fn from_js(ctx: &Ctx<'a>, value: Value<'a>) -> rquickjs::Result<Self> {
-        let v = value.as_string().expect("GameInstallStatus::from_js expected a string");
+        let v = value
+            .as_string()
+            .expect("GameInstallStatus::from_js expected a string");
         Ok(match v.to_string()?.as_str() {
-             "Installed" => Self::Installed,
+            "Installed" => Self::Installed,
             "Installing" => Self::Installing,
             "InLibrary" => Self::InLibrary,
             "Queued" => Self::Queued,
@@ -128,4 +130,11 @@ pub struct GameData {
 
 impl<'js> Trace<'js> for GameData {
     fn trace<'a>(&self, _tracer: Tracer<'a, 'js>) {}
+}
+
+#[rquickjs::class(rename_all = "camelCase")]
+#[derive(Clone, Debug, JsLifetime, Trace)]
+pub struct GameLibrary {
+    pub name: String,
+    pub id: String,
 }

@@ -2,7 +2,7 @@ import {
     GameInstallStatus,
     GameLibraryRef,
     getConfig,
-    registerAddon,
+    registerLibrary,
     ScannedGameLibraryMetadata,
     utils
 } from "@gami/sdk";
@@ -59,8 +59,7 @@ const config = getConfig('steam', {
         hint: "In decimal format. Obtain from [an online tool](https://www.steamidfinder.com)"
     }
 })
-registerAddon({
-    type: "library",
+registerLibrary({
     id: "steam",
     name: "Steam",
     install: runSteamCmd.bind(null, "install"),
