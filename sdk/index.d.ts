@@ -18,13 +18,12 @@ declare namespace utils {
     export function openUrl(url: string): void;
 }
 
-export declare const enum GameInstallStatus {
-    Installed = "Installed",
-    Installing = "Installing",
-    InLibrary = "InLibrary",
-    Queued = "Queued",
-    Uninstalling = "Uninstalling"
-}
+export type GameInstallStatus =
+    | "Installed"
+    | "Installing"
+    | "InLibrary"
+    | "Queued"
+    | "Uninstalling"
 
 export interface ScannedGameLibraryMetadata extends GameLibraryRef {
     name: string,
