@@ -1,4 +1,4 @@
-use crate::models::{GameInstallStatus, IsGameLibraryRef};
+use crate::models::{GameData, GameInstallStatus, IsGameLibraryRef};
 use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use sea_orm::{DeriveActiveEnum, DeriveEntityModel, EnumIter};

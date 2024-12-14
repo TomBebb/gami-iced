@@ -1,8 +1,8 @@
 use crate::{db, ADDONS};
 use db::game::Entity as GameEntity;
-use gami_sdk::GameData;
-use gami_sdk::GameLibrary;
 use sea_orm::EntityTrait;
+use crate::models::GameData;
+
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
