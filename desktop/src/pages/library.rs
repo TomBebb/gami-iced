@@ -298,7 +298,6 @@ impl LibraryPage {
                     .collect::<Vec<Element<Message>>>(),
             ))
             .into(),
-            LibraryViewType::Table => text("TODO: Table").into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
         };
         let toolbar = Element::from(
