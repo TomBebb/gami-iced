@@ -3,11 +3,10 @@ use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{
-    button, column, combo_box, container, image, row, scrollable, text, tooltip, Container, Svg,
-};
+use iced::widget::{button, column, container, image, row, scrollable, text, tooltip, Container, Svg};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
+use std::cell::LazyCell;
 use std::cmp::PartialEq;
 use std::fmt;
 use url::Url;
@@ -18,18 +17,32 @@ pub enum LibraryViewType {
     Table,
     Grid,
 }
-impl LibraryViewType {
-    const ALL: [LibraryViewType; 3] = [Self::List, Self::Table, Self::Grid];
+
+#[derive(Debug, Clone)]
+struct LibraryViewTypeMeta {
+    value: LibraryViewType,
+    name: &'static str,
+    icon: Handle,
 }
-impl fmt::Display for LibraryViewType {
-    fn fmt(self: &Self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::List => "List",
-            Self::Table => "Table",
-            Self::Grid => "Grid",
-        })
-    }
-}
+const VIEW_TYPES: LazyCell<[LibraryViewTypeMeta; 3]> = LazyCell::new(|| {
+    [
+        LibraryViewTypeMeta {
+            value: LibraryViewType::List,
+            name: "List",
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--list.svg").to_vec()),
+        },
+        LibraryViewTypeMeta {
+            value: LibraryViewType::Table,
+            name: "Table",
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--table.svg").to_vec()),
+        },
+        LibraryViewTypeMeta {
+            value: LibraryViewType::Grid,
+            name: "Grid",
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--grid-4x4.svg").to_vec()),
+        },
+    ]
+});
 #[derive(Clone, Debug)]
 pub struct LibraryPage {
     curr_index: usize,
@@ -101,7 +114,6 @@ const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
 impl LibraryPage {
     pub fn new() -> Self {
         let me = Self {
-            view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
             view_type: LibraryViewType::List,
             games: Vec::new(),
             curr_index: 0,
