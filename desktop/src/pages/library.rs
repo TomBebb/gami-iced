@@ -2,7 +2,7 @@ use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, combo_box, row, scrollable, text, Container, Svg};
+use iced::widget::{button, column, combo_box, row, scrollable, text, Button, Container, Svg};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;
@@ -27,6 +27,7 @@ impl fmt::Display for LibraryViewType {
 }
 #[derive(Clone, Debug)]
 pub struct LibraryPage {
+    curr_index: usize,
     view_types: combo_box::State<LibraryViewType>,
     view_type: LibraryViewType,
     games: Vec<GameData>,
@@ -40,6 +41,7 @@ pub enum Message {
     RefreshGames,
     ReloadCache,
     CacheReloaded(Vec<GameData>),
+    SelectGame(usize),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum GameAction {
@@ -94,6 +96,7 @@ impl LibraryPage {
             view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
             view_type: LibraryViewType::List,
             games: Vec::new(),
+            curr_index: 0,
         };
         me
     }
@@ -121,7 +124,21 @@ impl LibraryPage {
             LibraryViewType::List => scrollable(column(
                 self.games
                     .iter()
-                    .map(|game| (game, Element::from(row![text(&game.name)].width(Fill))))
+                    .enumerate()
+                    .map(|(index, game)| {
+                        (
+                            game,
+                            Element::from(
+                                Button::new(row![text(&game.name).width(Fill)].width(Fill))
+                                    .style(if index == self.curr_index {
+                                        button::primary
+                                    } else {
+                                        button::text
+                                    })
+                                    .on_press(Message::SelectGame(index)),
+                            ),
+                        )
+                    })
                     .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
                     .collect::<Vec<Element<Message>>>(),
             ))
@@ -183,6 +200,9 @@ impl LibraryPage {
             Message::GameAction(GameAction::Uninstall, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://uninstall/{}", game.library_id)).unwrap();
+            }
+            Message::SelectGame(index) => {
+                self.curr_index = index;
             }
             v => println!("{:?}", v),
         }
