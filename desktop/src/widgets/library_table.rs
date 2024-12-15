@@ -36,20 +36,14 @@ struct Column {
     kind: ColumnKind,
     width: f32,
     resize_offset: Option<f32>,
-    header: scrollable::Id,
-    body: scrollable::Id,
-    footer: scrollable::Id,
 }
 
 impl Column {
-    fn new(table: &LibraryTable, kind: ColumnKind) -> Self {
+    fn new(kind: ColumnKind) -> Self {
         Self {
             kind,
-            width: 50.,
+            width: 100.,
             resize_offset: None,
-            header: table.header.clone(),
-            body: table.body.clone(),
-            footer: table.footer.clone(),
         }
     }
 }
@@ -112,19 +106,21 @@ pub struct LibraryTable {
 
 impl LibraryTable {
     pub fn new() -> Self {
-        let mut me = Self {
-            columns: vec![],
+        Self {
+            columns: [
+                ColumnKind::Name,
+                ColumnKind::Playtime,
+                ColumnKind::LastPlayed,
+                ColumnKind::Description,
+            ]
+            .into_iter()
+            .map(Column::new)
+            .collect(),
             header: scrollable::Id::unique(),
             body: scrollable::Id::unique(),
             footer: scrollable::Id::unique(),
             rows: vec![],
-        };
-        me.columns = vec![
-            Column::new(&me, ColumnKind::Name),
-            Column::new(&me, ColumnKind::Playtime),
-            Column::new(&me, ColumnKind::Description),
-        ];
-        me
+        }
     }
     pub fn update(&mut self, msg: TableMessage) -> Task<TableMessage> {
         match msg {
