@@ -21,6 +21,10 @@ const PAGES: &[PageInfo] = &[
         name: "Library",
     },
     PageInfo {
+        icon: include_bytes!("../icons/tabler--trophy.svg"),
+        name: "Achievements",
+    },
+    PageInfo {
         icon: include_bytes!("../icons/tabler--settings.svg"),
         name: "Settings",
     },

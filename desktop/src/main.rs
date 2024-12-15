@@ -1,3 +1,4 @@
+use crate::pages::achivements::Achievements;
 use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::widgets::nav_view::NavView;
@@ -35,7 +36,8 @@ impl App {
                         self.page = match index {
                             0 => AppPage::Counter(Counter::default()),
                             1 => AppPage::Library(LibraryPage::new()),
-                            2 => AppPage::Settings,
+                            2 => AppPage::Achivements(Achievements::default()),
+                            3 => AppPage::Settings,
                             _ => unimplemented!(),
                         };
                         if let AppPage::Library(inner_lib) = &mut self.page {
