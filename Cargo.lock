@@ -1664,6 +1664,7 @@ dependencies = [
  "gami-sdk",
  "iced",
  "iced_aw",
+ "iced_table",
  "log",
  "open",
  "tokio",
@@ -2111,6 +2112,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "iced_table"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bbbd13c56f698280e7384fa834229a2e2fbbd975dd51db97b02efe21ae37b44"
+dependencies = [
+ "iced_core",
+ "iced_widget",
+]
+
+[[package]]
 name = "iced_tiny_skia"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2158,6 +2169,7 @@ dependencies = [
  "iced_runtime",
  "num-traits",
  "once_cell",
+ "ouroboros",
  "rustc-hash 2.1.0",
  "thiserror",
  "unicode-segmentation",

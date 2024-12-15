@@ -68,7 +68,7 @@ impl Into<GameData> for Model {
             last_played: self.last_played.map(naive_to_system),
             logo_url: self.logo_url,
             release_date: self.release_date.map(naive_to_system),
-            play_time_secs: self.play_time_secs,
+            play_time: Duration::from_secs(self.play_time_secs as u64),
         }
     }
 }

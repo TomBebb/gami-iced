@@ -79,7 +79,7 @@ pub struct GameData {
     pub id: i32,
     pub name: String,
     pub description: String,
-    pub play_time_secs: i64,
+    pub play_time: Duration,
     pub install_status: GameInstallStatus,
     pub release_date: Option<SystemTime>,
     pub last_played: Option<SystemTime>,
