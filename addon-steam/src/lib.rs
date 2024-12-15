@@ -3,16 +3,18 @@ mod kv;
 use crate::kv::ast::KvValue;
 use crate::kv::parser::full_parse;
 use gami_sdk::GameInstallStatus::Queued;
-use gami_sdk::{register_plugin, BaseAddon, BoxFuture, GameLibrary, PluginRegistrar};
+use gami_sdk::{register_plugin, BaseAddon, GameLibrary, PluginRegistrar};
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use log::*;
 use once_cell::sync::Lazy;
+use safer_ffi::option::TaggedOption;
 use safer_ffi::string::str_ref;
 use std::env;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::Runtime;
 use tokio::{fs, runtime};
+use url::Url;
 
 pub struct SteamLibrary;
 
@@ -31,7 +33,16 @@ const BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
     }
 });
 const APPS_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("steamapps"));
-
+const LIB_CACHE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("appcache/librarycache"));
+fn auto_cache_map(id: &str, postfix: &str) -> TaggedOption<safer_ffi::string::String> {
+    let full = LIB_CACHE_PATH.join(format!("{}{}", id, postfix));
+    if full.exists() {
+        let url = Url::from_file_path(full).unwrap();
+        TaggedOption::Some(url.to_string().into())
+    } else {
+        TaggedOption::None
+    }
+}
 const RUNTIME: Lazy<Runtime> = Lazy::new(|| runtime::Builder::new_multi_thread().build().unwrap());
 fn run_cmd(cmd: &'static str, id: &str) {
     let raw = format!("steam://{}//{}", cmd, id);
@@ -96,9 +107,11 @@ impl GameLibrary for SteamLibrary {
                 };
                 let bytes_to_dl = get_obj_text_opt("BytesToDownload");
                 let bytes_dl = get_obj_text_opt("BytesDownloaded");
+                let app_id = get_obj_text("appid");
                 res.push(ScannedGameLibraryMetadata {
-                    library_id: get_obj_text("appid").into(),
+                    library_id: app_id.into(),
                     name: get_obj_text("name").into(),
+                    icon_url: auto_cache_map(app_id, "_icon.jpg").into(),
                     last_played_epoch: get_obj_unix_opt("LastPlayed")
                         .map(|time| time.duration_since(UNIX_EPOCH).unwrap().as_secs())
                         .into(),
@@ -125,7 +138,7 @@ impl GameLibrary for SteamLibrary {
     fn uninstall(&self, game: &GameLibraryRef) {
         run_cmd_ref("uninstall", game)
     }
-    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus {
+    fn check_install_status(&self, _game: &GameLibraryRef) -> GameInstallStatus {
         GameInstallStatus::Installing
     }
 }
