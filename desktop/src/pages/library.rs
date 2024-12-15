@@ -1,16 +1,16 @@
+use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::widget::{
-    button, column, combo_box, image, container, row, scrollable, text, tooltip, Container, Svg,
+    button, column, combo_box, container, image, row, scrollable, text, tooltip, Container, Svg,
 };
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cmp::PartialEq;
 use std::fmt;
-
-use crate::widgets::library_table::{LibraryTable, TableMessage};
+use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LibraryViewType {
@@ -140,7 +140,7 @@ impl LibraryPage {
                         (
                             game,
                             Element::from(
-                                Button::new(
+                                button(
                                     row![
                                         text(&game.name).width(Fill),
                                         image(
