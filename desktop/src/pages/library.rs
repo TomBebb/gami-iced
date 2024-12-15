@@ -2,7 +2,9 @@ use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, combo_box, row, scrollable, text, Container, Svg};
+use iced::widget::{
+    button, column, combo_box, container, row, scrollable, text, tooltip, Container, Svg,
+};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;
@@ -137,23 +139,36 @@ impl LibraryPage {
                     Some(&self.view_type),
                     Message::ViewSelected,
                 ),
-                button(
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--plus.svg"
-                    )))
-                    .content_fit(ContentFit::Contain)
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--plus.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::success)
+                    .width(30)
+                    .on_press(Message::ShowAddDialog),
+                    container(text("Add a new game"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
+                ),
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--refresh.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::success)
+                    .width(30)
+                    .on_press(Message::RefreshGames),
+                    container(text("Re-sync your games library"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
                 )
-                .width(30)
-                .on_press(Message::ShowAddDialog),
-                button(
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--refresh.svg"
-                    )))
-                    .content_fit(ContentFit::Contain)
-                )
-                .style(button::success)
-                .width(30)
-                .on_press(Message::RefreshGames)
             ]
             .spacing(3)
             .align_y(Vertical::Center),
