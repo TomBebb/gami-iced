@@ -61,5 +61,5 @@ pub async fn main() -> iced::Result {
 
     log::info!("Starting Application");
     gami_backend::db::init().await;
-    iced::application("A cool counter", App::update, App::view).run()
+    iced::application("Gami", App::update, App::view).run()
 }
