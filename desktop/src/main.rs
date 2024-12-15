@@ -1,11 +1,13 @@
+use crate::pages::achivements::Achievements;
 use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::widgets::nav_view::NavView;
+use gami_backend::PLUGINS;
 use iced::widget::Row;
 use iced::{Element, Task};
-use gami_backend::PLUGINS;
 use pages::app_page::{AppPage, PageMessage};
 use pages::counter::Counter;
+use std::path::Path;
 
 mod pages;
 mod widgets;
@@ -58,7 +60,12 @@ impl App {
 #[tokio::main]
 pub async fn main() -> iced::Result {
     env_logger::init();
-    PLUGINS.load(Path::new("/home/tom/Code/gami-iced/addon-steam/dist/index.js")).await.unwrap();
+    PLUGINS
+        .load(Path::new(
+            "/home/tom/Code/gami-iced/addon-steam/dist/index.js",
+        ))
+        .await
+        .unwrap();
 
     log::info!("Starting Application");
     gami_backend::db::init().await;

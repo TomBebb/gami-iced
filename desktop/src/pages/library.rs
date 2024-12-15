@@ -1,5 +1,6 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db;
+use gami_backend::models::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::widget::{
@@ -7,10 +8,9 @@ use iced::widget::{
 };
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
-use std::fmt;
-use gami_backend::models::{GameData, GameInstallStatus};
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
+use std::fmt;
 use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]

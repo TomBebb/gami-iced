@@ -1,6 +1,6 @@
 use std::fmt;
 
-use gami_sdk::GameData;
+use gami_backend::models::GameData;
 use iced::{
     font::Weight,
     widget::{container, responsive, scrollable, text},
