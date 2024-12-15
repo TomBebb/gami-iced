@@ -11,6 +11,8 @@ use iced_table::table;
 #[derive(Debug, Copy, Clone)]
 pub enum TableMessage {
     SyncHeader(scrollable::AbsoluteOffset),
+    Resizing(usize, f32),
+    Resized,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -130,6 +132,16 @@ impl LibraryTable {
                     scrollable::scroll_to(self.footer.clone(), offset),
                 ])
             }
+            TableMessage::Resizing(index, offset) => {
+                if let Some(column) = self.columns.get_mut(index) {
+                    column.resize_offset = Some(offset);
+                }
+            }
+            TableMessage::Resized => self.columns.iter_mut().for_each(|column| {
+                if let Some(offset) = column.resize_offset.take() {
+                    column.width += offset;
+                }
+            }),
         };
         Task::none()
     }
@@ -144,6 +156,7 @@ impl LibraryTable {
                 TableMessage::SyncHeader,
             )
             .min_width(size.width)
+            .on_column_resize(TableMessage::Resizing, TableMessage::Resized)
             .into()
         })
         .into()
