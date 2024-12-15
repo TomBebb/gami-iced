@@ -151,6 +151,7 @@ impl LibraryPage {
                     )))
                     .content_fit(ContentFit::Contain)
                 )
+                .style(button::success)
                 .width(30)
                 .on_press(Message::RefreshGames)
             ]
