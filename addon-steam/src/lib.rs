@@ -7,6 +7,7 @@ use gami_sdk::{register_plugin, BaseAddon, BoxFuture, GameLibrary, PluginRegistr
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use log::*;
 use once_cell::sync::Lazy;
+use safer_ffi::string::str_ref;
 use std::env;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -48,8 +49,8 @@ fn from_epoch(secs: u64) -> SystemTime {
 }
 const ID: &str = "steam";
 impl BaseAddon for SteamLibrary {
-    fn get_id(&self) -> &'static str {
-        ID
+    fn get_id(&self) -> str_ref<'static> {
+        ID.into()
     }
 }
 impl GameLibrary for SteamLibrary {
@@ -100,7 +101,9 @@ impl GameLibrary for SteamLibrary {
                 res.push(ScannedGameLibraryMetadata {
                     library_id: get_obj_text("appid").into(),
                     name: get_obj_text("name").into(),
-                    last_played: get_obj_unix_opt("LastPlayed"),
+                    last_played_epoch: get_obj_unix_opt("LastPlayed")
+                        .map(|time| time.duration_since(UNIX_EPOCH).unwrap().as_secs())
+                        .into(),
                     library_type: ID.into(),
                     install_status: if bytes_dl == None {
                         Queued

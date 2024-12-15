@@ -1673,6 +1673,7 @@ dependencies = [
  "log",
  "once_cell",
  "open",
+ "safer-ffi",
  "tokio",
  "tokio-stream",
  "tokio-test",
@@ -1686,6 +1687,7 @@ dependencies = [
  "gami-sdk",
  "libloading 0.8.6",
  "log",
+ "safer-ffi",
  "sea-orm",
  "tokio-stream",
 ]

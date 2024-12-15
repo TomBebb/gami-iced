@@ -3,6 +3,7 @@ use gami_sdk::{
     PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use libloading::Library;
+use safer_ffi::string::str_ref;
 use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -17,7 +18,7 @@ pub struct GameLibraryProxy {
     pub _lib: Arc<Library>,
 }
 impl BaseAddon for GameLibraryProxy {
-    fn get_id(&self) -> &'static str {
+    fn get_id(&self) -> str_ref<'static> {
         self.inner.get_id()
     }
 }
