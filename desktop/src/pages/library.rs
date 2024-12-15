@@ -3,16 +3,16 @@ use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::widget::{
-    button, column, combo_box, image, row, scrollable, text, Button, Container, Svg,
+    button, column, combo_box, image, container, row, scrollable, text, tooltip, Container, Svg,
 };
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
-use std::fmt::{self};
-use url::Url;
+use std::cmp::PartialEq;
+use std::fmt;
 
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LibraryViewType {
     List,
     Table,
@@ -42,7 +42,6 @@ pub struct LibraryPage {
 #[derive(Debug, Clone)]
 pub enum Message {
     Table(TableMessage),
-    SyncHeader(scrollable::AbsoluteOffset),
     ViewSelected(LibraryViewType),
     ShowAddDialog,
     GameAction(GameAction, GameData),
@@ -98,6 +97,7 @@ const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
         _ => &[INSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
     }
 }
+
 impl LibraryPage {
     pub fn new() -> Self {
         let me = Self {
@@ -174,29 +174,68 @@ impl LibraryPage {
         };
         let toolbar = Element::from(
             row![
-                combo_box(
-                    &self.view_types,
-                    "Pick a view type",
-                    Some(&self.view_type),
-                    Message::ViewSelected,
+                Container::new(
+                    row(LibraryViewType::ALL.iter().cloned().map(|v| {
+                        let icon_bytes = match v {
+                            LibraryViewType::List => {
+                                include_bytes!("../icons/tabler--list.svg").to_vec()
+                            }
+                            LibraryViewType::Table => {
+                                include_bytes!("../icons/tabler--table.svg").to_vec()
+                            }
+                            LibraryViewType::Grid => {
+                                include_bytes!("../icons/tabler--grid-4x4.svg").to_vec()
+                            }
+                        };
+
+                        tooltip(
+                            button(Svg::new(Handle::from_memory(icon_bytes))).on_press_maybe(
+                                if self.view_type == v {
+                                    None
+                                } else {
+                                    Some(Message::ViewSelected(v))
+                                },
+                            ),
+                            container(text(v.to_string()))
+                                .padding(6)
+                                .style(container::rounded_box),
+                            tooltip::Position::Bottom,
+                        )
+                        .into()
+                    }))
+                    .spacing(2)
                 ),
-                button(
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--plus.svg"
-                    )))
-                    .content_fit(ContentFit::Contain)
+                text("").width(Fill),
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--plus.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::success)
+                    .width(30)
+                    .on_press(Message::ShowAddDialog),
+                    container(text("Add a new game"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
+                ),
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--refresh.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::success)
+                    .width(30)
+                    .on_press(Message::RefreshGames),
+                    container(text("Re-sync your games library"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
                 )
-                .width(30)
-                .on_press(Message::ShowAddDialog),
-                button(
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--refresh.svg"
-                    )))
-                    .content_fit(ContentFit::Contain)
-                )
-                .style(button::success)
-                .width(30)
-                .on_press(Message::RefreshGames)
             ]
             .spacing(3)
             .align_y(Vertical::Center),
