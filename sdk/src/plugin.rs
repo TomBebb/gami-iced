@@ -1,4 +1,5 @@
 use crate::{BoxFuture, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
+use safer_ffi::string::str_ref;
 
 pub struct PluginDeclaration {
     pub rustc_version: &'static str,
@@ -11,16 +12,16 @@ pub trait PluginRegistrar {
 }
 
 pub trait BaseAddon {
-    fn get_id(&self) -> &'static str;
+    fn get_id(&self) -> str_ref<'static>;
     //   const TYPE: &'static str;
 }
 
 pub trait GameLibrary: BaseAddon + Send {
-    fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>>;
-    fn install(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn uninstall(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus>;
+    fn launch(&self, game: &GameLibraryRef);
+    fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;
+    fn install(&self, game: &GameLibraryRef);
+    fn uninstall(&self, game: &GameLibraryRef);
+    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus;
 }
 
 pub static CORE_VERSION: &str = env!("CARGO_PKG_VERSION");

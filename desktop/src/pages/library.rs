@@ -149,23 +149,18 @@ impl LibraryPage {
                     .iter()
                     .enumerate()
                     .map(|(index, game)| {
+                        let raw_icon_url = game.icon_url.as_ref().map(String::as_str).unwrap_or("");
                         (
                             game,
                             Element::from(
                                 button(
                                     row![
                                         text(&game.name).width(Fill),
-                                        image(
-                                            Url::parse(
-                                                &game
-                                                    .icon_url
-                                                    .as_ref()
-                                                    .map(String::as_str)
-                                                    .unwrap_or("")
-                                            )
-                                            .unwrap()
-                                            .path()
-                                        )
+                                        image(if raw_icon_url.is_empty() {
+                                            "".into()
+                                        } else {
+                                            Url::parse(raw_icon_url).unwrap().path().to_owned()
+                                        }),
                                     ]
                                     .width(Fill),
                                 )

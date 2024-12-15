@@ -1,14 +1,18 @@
+use ::safer_ffi::prelude::*;
+use safer_ffi::option::TaggedOption;
+use safer_ffi::String;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::string::String as RString;
 use std::time::{Duration, SystemTime};
-use url::Url;
-
 pub trait IsGameLibraryRef {
     fn get_name(&self) -> &str;
     fn get_library_type(&self) -> &str;
     fn get_library_id(&self) -> &str;
 }
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone)]
+#[derive_ReprC]
+#[repr(C)]
 pub struct GameLibraryRef {
     pub name: String,
     pub library_type: String,
@@ -38,6 +42,7 @@ impl fmt::Display for GameLibraryRef {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
+#[derive_ReprC]
 pub enum GameInstallStatus {
     Installed,
     Installing,
@@ -49,17 +54,31 @@ impl Default for GameInstallStatus {
         GameInstallStatus::InLibrary
     }
 }
-
-#[derive(Default, Debug, Clone, Eq, PartialEq)]
+#[derive_ReprC]
+#[repr(C)]
+#[derive(Debug, Clone)]
 pub struct ScannedGameLibraryMetadata {
     pub name: String,
     pub library_type: String,
     pub library_id: String,
 
-    pub last_played: Option<SystemTime>,
+    pub last_played_epoch: TaggedOption<u64>,
     pub install_status: GameInstallStatus,
-    pub playtime: Duration,
-    pub icon_url: Option<Url>,
+    pub playtime_secs: u64,
+    pub icon_url: TaggedOption<String>,
+}
+impl Default for ScannedGameLibraryMetadata {
+    fn default() -> Self {
+        Self {
+            name: "".into(),
+            library_type: "".into(),
+            library_id: "".into(),
+            last_played_epoch: TaggedOption::None,
+            install_status: GameInstallStatus::InLibrary,
+            playtime_secs: 0,
+            icon_url: TaggedOption::None,
+        }
+    }
 }
 impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     fn get_name(&self) -> &str {
@@ -74,19 +93,19 @@ impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct GameData {
     pub id: i32,
-    pub name: String,
-    pub description: String,
+    pub name: RString,
+    pub description: RString,
     pub play_time: Duration,
     pub install_status: GameInstallStatus,
     pub release_date: Option<SystemTime>,
     pub last_played: Option<SystemTime>,
-    pub icon_url: Option<String>,
-    pub header_url: Option<String>,
-    pub logo_url: Option<String>,
-    pub hero_url: Option<String>,
-    pub library_type: String,
-    pub library_id: String,
+    pub icon_url: Option<RString>,
+    pub header_url: Option<RString>,
+    pub logo_url: Option<RString>,
+    pub hero_url: Option<RString>,
+    pub library_type: RString,
+    pub library_id: RString,
 }

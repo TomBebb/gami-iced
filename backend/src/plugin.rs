@@ -3,6 +3,7 @@ use gami_sdk::{
     PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use libloading::Library;
+use safer_ffi::string::str_ref;
 use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -17,28 +18,28 @@ pub struct GameLibraryProxy {
     pub _lib: Arc<Library>,
 }
 impl BaseAddon for GameLibraryProxy {
-    fn get_id(&self) -> &'static str {
+    fn get_id(&self) -> str_ref<'static> {
         self.inner.get_id()
     }
 }
 impl GameLibrary for GameLibraryProxy {
-    fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
+    fn launch(&self, game: &GameLibraryRef) {
         self.inner.launch(game)
     }
 
-    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>> {
+    fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
         self.inner.scan()
     }
 
-    fn install(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
+    fn install(&self, game: &GameLibraryRef) {
         self.inner.install(game)
     }
 
-    fn uninstall(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
+    fn uninstall(&self, game: &GameLibraryRef) {
         self.inner.uninstall(game)
     }
 
-    fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus> {
+    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus {
         self.inner.check_install_status(game)
     }
 }

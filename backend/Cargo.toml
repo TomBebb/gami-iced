@@ -9,4 +9,5 @@ gami-sdk = { path = "../sdk" }
 chrono = "0.4.39"
 libloading = "0.8.6"
 log = "0.4.22"
+safer-ffi = { version = "0.1.13", features = ["alloc"] }
 tokio-stream = "0.1.17"
