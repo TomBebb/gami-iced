@@ -35,8 +35,10 @@ pub struct NavView {
 }
 impl NavView {
     pub fn view(&self) -> Column<Message> {
-        Column::with_children(PAGES.into_iter().enumerate().map(
-            |(index, &PageInfo { name, icon })| {
+        let mut columns: Vec<Element<Message>> = PAGES
+            .into_iter()
+            .enumerate()
+            .map(|(index, &PageInfo { name, icon })| {
                 let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
                 Element::from(
                     button(Element::from(row![
@@ -50,9 +52,10 @@ impl NavView {
                         Some(Message::NavSelected(index))
                     }),
                 )
-            },
-        ))
-        .width(160)
+            })
+            .collect();
+        columns.push(button("").height(Fill).width(Fill).into());
+        Column::with_children(columns).width(160)
     }
     pub fn update(&mut self, message: Message) {
         match message {
