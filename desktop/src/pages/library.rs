@@ -2,10 +2,13 @@ use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, combo_box, row, scrollable, text, Button, Container, Svg};
+use iced::widget::{
+    button, column, combo_box, image, row, scrollable, text, Button, Container, Svg,
+};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;
+use url::Url;
 
 #[derive(Copy, Clone, Debug)]
 pub enum LibraryViewType {
@@ -129,13 +132,29 @@ impl LibraryPage {
                         (
                             game,
                             Element::from(
-                                Button::new(row![text(&game.name).width(Fill)].width(Fill))
-                                    .style(if index == self.curr_index {
-                                        button::primary
-                                    } else {
-                                        button::text
-                                    })
-                                    .on_press(Message::SelectGame(index)),
+                                Button::new(
+                                    row![
+                                        text(&game.name).width(Fill),
+                                        image(
+                                            Url::parse(
+                                                &game
+                                                    .icon_url
+                                                    .as_ref()
+                                                    .map(String::as_str)
+                                                    .unwrap_or("")
+                                            )
+                                            .unwrap()
+                                            .path()
+                                        )
+                                    ]
+                                    .width(Fill),
+                                )
+                                .style(if index == self.curr_index {
+                                    button::primary
+                                } else {
+                                    button::text
+                                })
+                                .on_press(Message::SelectGame(index)),
                             ),
                         )
                     })
