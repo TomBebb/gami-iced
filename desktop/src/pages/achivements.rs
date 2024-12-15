@@ -11,5 +11,5 @@ impl Achievements {
     pub fn view(&self) -> Element<Message> {
         text("Achievements: TODO").into()
     }
-    pub fn update(&mut self, message: Message) {}
+    pub fn update(&mut self, _message: Message) {}
 }
