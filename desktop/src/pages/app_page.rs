@@ -7,6 +7,7 @@ use iced::{Element, Task};
 pub enum PageMessage {
     Counter(pages::counter::CounterMessage),
     Library(pages::library::Message),
+    Achievements(pages::achivements::Message),
 }
 
 #[derive(Clone, Debug)]
@@ -14,6 +15,7 @@ pub enum PageMessage {
 pub enum AppPage {
     Counter(Counter),
     Library(pages::library::LibraryPage),
+    Achivements(pages::achivements::Achievements),
     Settings,
 }
 impl Default for AppPage {
@@ -27,6 +29,7 @@ impl AppPage {
         match self {
             AppPage::Counter(counter) => Element::from(counter.view()).map(PageMessage::Counter),
             AppPage::Library(lib) => Element::from(lib.view()).map(PageMessage::Library),
+            AppPage::Achivements(page) => page.view().map(PageMessage::Achievements),
             AppPage::Settings => Element::from(text("TODO settings")),
         }
     }
@@ -36,6 +39,7 @@ impl AppPage {
             (AppPage::Library(lib), PageMessage::Library(v)) => {
                 return lib.update(v).map(PageMessage::Library);
             }
+            (AppPage::Achivements(page), PageMessage::Achievements(v)) => page.update(v),
             _ => unimplemented!(),
         }
         Task::none()

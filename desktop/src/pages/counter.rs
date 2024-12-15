@@ -13,9 +13,13 @@ pub enum CounterMessage {
 impl Counter {
     pub fn view(&self) -> Row<CounterMessage> {
         row![
-            button("+").on_press(CounterMessage::Increment),
+            button("+")
+                .style(button::success)
+                .on_press(CounterMessage::Increment),
             text(self.value).size(50),
-            button("-").on_press(CounterMessage::Decrement),
+            button("-")
+                .style(button::danger)
+                .on_press(CounterMessage::Decrement),
         ]
         .align_y(Vertical::Center)
     }

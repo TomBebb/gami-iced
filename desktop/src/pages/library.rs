@@ -1,45 +1,68 @@
+use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db;
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, combo_box, row, scrollable, text, Container, Svg};
+use iced::widget::{
+    button, column, container, image, row, scrollable, text, tooltip, Container, Svg,
+};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::fmt;
 use gami_backend::models::{GameData, GameInstallStatus};
+use std::cell::LazyCell;
+use std::cmp::PartialEq;
+use url::Url;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LibraryViewType {
     List,
     Table,
     Grid,
 }
-impl LibraryViewType {
-    const ALL: [LibraryViewType; 3] = [Self::List, Self::Table, Self::Grid];
+
+#[derive(Debug, Clone)]
+struct LibraryViewTypeMeta {
+    value: LibraryViewType,
+    name: &'static str,
+    icon: Handle,
 }
-impl fmt::Display for LibraryViewType {
-    fn fmt(self: &Self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::List => "List",
-            Self::Table => "Table",
-            Self::Grid => "Grid",
-        })
-    }
-}
+const VIEW_TYPES: LazyCell<[LibraryViewTypeMeta; 3]> = LazyCell::new(|| {
+    [
+        LibraryViewTypeMeta {
+            value: LibraryViewType::List,
+            name: "List",
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--list.svg").to_vec()),
+        },
+        LibraryViewTypeMeta {
+            value: LibraryViewType::Table,
+            name: "Table",
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--table.svg").to_vec()),
+        },
+        LibraryViewTypeMeta {
+            value: LibraryViewType::Grid,
+            name: "Grid",
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--grid-4x4.svg").to_vec()),
+        },
+    ]
+});
 #[derive(Clone, Debug)]
 pub struct LibraryPage {
-    view_types: combo_box::State<LibraryViewType>,
+    curr_index: usize,
     view_type: LibraryViewType,
     games: Vec<GameData>,
+    table: LibraryTable,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    Table(TableMessage),
     ViewSelected(LibraryViewType),
     ShowAddDialog,
     GameAction(GameAction, GameData),
     RefreshGames,
     ReloadCache,
     CacheReloaded(Vec<GameData>),
+    SelectGame(usize),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum GameAction {
@@ -88,12 +111,14 @@ const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
         _ => &[INSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
     }
 }
+
 impl LibraryPage {
     pub fn new() -> Self {
         let me = Self {
-            view_types: combo_box::State::new(LibraryViewType::ALL.to_vec()),
             view_type: LibraryViewType::List,
             games: Vec::new(),
+            curr_index: 0,
+            table: LibraryTable::new(),
         };
         me
     }
@@ -118,41 +143,98 @@ impl LibraryPage {
     }
     pub fn view(&self) -> Element<Message> {
         let items: Element<Message> = match self.view_type {
+            LibraryViewType::Table => self.table.view().map(Message::Table),
+
             LibraryViewType::List => scrollable(column(
                 self.games
                     .iter()
-                    .map(|game| (game, Element::from(row![text(&game.name)].width(Fill))))
+                    .enumerate()
+                    .map(|(index, game)| {
+                        (
+                            game,
+                            Element::from(
+                                button(
+                                    row![
+                                        text(&game.name).width(Fill),
+                                        image(
+                                            Url::parse(
+                                                &game
+                                                    .icon_url
+                                                    .as_ref()
+                                                    .map(String::as_str)
+                                                    .unwrap_or("")
+                                            )
+                                            .unwrap()
+                                            .path()
+                                        )
+                                    ]
+                                    .width(Fill),
+                                )
+                                .style(if index == self.curr_index {
+                                    button::primary
+                                } else {
+                                    button::text
+                                })
+                                .on_press(Message::SelectGame(index)),
+                            ),
+                        )
+                    })
                     .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
                     .collect::<Vec<Element<Message>>>(),
             ))
             .into(),
-            LibraryViewType::Table => text("TODO: Table").into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
         };
         let toolbar = Element::from(
             row![
-                combo_box(
-                    &self.view_types,
-                    "Pick a view type",
-                    Some(&self.view_type),
-                    Message::ViewSelected,
+                Container::new(
+                    row(VIEW_TYPES.iter().cloned().map(|v| {
+                        tooltip(
+                            button(Svg::new(v.icon)).on_press_maybe(if self.view_type == v.value {
+                                None
+                            } else {
+                                Some(Message::ViewSelected(v.value))
+                            }),
+                            container(text(v.name))
+                                .padding(6)
+                                .style(container::rounded_box),
+                            tooltip::Position::Bottom,
+                        )
+                        .into()
+                    }))
+                    .spacing(2)
                 ),
-                button(
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--plus.svg"
-                    )))
-                    .content_fit(ContentFit::Contain)
+                text("").width(Fill),
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--plus.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::success)
+                    .width(30)
+                    .on_press(Message::ShowAddDialog),
+                    container(text("Add a new game"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
+                ),
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--refresh.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::success)
+                    .width(30)
+                    .on_press(Message::RefreshGames),
+                    container(text("Re-sync your games library"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
                 )
-                .width(30)
-                .on_press(Message::ShowAddDialog),
-                button(
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--refresh.svg"
-                    )))
-                    .content_fit(ContentFit::Contain)
-                )
-                .width(30)
-                .on_press(Message::RefreshGames)
             ]
             .spacing(3)
             .align_y(Vertical::Center),
@@ -161,6 +243,9 @@ impl LibraryPage {
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::Table(tbl) => {
+                return self.table.update(tbl).map(Message::Table);
+            }
             Message::RefreshGames => {
                 return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
             }
@@ -170,7 +255,10 @@ impl LibraryPage {
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
             }
-            Message::CacheReloaded(cache) => self.games = cache,
+            Message::CacheReloaded(cache) => {
+                self.games = cache.clone();
+                self.table.rows = cache;
+            }
             Message::GameAction(GameAction::Play, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://rungameid/{}", game.library_id)).unwrap();
@@ -182,6 +270,9 @@ impl LibraryPage {
             Message::GameAction(GameAction::Uninstall, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://uninstall/{}", game.library_id)).unwrap();
+            }
+            Message::SelectGame(index) => {
+                self.curr_index = index;
             }
             v => println!("{:?}", v),
         }
