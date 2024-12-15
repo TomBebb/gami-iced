@@ -1,14 +1,16 @@
+use ::safer_ffi::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::time::{Duration, SystemTime};
 use url::Url;
-
 pub trait IsGameLibraryRef {
     fn get_name(&self) -> &str;
     fn get_library_type(&self) -> &str;
     fn get_library_id(&self) -> &str;
 }
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[derive_ReprC]
+#[repr(opaque)]
 pub struct GameLibraryRef {
     pub name: String,
     pub library_type: String,
@@ -38,6 +40,7 @@ impl fmt::Display for GameLibraryRef {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
+#[derive_ReprC] // <- `::safer_ffi`'s attribute
 pub enum GameInstallStatus {
     Installed,
     Installing,
@@ -49,7 +52,8 @@ impl Default for GameInstallStatus {
         GameInstallStatus::InLibrary
     }
 }
-
+#[derive_ReprC]
+#[repr(opaque)]
 #[derive(Default, Debug, Clone, Eq, PartialEq)]
 pub struct ScannedGameLibraryMetadata {
     pub name: String,
@@ -74,6 +78,8 @@ impl IsGameLibraryRef for ScannedGameLibraryMetadata {
     }
 }
 
+#[derive_ReprC]
+#[repr(opaque)]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct GameData {
     pub id: i32,

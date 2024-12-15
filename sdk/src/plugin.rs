@@ -1,15 +1,7 @@
 use crate::{BoxFuture, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
-
-pub struct PluginDeclaration {
-    pub rustc_version: &'static str,
-    pub core_version: &'static str,
-    pub register: unsafe extern "C" fn(&mut dyn PluginRegistrar),
-}
-
-pub trait PluginRegistrar {
-    fn register_library(&mut self, name: &str, function: Box<dyn GameLibrary>);
-}
-
+use ::safer_ffi::prelude::*;
+use safer_ffi::derive_ReprC;
+#[derive_ReprC(dyn)]
 pub trait BaseAddon {
     fn get_id(&self) -> &'static str;
     //   const TYPE: &'static str;
