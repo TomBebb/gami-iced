@@ -3,12 +3,13 @@ use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, container, image, row, scrollable, text, tooltip, Container, Svg};
+use iced::widget::{
+    button, column, container, image, row, scrollable, text, tooltip, Container, Svg,
+};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
-use std::fmt;
 use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -46,7 +47,6 @@ const VIEW_TYPES: LazyCell<[LibraryViewTypeMeta; 3]> = LazyCell::new(|| {
 #[derive(Clone, Debug)]
 pub struct LibraryPage {
     curr_index: usize,
-    view_types: combo_box::State<LibraryViewType>,
     view_type: LibraryViewType,
     games: Vec<GameData>,
     table: LibraryTable,
@@ -187,28 +187,14 @@ impl LibraryPage {
         let toolbar = Element::from(
             row![
                 Container::new(
-                    row(LibraryViewType::ALL.iter().cloned().map(|v| {
-                        let icon_bytes = match v {
-                            LibraryViewType::List => {
-                                include_bytes!("../icons/tabler--list.svg").to_vec()
-                            }
-                            LibraryViewType::Table => {
-                                include_bytes!("../icons/tabler--table.svg").to_vec()
-                            }
-                            LibraryViewType::Grid => {
-                                include_bytes!("../icons/tabler--grid-4x4.svg").to_vec()
-                            }
-                        };
-
+                    row(VIEW_TYPES.iter().cloned().map(|v| {
                         tooltip(
-                            button(Svg::new(Handle::from_memory(icon_bytes))).on_press_maybe(
-                                if self.view_type == v {
-                                    None
-                                } else {
-                                    Some(Message::ViewSelected(v))
-                                },
-                            ),
-                            container(text(v.to_string()))
+                            button(Svg::new(v.icon)).on_press_maybe(if self.view_type == v.value {
+                                None
+                            } else {
+                                Some(Message::ViewSelected(v.value))
+                            }),
+                            container(text(v.name))
                                 .padding(6)
                                 .style(container::rounded_box),
                             tooltip::Position::Bottom,
