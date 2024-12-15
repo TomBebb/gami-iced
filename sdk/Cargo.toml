@@ -8,7 +8,7 @@ dirs = "5.0.1"
 tokio-stream = "0.1.16"
 url = "2.5.3"
 serde = { version = "1.0.215", features = ["derive"] }
-safer-ffi = { version = "0.1.13", features = ["dyn-traits"] }
+safer-ffi = { version = "0.1.13", features = ["dyn-traits", "alloc"] }
 
 [build-dependencies]
 rustc_version = "0.4.1"

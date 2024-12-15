@@ -1,9 +1,11 @@
 use crate::{BoxFuture, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use ::safer_ffi::prelude::*;
 use safer_ffi::derive_ReprC;
+use safer_ffi::string::str_ref;
+
 #[derive_ReprC(dyn)]
 pub trait BaseAddon {
-    fn get_id(&self) -> &'static str;
+    fn get_id(&self) -> str_ref<'static>;
     //   const TYPE: &'static str;
 }
 
