@@ -1,12 +1,16 @@
+use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
-use iced::widget::{button, column, container, row, scrollable, text, tooltip, Container, Svg};
+use iced::widget::{
+    button, column, container, image, row, scrollable, text, tooltip, Container, Svg,
+};
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
+use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LibraryViewType {
@@ -42,18 +46,22 @@ const VIEW_TYPES: LazyCell<[LibraryViewTypeMeta; 3]> = LazyCell::new(|| {
 });
 #[derive(Clone, Debug)]
 pub struct LibraryPage {
+    curr_index: usize,
     view_type: LibraryViewType,
     games: Vec<GameData>,
+    table: LibraryTable,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    Table(TableMessage),
     ViewSelected(LibraryViewType),
     ShowAddDialog,
     GameAction(GameAction, GameData),
     RefreshGames,
     ReloadCache,
     CacheReloaded(Vec<GameData>),
+    SelectGame(usize),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum GameAction {
@@ -108,6 +116,8 @@ impl LibraryPage {
         let me = Self {
             view_type: LibraryViewType::List,
             games: Vec::new(),
+            curr_index: 0,
+            table: LibraryTable::new(),
         };
         me
     }
@@ -132,15 +142,46 @@ impl LibraryPage {
     }
     pub fn view(&self) -> Element<Message> {
         let items: Element<Message> = match self.view_type {
+            LibraryViewType::Table => self.table.view().map(Message::Table),
+
             LibraryViewType::List => scrollable(column(
                 self.games
                     .iter()
-                    .map(|game| (game, Element::from(row![text(&game.name)].width(Fill))))
+                    .enumerate()
+                    .map(|(index, game)| {
+                        (
+                            game,
+                            Element::from(
+                                button(
+                                    row![
+                                        text(&game.name).width(Fill),
+                                        image(
+                                            Url::parse(
+                                                &game
+                                                    .icon_url
+                                                    .as_ref()
+                                                    .map(String::as_str)
+                                                    .unwrap_or("")
+                                            )
+                                            .unwrap()
+                                            .path()
+                                        )
+                                    ]
+                                    .width(Fill),
+                                )
+                                .style(if index == self.curr_index {
+                                    button::primary
+                                } else {
+                                    button::text
+                                })
+                                .on_press(Message::SelectGame(index)),
+                            ),
+                        )
+                    })
                     .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
                     .collect::<Vec<Element<Message>>>(),
             ))
             .into(),
-            LibraryViewType::Table => text("TODO: Table").into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
         };
         let toolbar = Element::from(
@@ -201,6 +242,9 @@ impl LibraryPage {
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::Table(tbl) => {
+                return self.table.update(tbl).map(Message::Table);
+            }
             Message::RefreshGames => {
                 return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
             }
@@ -210,7 +254,10 @@ impl LibraryPage {
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
             }
-            Message::CacheReloaded(cache) => self.games = cache,
+            Message::CacheReloaded(cache) => {
+                self.games = cache.clone();
+                self.table.rows = cache;
+            }
             Message::GameAction(GameAction::Play, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://rungameid/{}", game.library_id)).unwrap();
@@ -222,6 +269,9 @@ impl LibraryPage {
             Message::GameAction(GameAction::Uninstall, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://uninstall/{}", game.library_id)).unwrap();
+            }
+            Message::SelectGame(index) => {
+                self.curr_index = index;
             }
             v => println!("{:?}", v),
         }
