@@ -11,7 +11,8 @@ use safer_ffi::string::str_ref;
 use std::env;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::fs;
+use tokio::runtime::Runtime;
+use tokio::{fs, runtime};
 
 pub struct SteamLibrary;
 
@@ -30,19 +31,15 @@ const BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
     }
 });
 const APPS_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("steamapps"));
+
+const RUNTIME: Lazy<Runtime> = Lazy::new(|| runtime::Builder::new_multi_thread().build().unwrap());
 fn run_cmd(cmd: &'static str, id: &str) {
     let raw = format!("steam://{}//{}", cmd, id);
     debug!("steam cmd: {}", raw);
     open::that_in_background(&raw);
 }
-fn run_cmd_ref(cmd: &'static str, my_ref: GameLibraryRef) {
+fn run_cmd_ref(cmd: &'static str, my_ref: &GameLibraryRef) {
     run_cmd(cmd, &my_ref.library_id)
-}
-fn wrapped_run_cmd(cmd: &'static str, game: &GameLibraryRef) -> BoxFuture<'static> {
-    let game_c = game.clone();
-    Box::pin(async move {
-        run_cmd_ref(cmd, game_c);
-    })
 }
 fn from_epoch(secs: u64) -> SystemTime {
     UNIX_EPOCH + Duration::from_secs(secs)
@@ -54,10 +51,11 @@ impl BaseAddon for SteamLibrary {
     }
 }
 impl GameLibrary for SteamLibrary {
-    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>> {
-        debug!("APPS_PATH: {:?}", &*APPS_PATH);
-        let mut res = Vec::with_capacity(8);
-        Box::pin(async move {
+    fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
+        RUNTIME.block_on(async move {
+            let mut res = Vec::with_capacity(8);
+            debug!("APPS_PATH: {:?}", &*APPS_PATH);
+
             let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
             while let Some(entry) = reader.next_entry().await.unwrap() {
                 let path: PathBuf = entry.path();
@@ -118,18 +116,17 @@ impl GameLibrary for SteamLibrary {
             res
         })
     }
-    fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
-        wrapped_run_cmd("launch", game)
+    fn launch(&self, game: &GameLibraryRef) {
+        run_cmd_ref("launch", game)
     }
-    fn install(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
-        wrapped_run_cmd("install", game)
+    fn install(&self, game: &GameLibraryRef) {
+        run_cmd_ref("install", game)
     }
-    fn uninstall(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
-        wrapped_run_cmd("uninstall", game)
+    fn uninstall(&self, game: &GameLibraryRef) {
+        run_cmd_ref("uninstall", game)
     }
-    fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus> {
-        // TODO
-        Box::pin(async { GameInstallStatus::Installing })
+    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus {
+        GameInstallStatus::Installing
     }
 }
 // random/src/lib.rs

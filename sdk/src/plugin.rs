@@ -17,11 +17,11 @@ pub trait BaseAddon {
 }
 
 pub trait GameLibrary: BaseAddon + Send {
-    fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>>;
-    fn install(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn uninstall(&self, game: &GameLibraryRef) -> BoxFuture<'static>;
-    fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus>;
+    fn launch(&self, game: &GameLibraryRef);
+    fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;
+    fn install(&self, game: &GameLibraryRef);
+    fn uninstall(&self, game: &GameLibraryRef);
+    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus;
 }
 
 pub static CORE_VERSION: &str = env!("CARGO_PKG_VERSION");

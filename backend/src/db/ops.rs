@@ -6,7 +6,7 @@ use sea_orm::EntityTrait;
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
-            for item in lib.scan().await {
+            for item in lib.scan() {
                 println!("got item: {:?}", item);
             }
         }

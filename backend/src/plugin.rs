@@ -23,23 +23,23 @@ impl BaseAddon for GameLibraryProxy {
     }
 }
 impl GameLibrary for GameLibraryProxy {
-    fn launch(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
+    fn launch(&self, game: &GameLibraryRef) {
         self.inner.launch(game)
     }
 
-    fn scan(&self) -> BoxFuture<'static, Vec<ScannedGameLibraryMetadata>> {
+    fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
         self.inner.scan()
     }
 
-    fn install(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
+    fn install(&self, game: &GameLibraryRef) {
         self.inner.install(game)
     }
 
-    fn uninstall(&self, game: &GameLibraryRef) -> BoxFuture<'static> {
+    fn uninstall(&self, game: &GameLibraryRef) {
         self.inner.uninstall(game)
     }
 
-    fn check_install_status(&self, game: &GameLibraryRef) -> BoxFuture<'static, GameInstallStatus> {
+    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus {
         self.inner.check_install_status(game)
     }
 }
