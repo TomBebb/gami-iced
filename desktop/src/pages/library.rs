@@ -14,9 +14,6 @@ pub enum LibraryViewType {
     Table,
     Grid,
 }
-impl LibraryViewType {
-    const ALL: [LibraryViewType; 3] = [Self::List, Self::Table, Self::Grid];
-}
 
 #[derive(Debug, Clone)]
 struct LibraryViewTypeMeta {
