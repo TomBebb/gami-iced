@@ -1,12 +1,13 @@
 use iced::widget::svg::Handle;
 use iced::widget::{button, row, text, Column, Svg};
 use iced::{Alignment, ContentFit, Element, Fill, Theme};
+use std::collections::HashMap;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Message {
     NavSelected(usize),
 }
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum NavLocation {
     Top,
     Bottom,
@@ -45,48 +46,51 @@ pub struct NavView {
 }
 impl NavView {
     pub fn view(&self) -> Column<Message> {
-        let mut columns: Vec<Element<Message>> = PAGES
-            .into_iter()
-            .enumerate()
-            .filter(|(_, info)| info.location == NavLocation::Top)
-            .map(|(index, &PageInfo { name, icon, .. })| {
-                let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
-                Element::from(
-                    button(Element::from(row![
-                        svg.content_fit(ContentFit::Contain).width(30),
-                        text(name).align_x(Alignment::End).width(Fill),
-                    ]))
-                    .width(Fill)
-                    .on_press_maybe(if self.active_item == index {
-                        None
-                    } else {
-                        Some(Message::NavSelected(index))
-                    }),
-                )
-            })
-            .collect();
-        let bottom_columns: Vec<Element<Message>> = PAGES
-            .into_iter()
-            .enumerate()
-            .filter(|(_, info)| info.location == NavLocation::Bottom)
-            .map(|(index, &PageInfo { name, icon, .. })| {
-                let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
-                Element::from(
-                    button(Element::from(row![
-                        svg.content_fit(ContentFit::Contain).width(30),
-                        text(name).align_x(Alignment::End).width(Fill),
-                    ]))
-                    .width(Fill)
-                    .on_press_maybe(if self.active_item == index {
-                        None
-                    } else {
-                        Some(Message::NavSelected(index))
-                    }),
-                )
-            })
-            .collect();
-        columns.push(button("").height(Fill).width(Fill).into());
-        Column::with_children(columns.into_iter().chain(bottom_columns)).width(160)
+        let mut raw_page_items: HashMap<NavLocation, Vec<Element<Message>>> = HashMap::from_iter(
+            [NavLocation::Top, NavLocation::Bottom]
+                .into_iter()
+                .map(|loc| {
+                    (
+                        loc,
+                        PAGES
+                            .into_iter()
+                            .enumerate()
+                            .filter(|(_, info)| info.location == loc)
+                            .map(|(index, &PageInfo { name, icon, .. })| {
+                                let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
+                                Element::from(
+                                    button(Element::from(row![
+                                        svg.content_fit(ContentFit::Contain).width(30),
+                                        text(name).align_x(Alignment::End).width(Fill),
+                                    ]))
+                                    .width(Fill)
+                                    .on_press_maybe(
+                                        if self.active_item == index {
+                                            None
+                                        } else {
+                                            Some(Message::NavSelected(index))
+                                        },
+                                    ),
+                                )
+                            })
+                            .collect::<Vec<Element<Message>>>(),
+                    )
+                }),
+        );
+        Column::with_children(
+            raw_page_items
+                .remove(&NavLocation::Top)
+                .unwrap()
+                .into_iter()
+                .chain([button("").height(Fill).width(Fill).into()].into_iter())
+                .chain(
+                    raw_page_items
+                        .remove(&NavLocation::Bottom)
+                        .unwrap()
+                        .into_iter(),
+                ),
+        )
+        .width(160)
     }
     pub fn update(&mut self, message: Message) {
         match message {
