@@ -1,6 +1,8 @@
 use gami_backend::ADDONS;
 use gami_sdk::PluginMetadata;
-use iced::widget::{button, column, scrollable, Column};
+use iced::font::Weight;
+use iced::widget::{button, column, row, scrollable, text};
+use iced::{Element, Font, Length};
 
 #[derive(Clone, Debug)]
 pub struct AddOns {
@@ -21,18 +23,27 @@ pub enum AddOnMessage {
 }
 
 impl AddOns {
-    pub fn view(&self) -> Column<AddOnMessage> {
-        column![scrollable(column(self.metadatas.iter().enumerate().map(
-            |(index, m)| {
-                button(m.name.trim())
-                    .on_press_maybe(if index == self.selected {
-                        None
-                    } else {
-                        Some(AddOnMessage::Selected(index))
-                    })
-                    .into()
-            }
-        )))]
+    pub fn view(&self) -> Element<AddOnMessage> {
+        row![
+            scrollable(column(self.metadatas.iter().enumerate().map(
+                |(index, m)| {
+                    button(m.name.trim())
+                        .on_press_maybe(if index == self.selected {
+                            None
+                        } else {
+                            Some(AddOnMessage::Selected(index))
+                        })
+                        .into()
+                }
+            ))),
+            column![text("Settings").font(Font {
+                weight: Weight::Bold,
+                ..Font::default()
+            }),]
+            .padding(10)
+            .width(Length::Fill)
+        ]
+        .into()
     }
     pub fn update(&mut self, message: AddOnMessage) {
         match message {
