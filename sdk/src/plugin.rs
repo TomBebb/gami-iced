@@ -3,9 +3,16 @@ use safer_ffi::string::str_ref;
 use std::collections::HashMap;
 
 pub struct PluginDeclaration {
+    pub metadata: PluginMetadata,
     pub rustc_version: &'static str,
     pub core_version: &'static str,
     pub register: unsafe extern "C" fn(&mut dyn PluginRegistrar),
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct PluginMetadata {
+    pub id: &'static str,
+    pub name: &'static str,
 }
 #[derive(Debug, Clone, Copy)]
 pub struct ConfigSchemaMetadata {
@@ -25,11 +32,7 @@ pub trait PluginRegistrar {
     fn register_library(&mut self, name: &str, function: Box<dyn GameLibrary>);
 }
 
-pub trait BaseAddon {
-    fn get_id(&self) -> str_ref<'static>;
-}
-
-pub trait GameLibrary: BaseAddon + Send {
+pub trait GameLibrary: Send {
     fn launch(&self, game: &GameLibraryRef);
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;
     fn install(&self, game: &GameLibraryRef);

@@ -1,9 +1,8 @@
 use gami_sdk::{
-    BaseAddon, BoxFuture, BoxStream, ConfigSchemaMetadata, GameInstallStatus, GameLibrary,
-    GameLibraryRef, PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
+    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, PluginDeclaration,
+    PluginMetadata, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use libloading::Library;
-use safer_ffi::string::str_ref;
 use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -16,11 +15,6 @@ use std::sync::Arc;
 pub struct GameLibraryProxy {
     pub inner: Box<dyn GameLibrary>,
     pub _lib: Arc<Library>,
-}
-impl BaseAddon for GameLibraryProxy {
-    fn get_id(&self) -> str_ref<'static> {
-        self.inner.get_id()
-    }
 }
 impl GameLibrary for GameLibraryProxy {
     fn launch(&self, game: &GameLibraryRef) {
@@ -47,12 +41,17 @@ impl GameLibrary for GameLibraryProxy {
 #[derive(Default)]
 pub struct ExternalAddons {
     game_libs: HashMap<String, GameLibraryProxy>,
+    metas: Vec<PluginMetadata>,
     libraries: Vec<Arc<Library>>,
 }
 
 impl ExternalAddons {
     pub fn new() -> ExternalAddons {
         ExternalAddons::default()
+    }
+
+    pub fn get_addon_metadatas(&self) -> &[PluginMetadata] {
+        &self.metas
     }
 
     pub fn get_keys(&self) -> Vec<&str> {
@@ -107,6 +106,7 @@ impl ExternalAddons {
         self.game_libs.extend(registrar.game_libs);
         // and make sure ExternalFunctions keeps a reference to the library
         self.libraries.push(library);
+        self.metas.push(decl.metadata);
 
         Ok(())
     }

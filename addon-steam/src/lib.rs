@@ -5,12 +5,11 @@ mod models;
 
 use crate::conf::Config;
 use crate::models::OwnedGame;
-use gami_sdk::{register_plugin, BaseAddon, GameLibrary, PluginRegistrar};
+use gami_sdk::{register_plugin, GameLibrary, PluginRegistrar};
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use log::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
-use safer_ffi::string::str_ref;
 use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::{self, Runtime};
@@ -47,11 +46,6 @@ pub fn auto_cache_map(id: &str, postfix: &str) -> TaggedOption<safer_ffi::string
 }
 
 const ID: &str = "steam";
-impl BaseAddon for SteamLibrary {
-    fn get_id(&self) -> str_ref<'static> {
-        ID.into()
-    }
-}
 impl SteamLibrary {
     async fn get_owned_games(&self, conf: &Config) -> models::OwnedGamesResponse {
         let mut url =
@@ -93,7 +87,7 @@ impl GameLibrary for SteamLibrary {
                 .map(|g: OwnedGame| {
                     let id_str = g.appid.to_string();
                     ScannedGameLibraryMetadata {
-                        library_type: self.get_id().to_string().into(),
+                        library_type: ID.into(),
                         library_id: id_str.clone().into(),
                         name: g.name.into(),
                         icon_url: auto_cache_map(&id_str, "_icon.jpg").into(),
@@ -120,7 +114,7 @@ impl GameLibrary for SteamLibrary {
 }
 // random/src/lib.rs
 
-register_plugin!(register);
+register_plugin!(register, ID, "Steam");
 
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
     registrar.register_library("steam", Box::new(SteamLibrary {}));
