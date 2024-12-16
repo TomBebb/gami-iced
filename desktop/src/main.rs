@@ -37,7 +37,7 @@ impl App {
                         self.page = match index {
                             0 => AppPage::Counter(Counter::default()),
                             1 => AppPage::Library(LibraryPage::new()),
-                            2 => AppPage::Achivements(Achievements::default()),
+                            2 => AppPage::Achievements(Achievements::default()),
                             3 => AppPage::Settings(SettingsPage::default()),
                             _ => unimplemented!(),
                         };
