@@ -159,7 +159,13 @@ impl LibraryPage {
                                         image(if raw_icon_url.is_empty() {
                                             "".into()
                                         } else {
-                                            Url::parse(raw_icon_url).unwrap().path().to_owned()
+                                            let url = Url::parse(raw_icon_url).unwrap();
+                                            println!("scheme: {:?}; URL: {:?}", url.scheme(), url);
+                                            if url.scheme() == "file" {
+                                                url.path().to_owned()
+                                            } else {
+                                                raw_icon_url.to_owned()
+                                            }
                                         }),
                                     ]
                                     .width(Fill),
