@@ -111,16 +111,18 @@ const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
     }
 }
 
-impl LibraryPage {
-    pub fn new() -> Self {
-        let me = Self {
+impl Default for LibraryPage {
+    fn default() -> Self {
+        Self {
             view_type: LibraryViewType::List,
             games: Vec::new(),
             curr_index: 0,
             table: LibraryTable::new(),
-        };
-        me
+        }
     }
+}
+
+impl LibraryPage {
     fn game_menu<'a>(
         &'a self,
         game: &'a GameData,

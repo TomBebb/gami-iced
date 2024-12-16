@@ -1,11 +1,10 @@
 use crate::pages;
-use crate::pages::counter::Counter;
 use iced::widget::text;
 use iced::{Element, Task};
 
 #[derive(Debug, Clone)]
 pub enum PageMessage {
-    Counter(pages::counter::CounterMessage),
+    AddOns(pages::add_ons::AddOnMessage),
     Library(pages::library::Message),
     Achievements(pages::achivements::Message),
     Settings(pages::settings::Message),
@@ -14,21 +13,21 @@ pub enum PageMessage {
 #[derive(Clone, Debug)]
 
 pub enum AppPage {
-    Counter(Counter),
+    AddOns(pages::add_ons::AddOns),
     Library(pages::library::LibraryPage),
     Achivements(pages::achivements::Achievements),
     Settings(pages::settings::SettingsPage),
 }
 impl Default for AppPage {
     fn default() -> Self {
-        Self::Counter(Counter::default())
+        Self::Library(Default::default())
     }
 }
 
 impl AppPage {
     pub fn view(&self) -> Element<PageMessage> {
         match self {
-            AppPage::Counter(counter) => Element::from(counter.view()).map(PageMessage::Counter),
+            AppPage::AddOns(counter) => Element::from(counter.view()).map(PageMessage::AddOns),
             AppPage::Library(lib) => Element::from(lib.view()).map(PageMessage::Library),
             AppPage::Achivements(page) => page.view().map(PageMessage::Achievements),
             AppPage::Settings(page) => page.view().map(PageMessage::Settings),
@@ -36,7 +35,7 @@ impl AppPage {
     }
     pub fn update(&mut self, message: PageMessage) -> Task<PageMessage> {
         match (self, message) {
-            (AppPage::Counter(counter), PageMessage::Counter(v)) => counter.update(v),
+            (AppPage::AddOns(counter), PageMessage::AddOns(v)) => counter.update(v),
             (AppPage::Library(lib), PageMessage::Library(v)) => {
                 return lib.update(v).map(PageMessage::Library);
             }
