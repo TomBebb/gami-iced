@@ -1,10 +1,11 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db;
+use gami_backend::db::ops::GamesFilters;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::widget::{
-    button, column, container, image, row, scrollable, text, tooltip, Container, Svg,
+    button, column, container, image, row, scrollable, text, text_input, tooltip, Container, Svg,
 };
 use iced::{ContentFit, Element, Fill, Task, Theme};
 use iced_aw::ContextMenu;
@@ -50,6 +51,7 @@ pub struct LibraryPage {
     view_type: LibraryViewType,
     games: Vec<GameData>,
     table: LibraryTable,
+    filters: GamesFilters,
 }
 
 #[derive(Debug, Clone)]
@@ -62,6 +64,7 @@ pub enum Message {
     ReloadCache,
     CacheReloaded(Vec<GameData>),
     SelectGame(usize),
+    SearchChanged(String),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum GameAction {
@@ -118,6 +121,7 @@ impl LibraryPage {
             games: Vec::new(),
             curr_index: 0,
             table: LibraryTable::new(),
+            filters: GamesFilters::default(),
         };
         me
     }
@@ -198,7 +202,9 @@ impl LibraryPage {
                     }))
                     .spacing(2)
                 ),
-                text("").width(Fill),
+                text_input("Enter search", &self.filters.search)
+                    .on_input(Message::SearchChanged)
+                    .width(Fill),
                 tooltip(
                     button(
                         Svg::new(Handle::from_memory(include_bytes!(
@@ -243,8 +249,15 @@ impl LibraryPage {
             Message::RefreshGames => {
                 return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
             }
+            Message::SearchChanged(query) => {
+                self.filters.search = query;
+                return self.update(Message::ReloadCache);
+            }
             Message::ReloadCache => {
-                return Task::perform(db::ops::get_games(), Message::CacheReloaded)
+                return Task::perform(
+                    db::ops::get_games(self.filters.clone()),
+                    Message::CacheReloaded,
+                )
             }
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
