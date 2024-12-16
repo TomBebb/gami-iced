@@ -68,6 +68,7 @@ impl ExternalAddons {
             let path = res?.path();
             println!("Loading {}", path.display());
             self.load(&path)?;
+            println!("Loaded {}", path.display());
         }
         Ok(())
     }

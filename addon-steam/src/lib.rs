@@ -1,5 +1,7 @@
+mod conf;
 mod kv;
 
+use crate::conf::Config;
 use crate::kv::ast::KvValue;
 use crate::kv::parser::full_parse;
 use gami_sdk::GameInstallStatus::Queued;
@@ -64,9 +66,8 @@ impl BaseAddon for SteamLibrary {
 impl GameLibrary for SteamLibrary {
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
         RUNTIME.block_on(async move {
+            let conf = Config::load().await;
             let mut res = Vec::with_capacity(8);
-            debug!("APPS_PATH: {:?}", &*APPS_PATH);
-
             let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
             while let Some(entry) = reader.next_entry().await.unwrap() {
                 let path: PathBuf = entry.path();
