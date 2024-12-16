@@ -1,5 +1,6 @@
 mod conf;
 mod kv;
+mod models;
 
 use crate::conf::Config;
 use crate::kv::ast::KvValue;
@@ -45,7 +46,12 @@ fn auto_cache_map(id: &str, postfix: &str) -> TaggedOption<safer_ffi::string::St
         TaggedOption::None
     }
 }
-const RUNTIME: Lazy<Runtime> = Lazy::new(|| runtime::Builder::new_multi_thread().build().unwrap());
+const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
+    runtime::Builder::new_multi_thread()
+        .enable_io()
+        .build()
+        .unwrap()
+});
 fn run_cmd(cmd: &'static str, id: &str) {
     let raw = format!("steam://{}//{}", cmd, id);
     debug!("steam cmd: {}", raw);
@@ -63,10 +69,32 @@ impl BaseAddon for SteamLibrary {
         ID.into()
     }
 }
+impl SteamLibrary {
+    async fn get_owned_games(&self, conf: &Config) -> models::OwnedGamesResponse {
+        let mut url =
+            Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/").unwrap();
+        url.query_pairs_mut()
+            .append_pair("key", conf.api_key.as_str())
+            .append_pair("steamid", conf.steam_id.as_str())
+            .append_pair("include_appinfo", "1")
+            .append_pair("format", "json");
+        reqwest::get(url)
+            .await
+            .unwrap()
+            .json::<models::OwnedGamesResponse>()
+            .await
+            .unwrap()
+    }
+}
 impl GameLibrary for SteamLibrary {
+    fn launch(&self, game: &GameLibraryRef) {
+        run_cmd_ref("launch", game)
+    }
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
         RUNTIME.block_on(async move {
             let conf = Config::load().await;
+            let owned_games = self.get_owned_games(&conf).await;
+            println!("Owned games: {:?}", owned_games);
             let mut res = Vec::with_capacity(8);
             let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
             while let Some(entry) = reader.next_entry().await.unwrap() {
@@ -129,9 +157,6 @@ impl GameLibrary for SteamLibrary {
             }
             res
         })
-    }
-    fn launch(&self, game: &GameLibraryRef) {
-        run_cmd_ref("launch", game)
     }
     fn install(&self, game: &GameLibraryRef) {
         run_cmd_ref("install", game)
