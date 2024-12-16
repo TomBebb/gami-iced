@@ -1714,6 +1714,7 @@ dependencies = [
 name = "gami-sdk"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dirs 5.0.1",
  "rustc_version",
  "safer-ffi",

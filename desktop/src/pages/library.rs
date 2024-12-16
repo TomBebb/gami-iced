@@ -1,5 +1,4 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
-use chrono::{DateTime, Utc};
 use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
 use gami_sdk::{GameData, GameInstallStatus};
@@ -13,7 +12,6 @@ use iced::{ContentFit, Element, Fill, Font, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
-use std::time::SystemTime;
 use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -191,7 +189,6 @@ impl LibraryPage {
                     if let Some(curr) = curr {
                         let last_played = curr
                             .last_played
-                            .map(<SystemTime as Into<DateTime<Utc>>>::into)
                             .map(|t| t.to_string())
                             .unwrap_or("None".into());
                         column![

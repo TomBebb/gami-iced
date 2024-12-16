@@ -1,8 +1,7 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Duration, Utc};
 use gami_sdk::{GameData, GameInstallStatus, IsGameLibraryRef};
 use sea_orm::entity::prelude::*;
 use sea_orm::{DeriveActiveEnum, DeriveEntityModel, EnumIter};
-use std::time::{Duration, SystemTime};
 #[derive(EnumIter, DeriveActiveEnum, Copy, Clone, Debug, PartialEq, Eq)]
 #[sea_orm(rs_type = "u8", db_type = "Integer")]
 #[repr(u8)]
@@ -41,17 +40,14 @@ pub struct Model {
     pub description: String,
     pub play_time_secs: i64,
     pub install_status: DbGameInstallStatus,
-    pub release_date: Option<NaiveDateTime>,
-    pub last_played: Option<NaiveDateTime>,
+    pub release_date: Option<DateTime<Utc>>,
+    pub last_played: Option<DateTime<Utc>>,
     pub icon_url: Option<String>,
     pub header_url: Option<String>,
     pub logo_url: Option<String>,
     pub hero_url: Option<String>,
     pub library_type: String,
     pub library_id: String,
-}
-fn naive_to_system(naive: NaiveDateTime) -> SystemTime {
-    SystemTime::UNIX_EPOCH + Duration::from_secs(naive.and_utc().timestamp() as u64)
 }
 impl Into<GameData> for Model {
     fn into(self) -> GameData {
@@ -65,10 +61,10 @@ impl Into<GameData> for Model {
             description: self.description,
             hero_url: self.hero_url,
             icon_url: self.icon_url,
-            last_played: self.last_played.map(naive_to_system),
+            last_played: self.last_played,
             logo_url: self.logo_url,
-            release_date: self.release_date.map(naive_to_system),
-            play_time: Duration::from_secs(self.play_time_secs as u64),
+            release_date: self.release_date,
+            play_time: Duration::seconds(self.play_time_secs),
         }
     }
 }
