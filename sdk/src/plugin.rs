@@ -1,4 +1,6 @@
-use crate::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
+use crate::{
+    models::ConfigSchemaMetadata, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata,
+};
 use safer_ffi::string::String;
 use std::collections::HashMap;
 
@@ -12,22 +14,14 @@ pub struct PluginDeclaration {
 pub struct PluginMetadata {
     pub id: String,
     pub name: String,
-}
-#[derive(Debug, Clone, Copy)]
-pub struct ConfigSchemaMetadata {
-    pub key: &'static str,
-    pub hint: &'static str,
-    pub name: &'static str,
-    pub kind: ConfigSchemaKind,
-}
-#[derive(Debug, Copy, Clone)]
-pub enum ConfigSchemaKind {
-    String,
-    Int,
-    Boolean,
+    pub configs: HashMap<std::string::String, ConfigSchemaMetadata>,
 }
 pub trait PluginRegistrar {
-    fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>);
+    fn register_config(
+        &mut self,
+        file_name: &str,
+        schema: HashMap<std::string::String, ConfigSchemaMetadata>,
+    );
     fn register_library(&mut self, name: &str, function: Box<dyn GameLibrary>);
 }
 

@@ -31,13 +31,14 @@ pub type BoxFuture<'a, T = ()> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type BoxStream<'a, T> = Pin<Box<dyn Stream<Item = T> + Send + 'a>>;
 #[macro_export]
 macro_rules! register_plugin {
-    ($register:expr, $id:expr, $name:expr) => {
+    ($register:expr, $id:expr, $name:expr, $configs:expr) => {
         #[doc(hidden)]
         #[no_mangle]
         unsafe extern "C" fn get_metadata() -> $crate::PluginMetadata {
             $crate::PluginMetadata {
                 id: $id.into(),
                 name: $name.into(),
+                configs: $configs,
             }
         }
         #[doc(hidden)]

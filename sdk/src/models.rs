@@ -109,3 +109,16 @@ pub struct GameData {
     pub library_type: RString,
     pub library_id: RString,
 }
+
+#[derive(Debug, Clone)]
+pub struct ConfigSchemaMetadata {
+    pub hint: String,
+    pub name: String,
+    pub kind: ConfigSchemaKind,
+}
+#[derive(Debug, Copy, Clone)]
+pub enum ConfigSchemaKind {
+    String,
+    Int,
+    Boolean,
+}

@@ -5,12 +5,15 @@ mod models;
 
 use crate::conf::Config;
 use crate::models::OwnedGame;
-use gami_sdk::{register_plugin, GameLibrary, PluginRegistrar};
+use gami_sdk::{
+    register_plugin, ConfigSchemaKind, ConfigSchemaMetadata, GameLibrary, PluginRegistrar,
+};
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use log::*;
+pub use models::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::{self, Runtime};
 use url::Url;
@@ -112,8 +115,30 @@ impl GameLibrary for SteamLibrary {
         GameInstallStatus::Installing
     }
 }
-register_plugin!(register, ID, "Steam");
+register_plugin!(register, ID, "Steam", {
+    let mut conf: HashMap<String, ConfigSchemaMetadata> = HashMap::with_capacity(2);
+    conf
+});
 #[no_mangle]
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
     registrar.register_library("steam", Box::new(SteamLibrary {}));
+
+    let mut conf: HashMap<String, ConfigSchemaMetadata> = HashMap::with_capacity(2);
+    conf.insert(
+        "steamId".into(),
+        ConfigSchemaMetadata {
+            name: "Steam ID".into(),
+            hint: "TODo".into(),
+            kind: ConfigSchemaKind::Int,
+        },
+    );
+    conf.insert(
+        "apiKey".into(),
+        ConfigSchemaMetadata {
+            name: "API Key".into(),
+            hint: "TODo".into(),
+            kind: ConfigSchemaKind::Int,
+        },
+    );
+    registrar.register_config("steam", conf);
 }

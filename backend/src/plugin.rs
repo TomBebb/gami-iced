@@ -105,6 +105,7 @@ impl ExternalAddons {
         let mut registrar = PluginRegistrar::new(Arc::clone(&library));
 
         (decl.register)(&mut registrar);
+        println!("configs: {:?}", registrar.configs);
 
         // add all loaded plugins to the functions map
         self.game_libs.extend(registrar.game_libs);
@@ -117,6 +118,7 @@ impl ExternalAddons {
 }
 struct PluginRegistrar {
     game_libs: HashMap<String, GameLibraryProxy>,
+    configs: HashMap<String, HashMap<String, ConfigSchemaMetadata>>,
     lib: Arc<Library>,
 }
 
@@ -124,17 +126,16 @@ impl PluginRegistrar {
     fn new(lib: Arc<Library>) -> PluginRegistrar {
         PluginRegistrar {
             lib,
+            configs: HashMap::default(),
             game_libs: HashMap::default(),
         }
     }
 }
 
 impl gami_sdk::PluginRegistrar for PluginRegistrar {
-    fn register_config(
-        &mut self,
-        file_name: &str,
-        schema: HashMap<safer_ffi::String, ConfigSchemaMetadata>,
-    ) {
+    fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>) {
+        println!("Registering config: {} => {:?}", file_name, schema);
+        self.configs.insert(file_name.to_string(), schema);
     }
 
     fn register_library(&mut self, name: &str, lib: Box<dyn GameLibrary>) {
