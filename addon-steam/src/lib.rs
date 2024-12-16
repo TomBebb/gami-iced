@@ -5,6 +5,7 @@ mod models;
 use crate::conf::Config;
 use crate::kv::ast::KvValue;
 use crate::kv::parser::full_parse;
+use crate::models::OwnedGame;
 use gami_sdk::GameInstallStatus::Queued;
 use gami_sdk::{register_plugin, BaseAddon, GameLibrary, PluginRegistrar};
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
@@ -12,6 +13,7 @@ use log::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
 use safer_ffi::string::str_ref;
+use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -94,8 +96,23 @@ impl GameLibrary for SteamLibrary {
         RUNTIME.block_on(async move {
             let conf = Config::load().await;
             let owned_games = self.get_owned_games(&conf).await;
-            println!("Owned games: {:?}", owned_games);
-            let mut res = Vec::with_capacity(8);
+            let mut games_by_id: BTreeMap<String, ScannedGameLibraryMetadata> = BTreeMap::from_iter(
+                owned_games
+                    .response
+                    .games
+                    .into_iter()
+                    .map(|g: OwnedGame| ScannedGameLibraryMetadata {
+                        library_type: self.get_id().to_string().into(),
+                        library_id: g.appid.to_string().into(),
+                        name: g.name.into(),
+                        icon_url: TaggedOption::Some(g.img_icon_url.into()),
+                        last_played_epoch: TaggedOption::Some(g.rtime_last_played),
+                        playtime_secs: g.playtime_forever,
+                        install_status: GameInstallStatus::InLibrary,
+                    })
+                    .map(|g| (g.library_id.to_string(), g)),
+            );
+
             let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
             while let Some(entry) = reader.next_entry().await.unwrap() {
                 let path: PathBuf = entry.path();
@@ -137,25 +154,17 @@ impl GameLibrary for SteamLibrary {
                 let bytes_to_dl = get_obj_text_opt("BytesToDownload");
                 let bytes_dl = get_obj_text_opt("BytesDownloaded");
                 let app_id = get_obj_text("appid");
-                res.push(ScannedGameLibraryMetadata {
-                    library_id: app_id.into(),
-                    name: get_obj_text("name").into(),
-                    icon_url: auto_cache_map(app_id, "_icon.jpg").into(),
-                    last_played_epoch: get_obj_unix_opt("LastPlayed")
-                        .map(|time| time.duration_since(UNIX_EPOCH).unwrap().as_secs())
-                        .into(),
-                    library_type: ID.into(),
-                    install_status: if bytes_dl == None {
+                if let Some(game) = games_by_id.get_mut(app_id) {
+                    game.install_status = if bytes_dl == None {
                         Queued
                     } else if bytes_dl == bytes_to_dl {
                         GameInstallStatus::Installed
                     } else {
                         GameInstallStatus::Installing
-                    },
-                    ..Default::default()
-                })
+                    };
+                }
             }
-            res
+            games_by_id.into_iter().map(|a| a.1).collect()
         })
     }
     fn install(&self, game: &GameLibraryRef) {
