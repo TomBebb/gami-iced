@@ -1,8 +1,9 @@
 use gami_backend::ADDONS;
-use gami_sdk::PluginMetadata;
+use gami_sdk::{ConfigSchemaMetadata, PluginMetadata};
 use iced::font::Weight;
-use iced::widget::{button, column, row, scrollable, text};
+use iced::widget::{button, column, row, scrollable, text, Column};
 use iced::{Element, Font, Length};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct AddOns {
@@ -24,6 +25,20 @@ pub enum AddOnMessage {
 
 impl AddOns {
     pub fn view(&self) -> Element<AddOnMessage> {
+        let curr: &HashMap<String, ConfigSchemaMetadata> = &self.metadatas[self.selected].configs;
+        println!(
+            "{:?}; all: {:?}",
+            &self.metadatas[self.selected], self.metadatas
+        );
+        let items: Element<AddOnMessage> = Column::with_children(curr.into_iter().map(|(k, v)| {
+            text(v.name.trim_start())
+                .font(Font {
+                    weight: Weight::Semibold,
+                    ..Font::default()
+                })
+                .into()
+        }))
+        .into();
         row![
             scrollable(column(self.metadatas.iter().enumerate().map(
                 |(index, m)| {
@@ -36,10 +51,13 @@ impl AddOns {
                         .into()
                 }
             ))),
-            column![text("Settings").font(Font {
-                weight: Weight::Bold,
-                ..Font::default()
-            }),]
+            column![
+                text("Settings").font(Font {
+                    weight: Weight::Bold,
+                    ..Font::default()
+                }),
+                items
+            ]
             .padding(10)
             .width(Length::Fill)
         ]
