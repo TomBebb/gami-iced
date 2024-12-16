@@ -1,6 +1,6 @@
 use gami_sdk::{
-    BaseAddon, BoxFuture, BoxStream, GameInstallStatus, GameLibrary, GameLibraryRef,
-    PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
+    BaseAddon, BoxFuture, BoxStream, ConfigSchemaMetadata, GameInstallStatus, GameLibrary,
+    GameLibraryRef, PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use libloading::Library;
 use safer_ffi::string::str_ref;
@@ -125,6 +125,8 @@ impl PluginRegistrar {
 }
 
 impl gami_sdk::PluginRegistrar for PluginRegistrar {
+    fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>) {}
+
     fn register_library(&mut self, name: &str, lib: Box<dyn GameLibrary>) {
         let proxy = GameLibraryProxy {
             inner: lib,
