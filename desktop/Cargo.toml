@@ -13,6 +13,7 @@ iced = { version = "0.13.1", features = [
 ] }
 iced_aw = { version = "0.11.0", default-features = false, features = [
     "context_menu",
+    "tabs"
 ] }
 open = "5.3.1"
 gami-sdk = { path = "../sdk" }

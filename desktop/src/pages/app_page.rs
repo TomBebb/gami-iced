@@ -8,6 +8,7 @@ pub enum PageMessage {
     Counter(pages::counter::CounterMessage),
     Library(pages::library::Message),
     Achievements(pages::achivements::Message),
+    Settings(pages::settings::Message),
 }
 
 #[derive(Clone, Debug)]
@@ -16,7 +17,7 @@ pub enum AppPage {
     Counter(Counter),
     Library(pages::library::LibraryPage),
     Achivements(pages::achivements::Achievements),
-    Settings,
+    Settings(pages::settings::SettingsPage),
 }
 impl Default for AppPage {
     fn default() -> Self {
@@ -30,7 +31,7 @@ impl AppPage {
             AppPage::Counter(counter) => Element::from(counter.view()).map(PageMessage::Counter),
             AppPage::Library(lib) => Element::from(lib.view()).map(PageMessage::Library),
             AppPage::Achivements(page) => page.view().map(PageMessage::Achievements),
-            AppPage::Settings => Element::from(text("TODO settings")),
+            AppPage::Settings(page) => page.view().map(PageMessage::Settings),
         }
     }
     pub fn update(&mut self, message: PageMessage) -> Task<PageMessage> {
@@ -40,6 +41,7 @@ impl AppPage {
                 return lib.update(v).map(PageMessage::Library);
             }
             (AppPage::Achivements(page), PageMessage::Achievements(v)) => page.update(v),
+            (AppPage::Settings(page), PageMessage::Settings(v)) => page.update(v),
             _ => unimplemented!(),
         }
         Task::none()

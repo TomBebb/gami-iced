@@ -1,6 +1,7 @@
 use crate::pages::achivements::Achievements;
 use crate::pages::library;
 use crate::pages::library::LibraryPage;
+use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
 use iced::{Element, Task};
@@ -37,7 +38,7 @@ impl App {
                             0 => AppPage::Counter(Counter::default()),
                             1 => AppPage::Library(LibraryPage::new()),
                             2 => AppPage::Achivements(Achievements::default()),
-                            3 => AppPage::Settings,
+                            3 => AppPage::Settings(SettingsPage::default()),
                             _ => unimplemented!(),
                         };
                         if let AppPage::Library(inner_lib) = &mut self.page {
