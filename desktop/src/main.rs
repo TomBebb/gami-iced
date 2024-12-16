@@ -35,7 +35,7 @@ impl App {
                 match v {
                     widgets::nav_view::Message::NavSelected(index) => {
                         self.page = match index {
-                            0 => AppPage::Library(LibraryPage::default()),
+                            0 => AppPage::Library(LibraryPage::new()),
                             1 => AppPage::Achivements(Achievements::default()),
                             2 => AppPage::AddOns(AddOns::default()),
                             3 => AppPage::Settings(SettingsPage::default()),
