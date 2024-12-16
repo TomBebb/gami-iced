@@ -2,15 +2,21 @@ use gami_backend::ADDONS;
 use gami_sdk::PluginMetadata;
 use iced::widget::{button, column, scrollable, Column};
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct AddOns {
     metadatas: Vec<PluginMetadata>,
     selected: usize,
 }
-#[derive(Debug, Clone, Copy, Default)]
+impl AddOns {
+    pub fn new() -> Self {
+        Self {
+            metadatas: ADDONS.get_addon_metadatas().to_vec(),
+            selected: 0,
+        }
+    }
+}
+#[derive(Debug, Clone, Copy)]
 pub enum AddOnMessage {
-    #[default]
-    LoadPlugin,
     Selected(usize),
 }
 
@@ -30,10 +36,6 @@ impl AddOns {
     }
     pub fn update(&mut self, message: AddOnMessage) {
         match message {
-            AddOnMessage::LoadPlugin => {
-                log::info!("loading plugin");
-                self.metadatas = ADDONS.get_addon_metadatas().to_vec();
-            }
             AddOnMessage::Selected(index) => self.selected = index,
         }
     }

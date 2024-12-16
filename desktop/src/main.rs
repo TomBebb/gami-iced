@@ -37,7 +37,7 @@ impl App {
                         self.page = match index {
                             0 => AppPage::Library(LibraryPage::new()),
                             1 => AppPage::Achivements(Achievements::default()),
-                            2 => AppPage::AddOns(AddOns::default()),
+                            2 => AppPage::AddOns(AddOns::new()),
                             3 => AppPage::Settings(SettingsPage::default()),
                             _ => {
                                 log::error!("No such page with index {}", index);

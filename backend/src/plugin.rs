@@ -69,6 +69,7 @@ impl ExternalAddons {
             self.load(&path)?;
             println!("Loaded {}", path.display());
         }
+        log::info!("loaded addons");
         Ok(())
     }
 
