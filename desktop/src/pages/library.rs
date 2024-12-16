@@ -1,16 +1,19 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
+use chrono::{DateTime, Utc};
 use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
+use iced::font::Weight;
 use iced::widget::{
     button, column, container, image, row, scrollable, text, text_input, tooltip, Container, Svg,
 };
-use iced::{ContentFit, Element, Fill, Task, Theme};
+use iced::{ContentFit, Element, Fill, Font, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
+use std::time::SystemTime;
 use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -145,41 +148,70 @@ impl LibraryPage {
         .into()
     }
     pub fn view(&self) -> Element<Message> {
+        let curr: Option<&GameData> = self.games.as_slice().get(self.curr_index);
         let items: Element<Message> = match self.view_type {
             LibraryViewType::Table => self.table.view().map(Message::Table),
 
-            LibraryViewType::List => scrollable(column(
-                self.games
-                    .iter()
-                    .enumerate()
-                    .map(|(index, game)| {
-                        let raw_icon_url = game.icon_url.as_ref().map(String::as_str).unwrap_or("");
-                        (
-                            game,
-                            Element::from(
-                                button(
-                                    row![
-                                        text(&game.name).width(Fill),
-                                        image(if raw_icon_url.is_empty() {
-                                            "".into()
-                                        } else {
-                                            Url::parse(raw_icon_url).unwrap().path().to_owned()
-                                        }),
-                                    ]
-                                    .width(Fill),
-                                )
-                                .style(if index == self.curr_index {
-                                    button::primary
-                                } else {
-                                    button::text
-                                })
-                                .on_press(Message::SelectGame(index)),
-                            ),
-                        )
-                    })
-                    .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
-                    .collect::<Vec<Element<Message>>>(),
-            ))
+            LibraryViewType::List => row![
+                scrollable(column(
+                    self.games
+                        .iter()
+                        .enumerate()
+                        .map(|(index, game)| {
+                            let raw_icon_url =
+                                game.icon_url.as_ref().map(String::as_str).unwrap_or("");
+                            (
+                                game,
+                                Element::from(
+                                    button(
+                                        row![
+                                            text(&game.name).width(Fill),
+                                            image(if raw_icon_url.is_empty() {
+                                                "".into()
+                                            } else {
+                                                Url::parse(raw_icon_url).unwrap().path().to_owned()
+                                            }),
+                                        ]
+                                        .width(Fill),
+                                    )
+                                    .style(if index == self.curr_index {
+                                        button::primary
+                                    } else {
+                                        button::text
+                                    })
+                                    .on_press(Message::SelectGame(index)),
+                                ),
+                            )
+                        })
+                        .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
+                        .collect::<Vec<Element<Message>>>(),
+                ))
+                .width(Fill),
+                scrollable(
+                    if let Some(curr) = curr {
+                        let last_played = curr
+                            .last_played
+                            .map(<SystemTime as Into<DateTime<Utc>>>::into)
+                            .map(|t| t.to_string())
+                            .unwrap_or("None".into());
+                        column![
+                            text(&curr.name),
+                            text(&curr.description),
+                            column![
+                                text("Last played:").font(Font {
+                                    weight: Weight::Semibold,
+                                    ..Font::default()
+                                }),
+                                text(last_played)
+                            ]
+                        ]
+                    } else {
+                        column![]
+                    }
+                    .spacing(2)
+                )
+                .width(Fill)
+            ]
             .into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
         };
