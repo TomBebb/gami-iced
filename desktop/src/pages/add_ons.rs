@@ -1,36 +1,40 @@
-use iced::alignment::Vertical;
-use iced::widget::{button, row, text, Row};
+use gami_backend::ADDONS;
+use gami_sdk::PluginMetadata;
+use iced::widget::{button, column, scrollable, Column};
+
 #[derive(Default, Clone, Debug)]
 pub struct AddOns {
-    value: i32,
+    metadatas: Vec<PluginMetadata>,
+    selected: usize,
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum AddOnMessage {
-    Increment,
-    Decrement,
+    #[default]
+    LoadPlugin,
+    Selected(usize),
 }
 
 impl AddOns {
-    pub fn view(&self) -> Row<AddOnMessage> {
-        row![
-            button("+")
-                .style(button::success)
-                .on_press(AddOnMessage::Increment),
-            text(self.value).size(50),
-            button("-")
-                .style(button::danger)
-                .on_press(AddOnMessage::Decrement),
-        ]
-        .align_y(Vertical::Center)
+    pub fn view(&self) -> Column<AddOnMessage> {
+        column![scrollable(column(self.metadatas.iter().enumerate().map(
+            |(index, m)| {
+                button(m.name)
+                    .on_press_maybe(if index == self.selected {
+                        None
+                    } else {
+                        Some(AddOnMessage::Selected(index))
+                    })
+                    .into()
+            }
+        )))]
     }
     pub fn update(&mut self, message: AddOnMessage) {
         match message {
-            AddOnMessage::Increment => {
-                self.value += 1;
+            AddOnMessage::LoadPlugin => {
+                log::info!("loading plugin");
+                self.metadatas = ADDONS.get_addon_metadatas().to_vec();
             }
-            AddOnMessage::Decrement => {
-                self.value -= 1;
-            }
+            AddOnMessage::Selected(index) => self.selected = index,
         }
     }
 }
