@@ -1,4 +1,4 @@
-use crate::pages::achivements::Achievements;
+use crate::pages::achievements::Achievements;
 use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::pages::settings::SettingsPage;

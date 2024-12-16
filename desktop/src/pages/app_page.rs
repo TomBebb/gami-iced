@@ -7,7 +7,7 @@ use iced::{Element, Task};
 pub enum PageMessage {
     Counter(pages::counter::CounterMessage),
     Library(pages::library::Message),
-    Achievements(pages::achivements::Message),
+    Achievements(pages::achievements::Message),
     Settings(pages::settings::Message),
 }
 
@@ -16,7 +16,7 @@ pub enum PageMessage {
 pub enum AppPage {
     Counter(Counter),
     Library(pages::library::LibraryPage),
-    Achivements(pages::achivements::Achievements),
+    Achivements(pages::achievements::Achievements),
     Settings(pages::settings::SettingsPage),
 }
 impl Default for AppPage {
