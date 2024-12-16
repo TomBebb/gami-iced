@@ -1,5 +1,4 @@
 use crate::pages;
-use iced::widget::text;
 use iced::{Element, Task};
 
 #[derive(Debug, Clone)]
@@ -20,7 +19,7 @@ pub enum AppPage {
 }
 impl Default for AppPage {
     fn default() -> Self {
-        Self::Library(Default::default())
+        Self::Library(pages::library::LibraryPage::new())
     }
 }
 
