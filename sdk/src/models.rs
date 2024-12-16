@@ -1,10 +1,10 @@
 use ::safer_ffi::prelude::*;
+use chrono::{DateTime, Duration, Utc};
 use safer_ffi::option::TaggedOption;
 use safer_ffi::String;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::string::String as RString;
-use std::time::{Duration, SystemTime};
 pub trait IsGameLibraryRef {
     fn get_name(&self) -> &str;
     fn get_library_type(&self) -> &str;
@@ -100,8 +100,8 @@ pub struct GameData {
     pub description: RString,
     pub play_time: Duration,
     pub install_status: GameInstallStatus,
-    pub release_date: Option<SystemTime>,
-    pub last_played: Option<SystemTime>,
+    pub release_date: Option<DateTime<Utc>>,
+    pub last_played: Option<DateTime<Utc>>,
     pub icon_url: Option<RString>,
     pub header_url: Option<RString>,
     pub logo_url: Option<RString>,

@@ -82,7 +82,7 @@ where
                 */
                 text("TODO").into()
             }
-            ColumnKind::Playtime => text(row.play_time.as_secs()).into(),
+            ColumnKind::Playtime => text(row.play_time.to_string()).into(),
         };
 
         container(content).width(Length::Fill).center_y(32).into()
@@ -133,9 +133,7 @@ impl LibraryTable {
                 ])
             }
             TableMessage::Resizing(index, offset) => {
-                if let Some(column) = self.columns.get_mut(index) {
-                    column.resize_offset = Some(offset);
-                }
+                self.columns[index].resize_offset = Some(offset);
             }
             TableMessage::Resized => self.columns.iter_mut().for_each(|column| {
                 if let Some(offset) = column.resize_offset.take() {

@@ -5,7 +5,7 @@ use iced::{Element, Task};
 pub enum PageMessage {
     AddOns(pages::add_ons::AddOnMessage),
     Library(pages::library::Message),
-    Achievements(pages::achivements::Message),
+    Achievements(pages::achievements::Message),
     Settings(pages::settings::Message),
 }
 
@@ -14,7 +14,7 @@ pub enum PageMessage {
 pub enum AppPage {
     AddOns(pages::add_ons::AddOns),
     Library(pages::library::LibraryPage),
-    Achivements(pages::achivements::Achievements),
+    Achievements(pages::achievements::Achievements),
     Settings(pages::settings::SettingsPage),
 }
 impl Default for AppPage {
@@ -28,7 +28,7 @@ impl AppPage {
         match self {
             AppPage::AddOns(counter) => Element::from(counter.view()).map(PageMessage::AddOns),
             AppPage::Library(lib) => Element::from(lib.view()).map(PageMessage::Library),
-            AppPage::Achivements(page) => page.view().map(PageMessage::Achievements),
+            AppPage::Achievements(page) => page.view().map(PageMessage::Achievements),
             AppPage::Settings(page) => page.view().map(PageMessage::Settings),
         }
     }
@@ -38,7 +38,7 @@ impl AppPage {
             (AppPage::Library(lib), PageMessage::Library(v)) => {
                 return lib.update(v).map(PageMessage::Library);
             }
-            (AppPage::Achivements(page), PageMessage::Achievements(v)) => page.update(v),
+            (AppPage::Achievements(page), PageMessage::Achievements(v)) => page.update(v),
             (AppPage::Settings(page), PageMessage::Settings(v)) => page.update(v),
             _ => unimplemented!(),
         }
