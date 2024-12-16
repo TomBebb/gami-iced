@@ -1,7 +1,9 @@
+use crate::db::game::Column;
 use crate::{db, ADDONS};
 use db::game::{ActiveModel as GameModel, Entity as GameEntity};
 use gami_sdk::GameLibrary;
 use gami_sdk::{GameData, ScannedGameLibraryMetadata};
+use sea_orm::sea_query::OnConflict;
 use sea_orm::ActiveValue::Set;
 use sea_orm::EntityTrait;
 
@@ -24,6 +26,11 @@ pub async fn sync_library() {
                     ..Default::default()
                 }
             }))
+            .on_conflict(OnConflict::columns([
+                Column::LibraryType,
+                Column::LibraryId,
+            ]))
+            .do_nothing()
             .exec(&mut conn)
             .await
             .unwrap();
