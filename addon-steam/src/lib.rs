@@ -112,10 +112,8 @@ impl GameLibrary for SteamLibrary {
         GameInstallStatus::Installing
     }
 }
-// random/src/lib.rs
-
 register_plugin!(register, ID, "Steam");
-
+#[no_mangle]
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
     registrar.register_library("steam", Box::new(SteamLibrary {}));
 }

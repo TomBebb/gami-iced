@@ -24,7 +24,7 @@ impl AddOns {
     pub fn view(&self) -> Column<AddOnMessage> {
         column![scrollable(column(self.metadatas.iter().enumerate().map(
             |(index, m)| {
-                button(m.name)
+                button(m.name.trim())
                     .on_press_maybe(if index == self.selected {
                         None
                     } else {

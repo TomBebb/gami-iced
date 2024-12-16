@@ -1,18 +1,17 @@
 use crate::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
-use safer_ffi::string::str_ref;
+use safer_ffi::string::String;
 use std::collections::HashMap;
 
 pub struct PluginDeclaration {
-    pub metadata: PluginMetadata,
     pub rustc_version: &'static str,
     pub core_version: &'static str,
     pub register: unsafe extern "C" fn(&mut dyn PluginRegistrar),
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct PluginMetadata {
-    pub id: &'static str,
-    pub name: &'static str,
+    pub id: String,
+    pub name: String,
 }
 #[derive(Debug, Clone, Copy)]
 pub struct ConfigSchemaMetadata {

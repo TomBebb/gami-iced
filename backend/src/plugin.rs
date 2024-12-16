@@ -85,6 +85,9 @@ impl ExternalAddons {
     pub unsafe fn load<P: AsRef<OsStr>>(&mut self, library_path: P) -> io::Result<()> {
         // load the library into memory
         let library = Arc::new(Library::new(library_path).unwrap());
+        let metadata = library
+            .get::<unsafe extern "C" fn() -> PluginMetadata>(b"get_metadata\0")
+            .unwrap()();
 
         // get a pointer to the plugin_declaration symbol.
         let decl = library
@@ -107,7 +110,7 @@ impl ExternalAddons {
         self.game_libs.extend(registrar.game_libs);
         // and make sure ExternalFunctions keeps a reference to the library
         self.libraries.push(library);
-        self.metas.push(decl.metadata);
+        self.metas.push(metadata);
 
         Ok(())
     }
@@ -127,7 +130,12 @@ impl PluginRegistrar {
 }
 
 impl gami_sdk::PluginRegistrar for PluginRegistrar {
-    fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>) {}
+    fn register_config(
+        &mut self,
+        file_name: &str,
+        schema: HashMap<safer_ffi::String, ConfigSchemaMetadata>,
+    ) {
+    }
 
     fn register_library(&mut self, name: &str, lib: Box<dyn GameLibrary>) {
         let proxy = GameLibraryProxy {
