@@ -4,7 +4,7 @@ use db::game::Entity as GameEntity;
 use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
-use sea_orm::{ConnectionTrait, EntityTrait};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder};
 
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
@@ -48,15 +48,22 @@ pub async fn sync_library() {
             if query.ends_with(')') {
                 query.push_str(" DO NOTHING");
             }
-            std::fs::write("insert.sql", query.as_bytes()).unwrap();
             conn.execute_unprepared(&query).await.unwrap();
             log::info!("Pushed games to DB");
         }
     }
 }
-pub async fn get_games() -> Vec<GameData> {
-    println!("Getting games");
+
+#[derive(Debug, Default, Clone)]
+pub struct GamesFilters {
+    pub search: String,
+}
+pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     let conn = db::connect().await;
-    let raw = GameEntity::find().all(&conn).await.unwrap();
+    let mut query = GameEntity::find();
+    if !filters.search.is_empty() {
+        query = query.filter(Column::Name.contains(&filters.search));
+    }
+    let raw = query.all(&conn).await.unwrap();
     raw.into_iter().map(Into::into).collect()
 }
