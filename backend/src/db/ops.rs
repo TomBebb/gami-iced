@@ -1,47 +1,62 @@
 use crate::db::game::Column;
 use crate::{db, ADDONS};
-use db::game::{ActiveModel as GameModel, Entity as GameEntity};
+use db::game::Entity as GameEntity;
+use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
-use gami_sdk::{GameData, ScannedGameLibraryMetadata};
-use sea_orm::sea_query::OnConflict;
-use sea_orm::ActiveValue::Set;
-use sea_orm::EntityTrait;
+use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
+use sea_orm::{ConnectionTrait, EntityTrait};
 
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
             let items = lib.scan();
             log::info!("Pushing {} games to DB", items.len());
-            let mut conn = crate::db::connect().await;
-            GameEntity::insert_many(items.into_iter().map(|i: ScannedGameLibraryMetadata| {
-                GameModel {
-                    name: Set(i.name.into()),
-                    description: Set("".into()),
-                    icon_url: Set(i.icon_url.into_rust().map(safer_ffi::string::String::into)),
-                    install_status: Set(i.install_status.into()),
-                    play_time_secs: Set(i.playtime_secs as i64),
-                    //last_played:Set( i.last_played_epoch),
-                    library_id: Set(i.library_id.into()),
-                    library_type: Set(i.library_type.into()),
-                    ..Default::default()
-                }
-            }))
-            .on_conflict(OnConflict::columns([
-                Column::LibraryType,
-                Column::LibraryId,
-            ]))
-            .do_nothing()
-            .exec(&mut conn)
-            .await
-            .unwrap();
-
+            let conn = db::connect().await;
+            let mut raw = Query::insert();
+            let mut query_raw = raw
+                .into_table(GameEntity)
+                .columns(vec![
+                    Column::LibraryType,
+                    Column::LibraryId,
+                    Column::Name,
+                    Column::Description,
+                    Column::InstallStatus,
+                    Column::PlayTimeSecs,
+                    Column::LastPlayed,
+                    Column::IconUrl,
+                ])
+                .on_conflict(OnConflict::columns([
+                    Column::LibraryType,
+                    Column::LibraryId,
+                ]));
+            for item in items {
+                query_raw = query_raw.values_panic(vec![
+                    item.library_type.to_string().into(),
+                    item.library_id.to_string().into(),
+                    item.name.to_string().into(),
+                    "".into(),
+                    (item.install_status as u8).into(),
+                    item.playtime_secs.into(),
+                    item.last_played_epoch.into_rust().into(),
+                    item.icon_url
+                        .into_rust()
+                        .map(<safer_ffi::String as Into<String>>::into)
+                        .into(),
+                ]);
+            }
+            let mut query = query_raw.to_string(SqliteQueryBuilder);
+            if query.ends_with(')') {
+                query.push_str(" DO NOTHING");
+            }
+            std::fs::write("insert.sql", query.as_bytes()).unwrap();
+            conn.execute_unprepared(&query).await.unwrap();
             log::info!("Pushed games to DB");
         }
     }
 }
 pub async fn get_games() -> Vec<GameData> {
     println!("Getting games");
-    let conn = crate::db::connect().await;
+    let conn = db::connect().await;
     let raw = GameEntity::find().all(&conn).await.unwrap();
     raw.into_iter().map(Into::into).collect()
 }
