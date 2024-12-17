@@ -2,7 +2,7 @@ use gami_backend::ADDONS;
 use gami_sdk::{load_schema, ConfigsSchema, PluginMetadata};
 use iced::font::Weight;
 use iced::widget::{button, column, row, scrollable, text, text_input, Column};
-use iced::{Element, Font, Length};
+use iced::{Alignment, Element, Font, Length};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -35,15 +35,18 @@ impl AddOns {
     pub fn view(&self) -> Element<AddOnMessage> {
         let items: Element<AddOnMessage> = Column::with_children(self.curr.iter().map(|(k, v)| {
             row![
-                text(v.name.trim_start().to_owned()).font(Font {
-                    weight: Weight::Semibold,
-                    ..Font::default()
-                }),
+                text(v.name.trim_start().to_owned())
+                    .font(Font {
+                        weight: Weight::Semibold,
+                        ..Font::default()
+                    })
+                    .align_x(Alignment::End)
+                    .width(Length::FillPortion(1)),
                 text_input("Enter value", "default")
                     .on_input(move |v| AddOnMessage::InputChanged(k.clone(), v))
-                    .width(Length::FillPortion(1))
-                    .padding(10)
+                    .width(Length::FillPortion(2))
             ]
+            .spacing(10)
             .into()
         }))
         .into();
