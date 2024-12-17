@@ -247,6 +247,9 @@ impl LibraryPage {
                 self.games = cache.clone();
                 self.table.rows = cache;
             }
+            Message::GameAction(GameAction::Delete, game) => {
+                return Task::perform(db::ops::delete_game(game.id), |_| Message::ReloadCache)
+            }
             Message::GameAction(GameAction::Play, game) if game.library_type == "steam" => {
                 //TODO: use addon
                 open::that(&format!("steam://rungameid/{}", game.library_id)).unwrap();

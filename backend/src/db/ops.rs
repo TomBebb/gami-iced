@@ -1,11 +1,20 @@
+use crate::db::game;
 use crate::db::game::Column;
 use crate::{db, ADDONS};
 use db::game::Entity as GameEntity;
-use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
+use gami_sdk::{GameData, GameLibraryRef};
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
+pub async fn delete_game(game_id: i32) {
+    let mut conn = db::connect().await;
+
+    GameEntity::delete_by_id(game_id)
+        .exec(&mut conn)
+        .await
+        .unwrap();
+}
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
