@@ -59,9 +59,11 @@ impl AddOns {
                         } else {
                             Some(AddOnMessage::Selected(index))
                         })
+                        .width(Length::Fill)
                         .into()
                 }
-            ))),
+            )))
+            .width(Length::FillPortion(1)),
             column![
                 text("Settings").font(Font {
                     weight: Weight::Bold,
@@ -69,9 +71,9 @@ impl AddOns {
                 }),
                 items
             ]
-            .padding(10)
-            .width(Length::Fill)
+            .width(Length::FillPortion(5)),
         ]
+        .spacing(5)
         .into()
     }
     pub fn update(&mut self, message: AddOnMessage) {
