@@ -10,8 +10,10 @@ use std::sync::Arc;
 
 /// A proxy object which wraps a [`Function`] and makes sure it can't outlive
 /// the library it came from.
+///
+#[derive(Clone)]
 pub struct GameLibraryProxy {
-    pub inner: Box<dyn GameLibrary>,
+    pub inner: Arc<dyn GameLibrary + Send + Sync>,
     pub _lib: Arc<Library>,
 }
 impl GameLibrary for GameLibraryProxy {
@@ -144,7 +146,7 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
         self.configs.insert(file_name.to_string(), schema);
     }
 
-    fn register_library(&mut self, name: &str, lib: Box<dyn GameLibrary>) {
+    fn register_library(&mut self, name: &str, lib: Arc<dyn GameLibrary + Send + Sync>) {
         let proxy = GameLibraryProxy {
             inner: lib,
             _lib: Arc::clone(&self.lib),

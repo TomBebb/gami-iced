@@ -18,6 +18,15 @@ pub struct GameLibraryRef {
     pub library_type: String,
     pub library_id: String,
 }
+impl From<GameData> for GameLibraryRef {
+    fn from(data: GameData) -> Self {
+        Self {
+            name: data.name.into(),
+            library_type: data.library_type.into(),
+            library_id: data.library_id.into(),
+        }
+    }
+}
 impl IsGameLibraryRef for GameLibraryRef {
     fn get_name(&self) -> &str {
         &self.name

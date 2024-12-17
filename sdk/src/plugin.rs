@@ -6,6 +6,7 @@ use safer_ffi::string::String;
 use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub struct PluginDeclaration {
     pub rustc_version: &'static str,
@@ -35,7 +36,7 @@ pub trait PluginRegistrar {
         file_name: &str,
         schema: HashMap<std::string::String, ConfigSchemaMetadata>,
     );
-    fn register_library(&mut self, name: &str, function: Box<dyn GameLibrary>);
+    fn register_library(&mut self, name: &str, function: Arc<dyn GameLibrary + Send + Sync>);
 }
 
 pub trait GameLibrary: Send {

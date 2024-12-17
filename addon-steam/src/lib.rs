@@ -13,6 +13,7 @@ pub use models::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
 use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::{self, Runtime};
 use url::Url;
@@ -117,7 +118,7 @@ impl GameLibrary for SteamLibrary {
 register_plugin!(register, ID, "Steam");
 #[no_mangle]
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
-    registrar.register_library("steam", Box::new(SteamLibrary {}));
+    registrar.register_library("steam", Arc::new(SteamLibrary {}));
 
     let mut conf: HashMap<String, ConfigSchemaMetadata> = HashMap::with_capacity(2);
     conf.insert(

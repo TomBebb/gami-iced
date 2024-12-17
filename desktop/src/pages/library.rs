@@ -1,7 +1,7 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
-use gami_backend::{db, get_actions, GameAction};
-use gami_sdk::{GameData, GameInstallStatus};
+use gami_backend::{db, get_actions, GameAction, ADDONS};
+use gami_sdk::{GameData, GameInstallStatus, GameLibrary, GameLibraryRef};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
@@ -296,17 +296,26 @@ impl LibraryPage {
             Message::GameAction(GameAction::Delete, game) => {
                 return Task::perform(db::ops::delete_game(game.id), |_| Message::ReloadCache)
             }
-            Message::GameAction(GameAction::Play, game) if game.library_type == "steam" => {
-                //TODO: use addon
-                open::that(&format!("steam://rungameid/{}", game.library_id)).unwrap();
+            Message::GameAction(GameAction::Play, game) => {
+                let addon = ADDONS
+                    .get_game_library(&game.library_type)
+                    .cloned()
+                    .expect("Failed to load library");
+                addon.launch(&game.into());
             }
-            Message::GameAction(GameAction::Install, game) if game.library_type == "steam" => {
-                //TODO: use addon
-                open::that(&format!("steam://install/{}", game.library_id)).unwrap();
+            Message::GameAction(GameAction::Install, game) => {
+                let addon = ADDONS
+                    .get_game_library(&game.library_type)
+                    .cloned()
+                    .expect("Failed to load library");
+                addon.install(&game.into());
             }
-            Message::GameAction(GameAction::Uninstall, game) if game.library_type == "steam" => {
-                //TODO: use addon
-                open::that(&format!("steam://uninstall/{}", game.library_id)).unwrap();
+            Message::GameAction(GameAction::Uninstall, game) => {
+                let addon = ADDONS
+                    .get_game_library(&game.library_type)
+                    .cloned()
+                    .expect("Failed to load library");
+                addon.uninstall(&game.into());
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;
