@@ -1,14 +1,15 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
-use gami_backend::db::ops::GamesFilters;
+use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction};
 use gami_sdk::GameData;
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
-    button, column, container, image, row, scrollable, text, text_input, tooltip, Container, Svg,
+    button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
+    Container, Svg,
 };
-use iced::{ContentFit, Element, Fill, Font, Task, Theme};
+use iced::{ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
@@ -66,6 +67,8 @@ pub enum Message {
     CacheReloaded(Vec<GameData>),
     SelectGame(usize),
     SearchChanged(String),
+    SortFieldChanged(SortField),
+    ToggleSortDirection,
 }
 impl LibraryPage {
     pub fn new() -> Self {
@@ -166,6 +169,9 @@ impl LibraryPage {
         };
         let toolbar = Element::from(
             row![
+                text_input("Enter search", &self.filters.search)
+                    .on_input(Message::SearchChanged)
+                    .width(Length::FillPortion(7)),
                 Container::new(
                     row(VIEW_TYPES.iter().cloned().map(|v| {
                         tooltip(
@@ -182,10 +188,29 @@ impl LibraryPage {
                         .into()
                     }))
                     .spacing(2)
-                ),
-                text_input("Enter search", &self.filters.search)
-                    .on_input(Message::SearchChanged)
-                    .width(Fill),
+                )
+                .width(Length::FillPortion(3)),
+                Container::new(row![
+                    button(Svg::new(
+                        if self.filters.sort.order == SortOrder::Ascending {
+                            Handle::from_memory(include_bytes!(
+                                "../icons/fluent--text-sort-descending-24-regular.svg"
+                            ))
+                        } else {
+                            Handle::from_memory(include_bytes!(
+                                "../icons/fluent--text-sort-ascending-24-regular.svg"
+                            ))
+                        }
+                    ))
+                    .on_press(Message::ToggleSortDirection),
+                    pick_list(
+                        &SortField::ALL[..],
+                        Some(self.filters.sort.field),
+                        Message::SortFieldChanged
+                    )
+                ]
+            )
+            .width(Length::FillPortion(3)),
                 tooltip(
                     button(
                         Svg::new(Handle::from_memory(include_bytes!(
@@ -238,7 +263,7 @@ impl LibraryPage {
                 return Task::perform(
                     db::ops::get_games(self.filters.clone()),
                     Message::CacheReloaded,
-                )
+                );
             }
             Message::ViewSelected(view_type) => {
                 self.view_type = view_type;
@@ -264,6 +289,17 @@ impl LibraryPage {
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;
+            }
+            Message::SortFieldChanged(field) => {
+                self.filters.sort.field = field;
+                return self.update(Message::ReloadCache);
+            }
+            Message::ToggleSortDirection => {
+                self.filters.sort.order = match self.filters.sort.order {
+                    SortOrder::Ascending => SortOrder::Descending,
+                    SortOrder::Descending => SortOrder::Ascending,
+                };
+                return self.update(Message::ReloadCache);
             }
             v => println!("{:?}", v),
         }

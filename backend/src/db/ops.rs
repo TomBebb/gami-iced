@@ -4,7 +4,8 @@ use db::game::Entity as GameEntity;
 use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder};
+use std::fmt;
 
 pub async fn delete_game(game_id: i32) {
     let mut conn = db::connect().await;
@@ -61,10 +62,65 @@ pub async fn sync_library() {
         }
     }
 }
-
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+pub enum SortOrder {
+    #[default]
+    Ascending,
+    Descending,
+}
+impl Into<Order> for SortOrder {
+    fn into(self) -> Order {
+        match self {
+            SortOrder::Ascending => Order::Asc,
+            SortOrder::Descending => Order::Desc,
+        }
+    }
+}
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+pub enum SortField {
+    #[default]
+    Name,
+    LastPlayed,
+    Playtime,
+    ReleaseDate,
+}
+impl fmt::Display for SortField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Name => "Name",
+            Self::LastPlayed => "Last played",
+            Self::Playtime => "Playtime",
+            Self::ReleaseDate => "Release date",
+        })
+    }
+}
+impl SortField {
+    pub const ALL: [SortField; 4] = [
+        SortField::Name,
+        SortField::LastPlayed,
+        SortField::Playtime,
+        SortField::ReleaseDate,
+    ];
+}
+impl Into<Column> for SortField {
+    fn into(self) -> Column {
+        match self {
+            Self::Name => Column::Name,
+            Self::LastPlayed => Column::LastPlayed,
+            Self::Playtime => Column::PlayTimeSecs,
+            Self::ReleaseDate => Column::ReleaseDate,
+        }
+    }
+}
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Sort {
+    pub field: SortField,
+    pub order: SortOrder,
+}
 #[derive(Debug, Default, Clone)]
 pub struct GamesFilters {
     pub search: String,
+    pub sort: Sort,
 }
 pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     let conn = db::connect().await;
@@ -72,6 +128,9 @@ pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     if !filters.search.is_empty() {
         query = query.filter(Column::Name.contains(&filters.search));
     }
+    let sort_field: Column = filters.sort.field.into();
+    let sort_ord: Order = filters.sort.order.into();
+    query = query.order_by(sort_field, sort_ord);
     let raw = query.all(&conn).await.unwrap();
     raw.into_iter().map(Into::into).collect()
 }
