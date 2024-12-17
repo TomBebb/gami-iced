@@ -15,7 +15,6 @@ iced_aw = { version = "0.11.0", default-features = false, features = [
     "context_menu",
     "tabs"
 ] }
-open = "5.3.1"
 gami-sdk = { path = "../sdk" }
 gami-backend = { path = "../backend" }
 tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros"] }
@@ -23,5 +22,4 @@ env_logger = "0.11.5"
 log = "0.4.22"
 url = "2.5.4"
 iced_table = "0.13.0"
-chrono = "0.4.39"
 serde_json = "1.0.133"

@@ -141,8 +141,6 @@ impl PluginRegistrar {
 
 impl gami_sdk::PluginRegistrar for PluginRegistrar {
     fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>) {
-        println!("Registering config: {} => {:?}", file_name, schema);
-        println!("conf json{:?}", serde_json::to_string(&schema).unwrap());
         self.configs.insert(file_name.to_string(), schema);
     }
 

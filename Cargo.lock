@@ -1708,15 +1708,12 @@ dependencies = [
  "log",
  "safer-ffi",
  "sea-orm",
- "serde_json",
- "tokio-stream",
 ]
 
 [[package]]
 name = "gami-iced"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "env_logger",
  "gami-backend",
  "gami-sdk",
@@ -1724,7 +1721,6 @@ dependencies = [
  "iced_aw",
  "iced_table",
  "log",
- "open",
  "serde_json",
  "tokio",
  "url",

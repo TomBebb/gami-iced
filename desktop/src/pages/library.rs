@@ -1,7 +1,7 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction, ADDONS};
-use gami_sdk::{GameData, GameInstallStatus, GameLibrary, GameLibraryRef};
+use gami_sdk::{GameData, GameInstallStatus, GameLibrary};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
