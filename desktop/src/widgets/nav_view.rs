@@ -30,7 +30,7 @@ const PAGES: &[PageInfo] = &[
         location: NavLocation::Top,
     },
     PageInfo {
-        icon: include_bytes!("../icons/mdi--extension.svg"),
+        icon: include_bytes!("../icons/tabler--script.svg"),
         name: "Add-ons",
         location: NavLocation::Bottom,
     },

@@ -190,18 +190,20 @@ impl LibraryPage {
                     .spacing(2)
                 )
                 .width(Length::FillPortion(3)),
-                Container::new(row![
-                    button(Svg::new(
-                        if self.filters.sort.order == SortOrder::Ascending {
+                row![
+                    button(
+                        Svg::new(if self.filters.sort.order == SortOrder::Ascending {
                             Handle::from_memory(include_bytes!(
-                                "../icons/fluent--text-sort-descending-24-regular.svg"
+                                "../icons/tabler--sort-descending.svg"
                             ))
                         } else {
                             Handle::from_memory(include_bytes!(
-                                "../icons/fluent--text-sort-ascending-24-regular.svg"
+                                "../icons/tabler--sort-ascending.svg"
                             ))
-                        }
-                    ))
+                        })
+                        .width(24)
+                        .height(24)
+                    )
                     .on_press(Message::ToggleSortDirection),
                     pick_list(
                         &SortField::ALL[..],
@@ -209,8 +211,7 @@ impl LibraryPage {
                         Message::SortFieldChanged
                     )
                 ]
-            )
-            .width(Length::FillPortion(3)),
+                .width(Length::FillPortion(3)),
                 tooltip(
                     button(
                         Svg::new(Handle::from_memory(include_bytes!(
