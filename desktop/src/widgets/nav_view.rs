@@ -45,6 +45,9 @@ pub struct NavView {
     pub active_item: usize,
 }
 impl NavView {
+    pub fn get_name(&self) -> String {
+        PAGES[self.active_item].name.to_string()
+    }
     pub fn view(&self) -> Column<Message> {
         let mut raw_page_items: HashMap<NavLocation, Vec<Element<Message>>> = HashMap::from_iter(
             [NavLocation::Top, NavLocation::Bottom]

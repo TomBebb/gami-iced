@@ -3,6 +3,7 @@ use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
+use iced::application::Title;
 use iced::widget::Row;
 use iced::{Element, Task};
 use pages::add_ons::AddOns;
@@ -59,11 +60,17 @@ impl App {
         Task::none()
     }
 }
+struct AppTitle;
+impl Title<App> for AppTitle {
+    fn title(&self, state: &App) -> String {
+        format!("{} - Gami", state.nav.get_name())
+    }
+}
 #[tokio::main]
 pub async fn main() -> iced::Result {
     env_logger::init();
 
     log::info!("Starting Application");
     gami_backend::db::init().await;
-    iced::application("Gami", App::update, App::view).run()
+    iced::application(AppTitle, App::update, App::view).run()
 }
