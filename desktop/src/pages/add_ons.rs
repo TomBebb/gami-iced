@@ -3,6 +3,7 @@ use gami_sdk::{load_schema, ConfigsSchema, PluginMetadata};
 use iced::font::Weight;
 use iced::widget::{button, column, row, scrollable, text, text_input, Column};
 use iced::{Element, Font, Length};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct AddOns {
@@ -12,10 +13,16 @@ pub struct AddOns {
 }
 impl AddOns {
     pub fn new() -> Self {
+        let metadatas = ADDONS.get_addon_metadatas().to_vec();
+        let curr = if metadatas.len() == 0 {
+            HashMap::new()
+        } else {
+            load_schema(&metadatas[0].id)
+        };
         Self {
-            metadatas: ADDONS.get_addon_metadatas().to_vec(),
+            metadatas,
             selected: 0,
-            curr: ConfigsSchema::new(),
+            curr,
         }
     }
 }
