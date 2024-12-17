@@ -1,7 +1,7 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction};
-use gami_sdk::GameData;
+use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
@@ -71,6 +71,20 @@ pub enum Message {
     ToggleSortDirection,
 }
 impl LibraryPage {
+    fn auto_installer_icon(status: GameInstallStatus) -> Handle {
+        Handle::from_memory(match status {
+            GameInstallStatus::Installed => {
+                include_bytes!("../icons/tabler--circle-check.svg").as_slice()
+            }
+            GameInstallStatus::Installing => {
+                include_bytes!("../icons/tabler--loader-2.svg").as_slice()
+            }
+            GameInstallStatus::Queued => {
+                include_bytes!("../icons/tabler--player-pause.svg").as_slice()
+            }
+            _ => include_bytes!("../icons/tabler--circle-x.svg"),
+        })
+    }
     pub fn new() -> Self {
         let me = Self {
             view_type: LibraryViewType::List,
@@ -118,14 +132,20 @@ impl LibraryPage {
                                 Element::from(
                                     button(
                                         row![
-                                            text(&game.name).width(Fill),
                                             image(if raw_icon_url.is_empty() {
                                                 "".into()
                                             } else {
                                                 Url::parse(raw_icon_url).unwrap().path().to_owned()
-                                            }),
+                                            })
+                                            .width(32),
+                                            text(&game.name).width(Fill),
+                                            Svg::new(Self::auto_installer_icon(
+                                                game.install_status
+                                            ))
+                                            .width(Length::Shrink),
                                         ]
-                                        .width(Fill),
+                                        .width(Fill)
+                                        .spacing(2),
                                     )
                                     .style(if index == self.curr_index {
                                         button::primary
@@ -136,7 +156,7 @@ impl LibraryPage {
                                 ),
                             )
                         })
-                        .map(|(game, raw)| self.game_menu(game, Container::new(raw).into()))
+                        .map(|(game, raw)| self.game_menu(game, raw))
                         .collect::<Vec<Element<Message>>>(),
                 ))
                 .width(Fill),
