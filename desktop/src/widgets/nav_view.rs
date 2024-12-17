@@ -20,22 +20,22 @@ struct PageInfo<'a> {
 }
 const PAGES: &[PageInfo] = &[
     PageInfo {
-        icon: include_bytes!("../icons/fluent--library-24-regular.svg"),
+        icon: include_bytes!("../icons/tabler--books.svg"),
         name: "Library",
         location: NavLocation::Top,
     },
     PageInfo {
-        icon: include_bytes!("../icons/fluent--trophy-24-regular.svg"),
+        icon: include_bytes!("../icons/tabler--trophy.svg"),
         name: "Achievements",
         location: NavLocation::Top,
     },
     PageInfo {
-        icon: include_bytes!("../icons/fluent--script-24-regular.svg"),
+        icon: include_bytes!("../icons/mdi--extension.svg"),
         name: "Add-ons",
         location: NavLocation::Bottom,
     },
     PageInfo {
-        icon: include_bytes!("../icons/fluent--settings-24-regular.svg"),
+        icon: include_bytes!("../icons/tabler--settings.svg"),
         name: "Settings",
         location: NavLocation::Bottom,
     },

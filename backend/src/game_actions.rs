@@ -16,27 +16,27 @@ pub struct GameActionData {
 }
 const PLAY_ACTION: GameActionData = GameActionData {
     name: "Play",
-    icon: include_bytes!("../../desktop/src/icons/fluent--play-24-regular.svg"),
+    icon: include_bytes!("../../desktop/src/icons/tabler--play.svg"),
     kind: GameAction::Play,
 };
 const INSTALL_ACTION: GameActionData = GameActionData {
     name: "Install",
-    icon: include_bytes!("../../desktop/src/icons/fluent--add-24-regular.svg"),
+    icon: include_bytes!("../../desktop/src/icons/tabler--plus.svg"),
     kind: GameAction::Install,
 };
 const UNINSTALL_ACTION: GameActionData = GameActionData {
     name: "Uninstall",
-    icon: include_bytes!("../../desktop/src/icons/fluent--uninstall-app-24-regular.svg"),
+    icon: include_bytes!("../../desktop/src/icons/tabler--minus.svg"),
     kind: GameAction::Uninstall,
 };
 const DELETE_ACTION: GameActionData = GameActionData {
     name: "Delete",
-    icon: include_bytes!("../../desktop/src/icons/fluent--delete-24-regular.svg"),
+    icon: include_bytes!("../../desktop/src/icons/tabler--x.svg"),
     kind: GameAction::Delete,
 };
 const EDIT_ACTION: GameActionData = GameActionData {
     name: "Edit",
-    icon: include_bytes!("../../desktop/src/icons/fluent--edit-24-regular.svg"),
+    icon: include_bytes!("../../desktop/src/icons/tabler--edit.svg"),
     kind: GameAction::Edit,
 };
 pub const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {

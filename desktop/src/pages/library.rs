@@ -33,17 +33,17 @@ const VIEW_TYPES: LazyCell<[LibraryViewTypeMeta; 3]> = LazyCell::new(|| {
         LibraryViewTypeMeta {
             value: LibraryViewType::List,
             name: "List",
-            icon: Handle::from_memory(include_bytes!("../icons/fluent--apps-list-24-regular.svg").to_vec()),
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--list.svg").to_vec()),
         },
         LibraryViewTypeMeta {
             value: LibraryViewType::Table,
             name: "Table",
-            icon: Handle::from_memory(include_bytes!("../icons/fluent--table-simple-24-regular.svg").to_vec()),
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--table.svg").to_vec()),
         },
         LibraryViewTypeMeta {
             value: LibraryViewType::Grid,
             name: "Grid",
-            icon: Handle::from_memory(include_bytes!("../icons/fluent--grid-24-regular.svg").to_vec()),
+            icon: Handle::from_memory(include_bytes!("../icons/tabler--grid-4x4.svg").to_vec()),
         },
     ]
 });
@@ -194,11 +194,11 @@ impl LibraryPage {
                     button(Svg::new(
                         if self.filters.sort.order == SortOrder::Ascending {
                             Handle::from_memory(include_bytes!(
-                                "../icons/fluent--arrow-sort-up-lines-24-regular.svg"
+                                "../icons/fluent--text-sort-descending-24-regular.svg"
                             ))
                         } else {
                             Handle::from_memory(include_bytes!(
-                                "../icons/fluent--arrow-sort-down-lines-24-regular.svg"
+                                "../icons/fluent--text-sort-ascending-24-regular.svg"
                             ))
                         }
                     ))
@@ -208,12 +208,13 @@ impl LibraryPage {
                         Some(self.filters.sort.field),
                         Message::SortFieldChanged
                     )
-                ])
-                .width(Length::FillPortion(3)),
+                ]
+            )
+            .width(Length::FillPortion(3)),
                 tooltip(
                     button(
                         Svg::new(Handle::from_memory(include_bytes!(
-                            "../icons/fluent--add-24-regular.svg"
+                            "../icons/tabler--plus.svg"
                         )))
                         .content_fit(ContentFit::Contain)
                     )
@@ -228,7 +229,7 @@ impl LibraryPage {
                 tooltip(
                     button(
                         Svg::new(Handle::from_memory(include_bytes!(
-                            "../icons/fluent--arrow-clockwise-24-regular.svg"
+                            "../icons/tabler--refresh.svg"
                         )))
                         .content_fit(ContentFit::Contain)
                     )
