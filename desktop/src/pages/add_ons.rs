@@ -1,5 +1,5 @@
 use gami_backend::ADDONS;
-use gami_sdk::{ConfigSchemaMetadata, PluginMetadata};
+use gami_sdk::{load_schema, ConfigSchemaMetadata, ConfigsSchema, PluginMetadata};
 use iced::font::Weight;
 use iced::widget::{button, column, row, scrollable, text, Column};
 use iced::{Element, Font, Length};
@@ -22,16 +22,15 @@ impl AddOns {
 pub enum AddOnMessage {
     Selected(usize),
 }
-
 impl AddOns {
     pub fn view(&self) -> Element<AddOnMessage> {
-        let curr: &HashMap<String, ConfigSchemaMetadata> = &self.metadatas[self.selected].configs;
+        let curr: ConfigsSchema = load_schema(self.metadatas[self.selected].id.trim_end());
         println!(
             "{:?}; all: {:?}",
             &self.metadatas[self.selected], self.metadatas
         );
         let items: Element<AddOnMessage> = Column::with_children(curr.into_iter().map(|(k, v)| {
-            text(v.name.trim_start())
+            text(v.name.trim_start().to_owned())
                 .font(Font {
                     weight: Weight::Semibold,
                     ..Font::default()

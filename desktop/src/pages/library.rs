@@ -140,10 +140,10 @@ impl LibraryPage {
                     .width(Fill)
                     .into()
             }))
-                .width(120)
-                .into()
-        })
+            .width(120)
             .into()
+        })
+        .into()
     }
     pub fn view(&self) -> Element<Message> {
         let curr: Option<&GameData> = self.games.as_slice().get(self.curr_index);
@@ -209,7 +209,7 @@ impl LibraryPage {
                 )
                 .width(Fill)
             ]
-                .into(),
+            .into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
         };
         let toolbar = Element::from(
@@ -265,8 +265,8 @@ impl LibraryPage {
                     tooltip::Position::Bottom,
                 )
             ]
-                .spacing(3)
-                .align_y(Vertical::Center),
+            .spacing(3)
+            .align_y(Vertical::Center),
         );
         column![toolbar, items].into()
     }

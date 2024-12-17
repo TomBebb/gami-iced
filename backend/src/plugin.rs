@@ -1,13 +1,11 @@
 use gami_sdk::{
     ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, PluginDeclaration,
-    PluginMetadata, ScannedGameLibraryMetadata, BASE_DATA_DIR,
+    PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
-use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 /// A proxy object which wraps a [`Function`] and makes sure it can't outlive
@@ -63,11 +61,18 @@ impl ExternalAddons {
 
     pub unsafe fn auto_load_addons(&mut self) -> io::Result<()> {
         log::info!("Automatically loading addons");
-        for res in std::fs::read_dir(&*ADDONS_DIR)? {
-            let path = res?.path();
-            println!("Loading {}", path.display());
-            self.load(&path)?;
-            println!("Loaded {}", path.display());
+        for dir in std::fs::read_dir(&*ADDONS_DIR)? {
+            for sub in std::fs::read_dir(dir?.path())? {
+                let path = sub?.path();
+
+                if path.extension().unwrap_or_default() == "json" {
+                    continue;
+                }
+
+                println!("Loading {}", path.display());
+                self.load(&path)?;
+                println!("Loaded {}", path.display());
+            }
         }
         log::info!("loaded addons");
         Ok(())
@@ -135,6 +140,7 @@ impl PluginRegistrar {
 impl gami_sdk::PluginRegistrar for PluginRegistrar {
     fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>) {
         println!("Registering config: {} => {:?}", file_name, schema);
+        println!("conf json{:?}", serde_json::to_string(&schema).unwrap());
         self.configs.insert(file_name.to_string(), schema);
     }
 
@@ -146,4 +152,3 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
         self.game_libs.insert(name.to_string(), proxy);
     }
 }
-pub const ADDONS_DIR: LazyCell<PathBuf> = LazyCell::new(|| BASE_DATA_DIR.join("addons"));
