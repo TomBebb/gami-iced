@@ -4,7 +4,7 @@ use db::game::Entity as GameEntity;
 use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {

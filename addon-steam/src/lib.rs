@@ -4,7 +4,6 @@ mod local_scanner;
 mod models;
 
 use crate::conf::Config;
-use crate::models::OwnedGame;
 use gami_sdk::{
     register_plugin, ConfigSchemaKind, ConfigSchemaMetadata, GameLibrary, PluginRegistrar,
 };
