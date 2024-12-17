@@ -1711,6 +1711,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gami-big-picture"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "gami-backend",
+ "gami-sdk",
+ "iced",
+ "log",
+ "tokio",
+]
+
+[[package]]
 name = "gami-iced"
 version = "0.1.0"
 dependencies = [
