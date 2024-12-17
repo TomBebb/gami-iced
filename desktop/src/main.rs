@@ -5,8 +5,8 @@ use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
 use iced::widget::Row;
 use iced::{Element, Task};
+use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
-use pages::counter::Counter;
 
 mod pages;
 mod widgets;
@@ -35,11 +35,14 @@ impl App {
                 match v {
                     widgets::nav_view::Message::NavSelected(index) => {
                         self.page = match index {
-                            0 => AppPage::Counter(Counter::default()),
-                            1 => AppPage::Library(LibraryPage::new()),
-                            2 => AppPage::Achievements(Achievements::default()),
+                            0 => AppPage::Library(LibraryPage::new()),
+                            1 => AppPage::Achievements(Achievements::default()),
+                            2 => AppPage::AddOns(AddOns::new()),
                             3 => AppPage::Settings(SettingsPage::default()),
-                            _ => unimplemented!(),
+                            _ => {
+                                log::error!("No such page with index {}", index);
+                                self.page.clone()
+                            }
                         };
                         if let AppPage::Library(inner_lib) = &mut self.page {
                             return inner_lib

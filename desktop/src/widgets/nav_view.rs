@@ -20,11 +20,6 @@ struct PageInfo<'a> {
 }
 const PAGES: &[PageInfo] = &[
     PageInfo {
-        icon: include_bytes!("../icons/tabler--minus.svg"),
-        name: "Counter",
-        location: NavLocation::Top,
-    },
-    PageInfo {
         icon: include_bytes!("../icons/tabler--books.svg"),
         name: "Library",
         location: NavLocation::Top,
@@ -33,6 +28,11 @@ const PAGES: &[PageInfo] = &[
         icon: include_bytes!("../icons/tabler--trophy.svg"),
         name: "Achievements",
         location: NavLocation::Top,
+    },
+    PageInfo {
+        icon: include_bytes!("../icons/mdi--extension.svg"),
+        name: "Add-ons",
+        location: NavLocation::Bottom,
     },
     PageInfo {
         icon: include_bytes!("../icons/tabler--settings.svg"),

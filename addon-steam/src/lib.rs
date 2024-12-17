@@ -1,49 +1,31 @@
+mod conf;
 mod kv;
+mod local_scanner;
+mod models;
 
-use crate::kv::ast::KvValue;
-use crate::kv::parser::full_parse;
-use gami_sdk::GameInstallStatus::Queued;
-use gami_sdk::{register_plugin, BaseAddon, GameLibrary, PluginRegistrar};
+use crate::conf::Config;
+use crate::models::OwnedGame;
+use gami_sdk::{
+    register_plugin, ConfigSchemaKind, ConfigSchemaMetadata, GameLibrary, PluginRegistrar,
+};
 use gami_sdk::{GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata};
 use log::*;
+pub use models::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
-use safer_ffi::string::str_ref;
-use std::env;
-use std::path::PathBuf;
+use std::collections::{BTreeMap, HashMap};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::runtime::Runtime;
-use tokio::{fs, runtime};
+use tokio::runtime::{self, Runtime};
 use url::Url;
 
 pub struct SteamLibrary;
 
-const BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
-    if cfg!(windows) {
-        "C:/Program Files (x86)/Steam".into()
-    } else {
-        let home = PathBuf::from(env::var("HOME").expect("HOME not found"));
-        home.join(if cfg!(target_os = "linux") {
-            ".local/share/Steam/"
-        } else if cfg!(target_os = "macos") {
-            "Library/Application Support/Steam"
-        } else {
-            unimplemented!()
-        })
-    }
+const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
+    runtime::Builder::new_multi_thread()
+        .enable_io()
+        .build()
+        .unwrap()
 });
-const APPS_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("steamapps"));
-const LIB_CACHE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("appcache/librarycache"));
-fn auto_cache_map(id: &str, postfix: &str) -> TaggedOption<safer_ffi::string::String> {
-    let full = LIB_CACHE_PATH.join(format!("{}{}", id, postfix));
-    if full.exists() {
-        let url = Url::from_file_path(full).unwrap();
-        TaggedOption::Some(url.to_string().into())
-    } else {
-        TaggedOption::None
-    }
-}
-const RUNTIME: Lazy<Runtime> = Lazy::new(|| runtime::Builder::new_multi_thread().build().unwrap());
 fn run_cmd(cmd: &'static str, id: &str) {
     let raw = format!("steam://{}//{}", cmd, id);
     debug!("steam cmd: {}", raw);
@@ -55,82 +37,73 @@ fn run_cmd_ref(cmd: &'static str, my_ref: &GameLibraryRef) {
 fn from_epoch(secs: u64) -> SystemTime {
     UNIX_EPOCH + Duration::from_secs(secs)
 }
+
+pub fn auto_cache_map(id: &str, postfix: &str) -> TaggedOption<safer_ffi::string::String> {
+    let full = crate::local_scanner::LIB_CACHE_PATH.join(format!("{}{}", id, postfix));
+    if full.exists() {
+        let url = Url::from_file_path(full).unwrap();
+        TaggedOption::Some(url.to_string().into())
+    } else {
+        TaggedOption::None
+    }
+}
+
 const ID: &str = "steam";
-impl BaseAddon for SteamLibrary {
-    fn get_id(&self) -> str_ref<'static> {
-        ID.into()
+impl SteamLibrary {
+    async fn get_owned_games(&self, conf: &Config) -> models::OwnedGamesResponse {
+        let mut url =
+            Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/").unwrap();
+        url.query_pairs_mut()
+            .append_pair("key", conf.api_key.as_str())
+            .append_pair("steamid", conf.steam_id.as_str())
+            .append_pair("include_appinfo", "1")
+            .append_pair("format", "json");
+        reqwest::get(url)
+            .await
+            .unwrap()
+            .json::<models::OwnedGamesResponse>()
+            .await
+            .unwrap()
     }
 }
 impl GameLibrary for SteamLibrary {
-    fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
-        RUNTIME.block_on(async move {
-            let mut res = Vec::with_capacity(8);
-            debug!("APPS_PATH: {:?}", &*APPS_PATH);
-
-            let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
-            while let Some(entry) = reader.next_entry().await.unwrap() {
-                let path: PathBuf = entry.path();
-                debug!("Checking file: {:?}", path);
-                let name = path.file_name().unwrap().to_str().unwrap();
-                if !name.starts_with("appmanifest") {
-                    continue;
-                }
-                debug!("Reading file: {:?}", path);
-                let reader = fs::File::open(&path).await.unwrap();
-                debug!("Parsing file: {:?}", path);
-                let parsed = full_parse(reader).await.unwrap();
-                debug!("Parsed file: {:?}", parsed);
-                let obj = if let KvValue::Object(v) = parsed.value {
-                    v
-                } else {
-                    error!("Steam KSV: Expected an object");
-                    continue;
-                };
-
-                let get_obj_text = |key: &str| match obj[key] {
-                    KvValue::String(ref s) => s.as_str(),
-                    _ => panic!("Steam KSV: Expected an string at key: {}", key),
-                };
-                let get_obj_text_opt = |key: &str| match obj.get(key) {
-                    Some(KvValue::String(ref s)) => Some(s.as_str()),
-                    Some(_) => panic!("Steam KSV: Expected an string at key: {}", key),
-                    None => None,
-                };
-
-                let get_obj_unix_opt = |key: &str| {
-                    if let Some(raw) = get_obj_text_opt(key) {
-                        let parsed: u64 = raw.parse().unwrap();
-                        Some(from_epoch(parsed))
-                    } else {
-                        None
-                    }
-                };
-                let bytes_to_dl = get_obj_text_opt("BytesToDownload");
-                let bytes_dl = get_obj_text_opt("BytesDownloaded");
-                let app_id = get_obj_text("appid");
-                res.push(ScannedGameLibraryMetadata {
-                    library_id: app_id.into(),
-                    name: get_obj_text("name").into(),
-                    icon_url: auto_cache_map(app_id, "_icon.jpg").into(),
-                    last_played_epoch: get_obj_unix_opt("LastPlayed")
-                        .map(|time| time.duration_since(UNIX_EPOCH).unwrap().as_secs())
-                        .into(),
-                    library_type: ID.into(),
-                    install_status: if bytes_dl == None {
-                        Queued
-                    } else if bytes_dl == bytes_to_dl {
-                        GameInstallStatus::Installed
-                    } else {
-                        GameInstallStatus::Installing
-                    },
-                    ..Default::default()
-                })
-            }
-            res
-        })
-    }
     fn launch(&self, game: &GameLibraryRef) {
         run_cmd_ref("launch", game)
+    }
+    fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
+        RUNTIME.block_on(async move {
+            let conf = Config::load().await;
+            let local_games = local_scanner::scan_local_dir_auto().await;
+            if conf.api_key.is_empty() || conf.steam_id.is_empty() {
+                return local_games;
+            }
+            let local_by_id: BTreeMap<String, ScannedGameLibraryMetadata> = BTreeMap::from_iter(
+                local_games
+                    .into_iter()
+                    .map(|g| (g.library_id.to_string(), g)),
+            );
+            self.get_owned_games(&conf)
+                .await
+                .response
+                .games
+                .into_iter()
+                .map(|g: OwnedGame| {
+                    let id_str = g.appid.to_string();
+                    ScannedGameLibraryMetadata {
+                        library_type: ID.into(),
+                        library_id: id_str.clone().into(),
+                        name: g.name.into(),
+                        icon_url: auto_cache_map(&id_str, "_icon.jpg").into(),
+                        last_played_epoch: TaggedOption::Some(g.rtime_last_played),
+                        playtime_secs: g.playtime_forever,
+                        install_status: local_by_id
+                            .get(&g.appid.to_string())
+                            .map(|v| v.install_status)
+                            .unwrap_or(GameInstallStatus::InLibrary),
+                    }
+                })
+                .collect()
+        })
     }
     fn install(&self, game: &GameLibraryRef) {
         run_cmd_ref("install", game)
@@ -142,10 +115,27 @@ impl GameLibrary for SteamLibrary {
         GameInstallStatus::Installing
     }
 }
-// random/src/lib.rs
-
-register_plugin!(register);
-
+register_plugin!(register, ID, "Steam");
+#[no_mangle]
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
     registrar.register_library("steam", Box::new(SteamLibrary {}));
+
+    let mut conf: HashMap<String, ConfigSchemaMetadata> = HashMap::with_capacity(2);
+    conf.insert(
+        "steamId".into(),
+        ConfigSchemaMetadata {
+            name: "Steam ID".into(),
+            hint: "TODo".into(),
+            kind: ConfigSchemaKind::Int,
+        },
+    );
+    conf.insert(
+        "apiKey".into(),
+        ConfigSchemaMetadata {
+            name: "API Key".into(),
+            hint: "TODo".into(),
+            kind: ConfigSchemaKind::Int,
+        },
+    );
+    registrar.register_config("steam", conf);
 }

@@ -1,14 +1,11 @@
 use gami_sdk::{
-    BaseAddon, BoxFuture, BoxStream, GameInstallStatus, GameLibrary, GameLibraryRef,
-    PluginDeclaration, ScannedGameLibraryMetadata, BASE_DATA_DIR,
+    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, PluginDeclaration,
+    PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
-use safer_ffi::string::str_ref;
-use std::cell::LazyCell;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 /// A proxy object which wraps a [`Function`] and makes sure it can't outlive
@@ -16,11 +13,6 @@ use std::sync::Arc;
 pub struct GameLibraryProxy {
     pub inner: Box<dyn GameLibrary>,
     pub _lib: Arc<Library>,
-}
-impl BaseAddon for GameLibraryProxy {
-    fn get_id(&self) -> str_ref<'static> {
-        self.inner.get_id()
-    }
 }
 impl GameLibrary for GameLibraryProxy {
     fn launch(&self, game: &GameLibraryRef) {
@@ -47,12 +39,17 @@ impl GameLibrary for GameLibraryProxy {
 #[derive(Default)]
 pub struct ExternalAddons {
     game_libs: HashMap<String, GameLibraryProxy>,
+    metas: Vec<PluginMetadata>,
     libraries: Vec<Arc<Library>>,
 }
 
 impl ExternalAddons {
     pub fn new() -> ExternalAddons {
         ExternalAddons::default()
+    }
+
+    pub fn get_addon_metadatas(&self) -> &[PluginMetadata] {
+        &self.metas
     }
 
     pub fn get_keys(&self) -> Vec<&str> {
@@ -64,11 +61,20 @@ impl ExternalAddons {
 
     pub unsafe fn auto_load_addons(&mut self) -> io::Result<()> {
         log::info!("Automatically loading addons");
-        for res in std::fs::read_dir(&*ADDONS_DIR)? {
-            let path = res?.path();
-            println!("Loading {}", path.display());
-            self.load(&path)?;
+        for dir in std::fs::read_dir(&*ADDONS_DIR)? {
+            for sub in std::fs::read_dir(dir?.path())? {
+                let path = sub?.path();
+
+                if path.extension().unwrap_or_default() == "json" {
+                    continue;
+                }
+
+                println!("Loading {}", path.display());
+                self.load(&path)?;
+                println!("Loaded {}", path.display());
+            }
         }
+        log::info!("loaded addons");
         Ok(())
     }
 
@@ -84,6 +90,9 @@ impl ExternalAddons {
     pub unsafe fn load<P: AsRef<OsStr>>(&mut self, library_path: P) -> io::Result<()> {
         // load the library into memory
         let library = Arc::new(Library::new(library_path).unwrap());
+        let metadata = library
+            .get::<unsafe extern "C" fn() -> PluginMetadata>(b"get_metadata\0")
+            .unwrap()();
 
         // get a pointer to the plugin_declaration symbol.
         let decl = library
@@ -101,17 +110,20 @@ impl ExternalAddons {
         let mut registrar = PluginRegistrar::new(Arc::clone(&library));
 
         (decl.register)(&mut registrar);
+        println!("configs: {:?}", registrar.configs);
 
         // add all loaded plugins to the functions map
         self.game_libs.extend(registrar.game_libs);
         // and make sure ExternalFunctions keeps a reference to the library
         self.libraries.push(library);
+        self.metas.push(metadata);
 
         Ok(())
     }
 }
 struct PluginRegistrar {
     game_libs: HashMap<String, GameLibraryProxy>,
+    configs: HashMap<String, HashMap<String, ConfigSchemaMetadata>>,
     lib: Arc<Library>,
 }
 
@@ -119,12 +131,19 @@ impl PluginRegistrar {
     fn new(lib: Arc<Library>) -> PluginRegistrar {
         PluginRegistrar {
             lib,
+            configs: HashMap::default(),
             game_libs: HashMap::default(),
         }
     }
 }
 
 impl gami_sdk::PluginRegistrar for PluginRegistrar {
+    fn register_config(&mut self, file_name: &str, schema: HashMap<String, ConfigSchemaMetadata>) {
+        println!("Registering config: {} => {:?}", file_name, schema);
+        println!("conf json{:?}", serde_json::to_string(&schema).unwrap());
+        self.configs.insert(file_name.to_string(), schema);
+    }
+
     fn register_library(&mut self, name: &str, lib: Box<dyn GameLibrary>) {
         let proxy = GameLibraryProxy {
             inner: lib,
@@ -133,4 +152,3 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
         self.game_libs.insert(name.to_string(), proxy);
     }
 }
-pub const ADDONS_DIR: LazyCell<PathBuf> = LazyCell::new(|| BASE_DATA_DIR.join("addons"));
