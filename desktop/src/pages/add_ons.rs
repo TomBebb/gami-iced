@@ -1,41 +1,43 @@
 use gami_backend::ADDONS;
-use gami_sdk::{load_schema, ConfigSchemaMetadata, ConfigsSchema, PluginMetadata};
+use gami_sdk::{load_schema, ConfigsSchema, PluginMetadata};
 use iced::font::Weight;
-use iced::widget::{button, column, row, scrollable, text, Column};
+use iced::widget::{button, column, row, scrollable, text, text_input, Column};
 use iced::{Element, Font, Length};
-use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct AddOns {
     metadatas: Vec<PluginMetadata>,
     selected: usize,
+    curr: ConfigsSchema,
 }
 impl AddOns {
     pub fn new() -> Self {
         Self {
             metadatas: ADDONS.get_addon_metadatas().to_vec(),
             selected: 0,
+            curr: ConfigsSchema::new(),
         }
     }
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum AddOnMessage {
     Selected(usize),
+    InputChanged(String, String),
 }
 impl AddOns {
     pub fn view(&self) -> Element<AddOnMessage> {
-        let curr: ConfigsSchema = load_schema(self.metadatas[self.selected].id.trim_end());
-        println!(
-            "{:?}; all: {:?}",
-            &self.metadatas[self.selected], self.metadatas
-        );
-        let items: Element<AddOnMessage> = Column::with_children(curr.into_iter().map(|(k, v)| {
-            text(v.name.trim_start().to_owned())
-                .font(Font {
+        let items: Element<AddOnMessage> = Column::with_children(self.curr.iter().map(|(k, v)| {
+            row![
+                text(v.name.trim_start().to_owned()).font(Font {
                     weight: Weight::Semibold,
                     ..Font::default()
-                })
-                .into()
+                }),
+                text_input("Enter value", "default")
+                    .on_input(move |v| AddOnMessage::InputChanged(k.clone(), v))
+                    .width(Length::FillPortion(1))
+                    .padding(10)
+            ]
+            .into()
         }))
         .into();
         row![
@@ -64,7 +66,13 @@ impl AddOns {
     }
     pub fn update(&mut self, message: AddOnMessage) {
         match message {
-            AddOnMessage::Selected(index) => self.selected = index,
+            AddOnMessage::Selected(index) => {
+                self.selected = index;
+                self.curr = load_schema(self.metadatas[self.selected].id.trim_end());
+            }
+            AddOnMessage::InputChanged(key, value) => {
+                println!("{} => {}", key, value);
+            }
         }
     }
 }
