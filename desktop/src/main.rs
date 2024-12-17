@@ -5,7 +5,7 @@ use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
 use iced::application::Title;
 use iced::widget::Row;
-use iced::{Element, Task};
+use iced::{Element, Task, Theme};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
@@ -72,5 +72,7 @@ pub async fn main() -> iced::Result {
 
     log::info!("Starting Application");
     gami_backend::db::init().await;
-    iced::application(AppTitle, App::update, App::view).run()
+    iced::application(AppTitle, App::update, App::view)
+        .theme(|_| Theme::Dark)
+        .run()
 }
