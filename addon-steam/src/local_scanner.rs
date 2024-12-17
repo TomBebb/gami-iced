@@ -16,7 +16,7 @@ const BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
     } else {
         let home = PathBuf::from(env::var("HOME").expect("HOME not found"));
 
-       if cfg!(target_os = "linux") {
+        if cfg!(target_os = "linux") {
             let non_debian = home.join(".steam/steam");
             if non_debian.exists() {
                 non_debian
@@ -24,7 +24,7 @@ const BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
                 home.join(".steam/debian-installation")
             }
         } else if cfg!(target_os = "macos") {
-             home.join("Library/Application Support/Steam")
+            home.join("Library/Application Support/Steam")
         } else {
             unimplemented!()
         }

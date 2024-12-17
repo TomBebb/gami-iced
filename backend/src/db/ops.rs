@@ -1,9 +1,8 @@
-use crate::db::game;
 use crate::db::game::Column;
 use crate::{db, ADDONS};
 use db::game::Entity as GameEntity;
+use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
-use gami_sdk::{GameData, GameLibraryRef};
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
