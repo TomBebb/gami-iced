@@ -34,7 +34,9 @@ impl AppPage {
     }
     pub fn update(&mut self, message: PageMessage) -> Task<PageMessage> {
         match (self, message) {
-            (AppPage::AddOns(counter), PageMessage::AddOns(v)) => counter.update(v),
+            (AppPage::AddOns(counter), PageMessage::AddOns(v)) => {
+                return counter.update(v).map(PageMessage::AddOns);
+            }
             (AppPage::Library(lib), PageMessage::Library(v)) => {
                 return lib.update(v).map(PageMessage::Library);
             }

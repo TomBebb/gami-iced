@@ -17,9 +17,9 @@ pub const BASE_DATA_DIR: LazyCell<PathBuf> = LazyCell::new(|| {
         .join("gami")
 });
 pub fn resolve_addon_config_json_path(key: &str) -> PathBuf {
-    let parent = BASE_DATA_DIR.join("addon_configs");
+    let parent = ADDONS_DIR.join(key);
     std::fs::create_dir_all(&parent).unwrap();
-    parent.join(format!("{}.json", key))
+    parent.join("config.json")
 }
 pub const BASE__DIR: LazyCell<PathBuf> = LazyCell::new(|| {
     dirs::data_dir()

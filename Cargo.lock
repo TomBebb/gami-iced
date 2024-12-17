@@ -1725,6 +1725,7 @@ dependencies = [
  "iced_table",
  "log",
  "open",
+ "serde_json",
  "tokio",
  "url",
 ]
