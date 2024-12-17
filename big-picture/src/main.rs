@@ -5,7 +5,7 @@ use gami_backend::db::ops::GamesFilters;
 use gami_sdk::GameData;
 use iced::keyboard::key::Named;
 use iced::keyboard::Key;
-use iced::widget::{column, row, text, Column, Row};
+use iced::widget::{column, text, Column};
 use iced::{keyboard, Element, Task, Theme};
 
 mod ui;
@@ -19,14 +19,23 @@ enum Message {
     LoadedCache(Vec<GameData>),
     Header(header::Message),
 }
-#[derive(Clone, Default)]
+#[derive(Clone)]
 struct App {
     pub header: Header,
     pub games: Vec<GameData>,
     pub filter: GamesFilters,
     pub curr_index: usize,
 }
-
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            header: Header::new(),
+            games: Vec::new(),
+            filter: GamesFilters::default(),
+            curr_index: 0,
+        }
+    }
+}
 impl App {
     pub fn view(&self) -> Column<Message> {
         let page = text("TODO");
