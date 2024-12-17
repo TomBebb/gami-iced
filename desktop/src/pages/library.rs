@@ -1,6 +1,6 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
-use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
+use gami_backend::{db, get_actions, GameAction};
 use gami_sdk::{GameData, GameInstallStatus};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
@@ -67,54 +67,6 @@ pub enum Message {
     SelectGame(usize),
     SearchChanged(String),
 }
-#[derive(Debug, Clone, Copy)]
-pub enum GameAction {
-    Play,
-    Install,
-    Uninstall,
-    Delete,
-    Edit,
-}
-#[derive(Debug, Clone, Copy)]
-struct GameActionData {
-    name: &'static str,
-    icon: &'static [u8],
-    kind: GameAction,
-}
-const PLAY_ACTION: GameActionData = GameActionData {
-    name: "Play",
-    icon: include_bytes!("../icons/tabler--play.svg"),
-    kind: GameAction::Play,
-};
-const INSTALL_ACTION: GameActionData = GameActionData {
-    name: "Install",
-    icon: include_bytes!("../icons/tabler--plus.svg"),
-    kind: GameAction::Install,
-};
-const UNINSTALL_ACTION: GameActionData = GameActionData {
-    name: "Uninstall",
-    icon: include_bytes!("../icons/tabler--minus.svg"),
-    kind: GameAction::Uninstall,
-};
-const DELETE_ACTION: GameActionData = GameActionData {
-    name: "Delete",
-    icon: include_bytes!("../icons/tabler--x.svg"),
-    kind: GameAction::Delete,
-};
-const EDIT_ACTION: GameActionData = GameActionData {
-    name: "Edit",
-    icon: include_bytes!("../icons/tabler--edit.svg"),
-    kind: GameAction::Edit,
-};
-const fn get_actions(status: GameInstallStatus) -> &'static [GameActionData] {
-    match status {
-        GameInstallStatus::Installed => {
-            &[PLAY_ACTION, UNINSTALL_ACTION, EDIT_ACTION, DELETE_ACTION]
-        }
-        _ => &[INSTALL_ACTION, EDIT_ACTION, DELETE_ACTION],
-    }
-}
-
 impl LibraryPage {
     pub fn new() -> Self {
         let me = Self {
