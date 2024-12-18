@@ -5,8 +5,8 @@ use gami_sdk::{
 use libloading::Library;
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::io;
 use std::sync::Arc;
+use std::{fs, io};
 
 /// A proxy object which wraps a [`Function`] and makes sure it can't outlive
 /// the library it came from.
@@ -63,8 +63,10 @@ impl ExternalAddons {
 
     pub unsafe fn auto_load_addons(&mut self) -> io::Result<()> {
         log::info!("Automatically loading addons");
-        for dir in std::fs::read_dir(&*ADDONS_DIR)? {
-            for sub in std::fs::read_dir(dir?.path())? {
+
+        fs::create_dir_all(&*ADDONS_DIR)?;
+        for dir in fs::read_dir(&*ADDONS_DIR)? {
+            for sub in fs::read_dir(dir?.path())? {
                 let path = sub?.path();
 
                 if path.extension().unwrap_or_default() == "json" {
