@@ -3,7 +3,7 @@ use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction, ADDONS};
-use gami_sdk::{GameData, GameInstallStatus, GameLibrary};
+use gami_sdk::{GameCommon, GameData, GameInstallStatus, GameLibrary};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
@@ -304,6 +304,17 @@ impl LibraryPage {
                     .cloned()
                     .expect("Failed to load library");
                 addon.launch(game.get_ref());
+                
+                let settings = settings::load().unwrap();   
+                match settings.general.post_launch_action {
+                    PostLaunchAction::DoNothing =>  {},
+                    PostLaunchAction::Exit => {
+                        return window::get_oldest().and_then(window::close);
+                    },
+                    PostLaunchAction::Minimize => {
+                        return window::get_oldest().and_then(|w| window::minimize(w, true));
+                    }
+                }
             }
             Message::GameAction(GameAction::Install, game) => {
                 let addon = ADDONS
