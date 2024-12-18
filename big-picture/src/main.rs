@@ -1,20 +1,23 @@
+use crate::models::Input;
 use crate::ui::widgets::header;
 use crate::ui::widgets::header::Header;
 use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
 use gami_sdk::GameData;
+use gilrs::{Button, Event, Gilrs};
 use iced::keyboard::key::Named;
 use iced::keyboard::Key;
 use iced::widget::{column, text, Column};
 use iced::{keyboard, Element, Task, Theme};
+use log::log;
+use tokio::task;
 
+mod models;
 mod ui;
+
 #[derive(Clone, Debug)]
-enum Message {
-    NavLeft,
-    NavRight,
-    NavUp,
-    NavDown,
+pub enum Message {
+    Input(Input),
     ReloadCache,
     LoadedCache(Vec<GameData>),
     Header(header::Message),
@@ -60,22 +63,34 @@ impl App {
         Task::none()
     }
 }
-pub fn main() -> iced::Result {
+#[tokio::main]
+pub async fn main() -> iced::Result {
     env_logger::init();
 
+    task::spawn_blocking(move || {
+        let mut gilrs = Gilrs::new().unwrap();
+
+        let mut active_gamepad = None;
+        loop {
+            // Examine new events
+            while let Some(Event {
+                id, event, time, ..
+            }) = gilrs.next_event()
+            {
+                log::info!("{:?} New event from {}: {:?}", time, id, event);
+
+                active_gamepad = Some(id);
+            }
+        }
+    });
     log::info!("Starting Big Picture Mode");
     iced::application("Gami Big Picture", App::update, App::view)
         .theme(|_| Theme::Dark)
         .subscription(|a| {
             keyboard::on_key_press(|key, mods| {
-                println!("Key press:{:?} w/ {:?}", key, mods);
-                match key {
-                    Key::Named(Named::ArrowLeft) => Some(Message::NavLeft),
-                    Key::Named(Named::ArrowRight) => Some(Message::NavRight),
-                    Key::Named(Named::ArrowUp) => Some(Message::NavUp),
-                    Key::Named(Named::ArrowDown) => Some(Message::NavDown),
-                    _ => None,
-                }
+                log::info!("Key press:{:?} w/ {:?}", key, mods);
+                let mapped = Input::try_from(key).ok();
+                mapped.map(Message::Input)
             })
         })
         .run()
