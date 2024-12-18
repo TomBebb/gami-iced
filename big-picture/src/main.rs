@@ -4,9 +4,8 @@ use crate::ui::widgets::header::Header;
 use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
 use gami_sdk::GameData;
-use gilrs::{Event, Gilrs};
+use gilrs::{Event, EventType, Gilrs};
 use iced::futures::sink::SinkExt;
-use iced::futures::Stream;
 use iced::stream;
 use iced::widget::{column, text, Column};
 use iced::Subscription;
@@ -14,12 +13,20 @@ use iced::{keyboard, Element, Task, Theme};
 use std::time::{Duration, Instant};
 use tokio::task;
 
+use futures::stream::{Stream, StreamExt};
 mod inputs;
 mod ui;
 
+#[derive(Clone, Debug, Copy)]
+pub enum InputState {
+    Pressed,
+    Released,
+}
+
 #[derive(Clone, Debug)]
 pub enum Message {
-    Input(Input),
+    Noop,
+    RawInput(Input, InputState),
     ReloadCache,
     LoadedCache(Vec<GameData>),
     Header(header::Message),
@@ -77,14 +84,11 @@ fn timed_worker() -> impl Stream<Item = Message> {
         }
     })
 }
-#[tokio::main]
-pub async fn main() -> iced::Result {
-    env_logger::init();
 
-    let gp = task::spawn_blocking(move || {
+fn gamepad_worker() -> impl Stream<Item = Message> {
+    stream::channel(100, |mut output| async move {
         let mut gilrs = Gilrs::new().unwrap();
 
-        let mut active_gamepad = None;
         loop {
             // Examine new events
             while let Some(Event {
@@ -93,21 +97,52 @@ pub async fn main() -> iced::Result {
             {
                 log::info!("{:?} New event from {}: {:?}", time, id, event);
 
-                active_gamepad = Some(id);
+                match event {
+                    EventType::Disconnected => {
+                        log::info!("Gamepad disconnected");
+                    }
+                    EventType::ButtonPressed(button, _) => {
+                        if let Ok(input) = Input::try_from(button) {
+                            log::info!("Gamepad pressed: {:?}", input);
+                            output.send(Message::RawInput(input, InputState::Pressed)).await.unwrap();
+                        } else {
+                            log::warn!("Unknown button {:?}", button);
+                        }
+                    }
+                    EventType::ButtonReleased(button, _) => {
+                        if let Ok(input) = Input::try_from(button) {
+                            log::info!("Gamepad released: {:?}", input);
+                            output.send(Message::RawInput(input, InputState::Released)).await.unwrap();
+                        } else {
+                            log::warn!("Unknown button {:?}", button);
+                        }
+                    }
+                    _ => {}
+                }
             }
         }
-    });
+    })
+}
+#[tokio::main]
+pub async fn main() -> iced::Result {
+    env_logger::init();
+
+    let gp = task::spawn_blocking(move || {});
     log::info!("Starting Big Picture Mode");
     iced::application("Gami Big Picture", App::update, App::view)
         .theme(|_| Theme::Dark)
         .subscription(|_| Subscription::run(timed_worker))
-        .subscription(|a| {
+        .subscription(|_| {
             keyboard::on_key_press(|key, mods| {
                 log::info!("Key press:{:?} w/ {:?}", key, mods);
                 let mapped = Input::try_from(key).ok();
-                mapped.map(Message::Input)
+                mapped.map(|v| Message::RawInput(v, InputState::Pressed))
             })
         })
+        .subscription(|_| {
+            Subscription::run(gamepad_worker)
+        })
+        .exit_on_close_request(true)
         .run()?;
 
     gp.await.unwrap();

@@ -1715,6 +1715,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "env_logger",
+ "futures",
  "gami-backend",
  "gami-sdk",
  "gilrs",
