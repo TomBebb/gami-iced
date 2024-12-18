@@ -1,5 +1,9 @@
-use iced::widget::text;
-use iced::Element;
+use crate::models::MyTheme;
+use crate::settings;
+use crate::settings::{AppearanceSettings, Settings};
+use iced::font::Weight;
+use iced::widget::{column, pick_list, row, text};
+use iced::{Element, Font, Length};
 use iced_aw::{TabLabel, Tabs};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -13,15 +17,21 @@ pub enum TabId {
 #[derive(Clone, Debug)]
 pub enum Message {
     TabSelected(TabId),
+    Changed(Settings),
 }
 #[derive(Default, Clone, Debug)]
 pub struct SettingsPage {
     active_tab: TabId,
+    settings: Settings,
 }
 impl SettingsPage {
     pub fn update(&mut self, msg: Message) {
         match msg {
             Message::TabSelected(tab) => self.active_tab = tab,
+            Message::Changed(settings) => {
+                settings::save(&settings).unwrap();
+                self.settings = settings;
+            }
         }
     }
     pub fn view(&self) -> Element<Message> {
@@ -35,7 +45,25 @@ impl SettingsPage {
                 (
                     TabId::Appearance,
                     TabLabel::Text("Appearance".into()),
-                    text("TODO: Appearance").into(),
+                    column![row![
+                        text("Theme:")
+                            .font(Font {
+                                weight: Weight::Semibold,
+                                ..Font::default()
+                            })
+                            .width(Length::FillPortion(3)),
+                        pick_list(
+                            MyTheme::ALL,
+                            Some(self.settings.appearance.theme),
+                            |theme| Message::Changed(Settings {
+                                appearance: AppearanceSettings { theme },
+                                ..self.settings.clone()
+                            }),
+                        )
+                        .placeholder("Select your theme")
+                        .width(Length::FillPortion(7)),
+                    ]]
+                    .into(),
                 ),
                 (
                     TabId::Metadata,

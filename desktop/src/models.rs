@@ -3,7 +3,7 @@ use iced::Theme;
 use bitcode::{Decode, Encode};
 use std::fmt;
 
-#[derive(Encode, Decode, Default, Debug, PartialEq, Clone)]
+#[derive(Encode, Decode, Default, Debug, PartialEq, Clone, Copy)]
 
 pub enum MyTheme {
     /// The built-in light variant.

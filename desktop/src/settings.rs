@@ -6,13 +6,11 @@ use std::path::PathBuf;
 
 const SETTINGS_PATH: LazyCell<PathBuf> =
     LazyCell::new(|| BASE_DATA_DIR.join("desktop_settings.bin"));
-#[derive(Encode, Decode, Debug, PartialEq, Clone)]
-
+#[derive(Encode, Decode, Default, Debug, PartialEq, Clone)]
 pub struct Settings {
     pub appearance: AppearanceSettings,
 }
-#[derive(Encode, Decode, Debug, PartialEq, Clone)]
-
+#[derive(Encode, Decode, Default, Debug, PartialEq, Clone)]
 pub struct AppearanceSettings {
     pub theme: MyTheme,
 }
