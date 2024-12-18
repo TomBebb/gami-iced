@@ -34,12 +34,18 @@ pub fn save(settings: &Settings) -> std::io::Result<()> {
 }
 
 pub async fn load_async() -> std::io::Result<Settings> {
+    if !SETTINGS_PATH.exists() {
+        return Ok(Settings::default());
+    }
     let bytes = tokio::fs::read(&*SETTINGS_PATH).await?;
     let decoded: Settings = bitcode::decode(&bytes).unwrap();
     Ok(decoded)
 }
 
 pub fn load() -> std::io::Result<Settings> {
+    if !SETTINGS_PATH.exists() {
+        return Ok(Settings::default());
+    }
     let bytes = std::fs::read(&*SETTINGS_PATH)?;
     let decoded: Settings = bitcode::decode(&bytes).unwrap();
     Ok(decoded)
