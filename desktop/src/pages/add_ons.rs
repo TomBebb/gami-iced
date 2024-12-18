@@ -9,8 +9,8 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 type Config = HashMap<String, String>;
-fn get_json(id: &str) -> Config {
-    let path = resolve_addon_config_json_path(id);
+fn get_json(id: String) -> Config {
+    let path = resolve_addon_config_json_path(&id);
     if !path.exists() {
         Config::new()
     } else {
@@ -36,7 +36,8 @@ impl AddOns {
         let metadatas = ADDONS.get_addon_metadatas().to_vec();
         let curr_config = metadatas
             .iter()
-            .map(|v| v.id)
+            .map(|v| v.id.clone())
+            .map(Into::into)
             .map(get_json)
             .next()
             .unwrap_or_default();
@@ -81,7 +82,8 @@ impl AddOns {
         row![
             scrollable(column(self.metadatas.iter().enumerate().map(
                 |(index, m)| {
-                    button(&m.name)
+                    let name: &str = &m.name;
+                    button(name)
                         .on_press_maybe(if index == self.selected {
                             None
                         } else {
@@ -105,7 +107,7 @@ impl AddOns {
         .into()
     }
     pub fn update(&mut self, message: AddOnMessage) -> Task<AddOnMessage> {
-        let id = self.metadatas[self.selected].id;
+        let id: &str = &self.metadatas[self.selected].id;
         let curr_config = self.curr_config.clone();
         let selected = self.selected;
         match message {
@@ -113,7 +115,7 @@ impl AddOns {
                 self.selected = index;
                 self.curr = load_schema(id);
 
-                *self.curr_config.lock().unwrap() = get_json(id);
+                *self.curr_config.lock().unwrap() = get_json(id.to_owned());
             }
             AddOnMessage::InputChanged(key, value) => {
                 self.curr_config.lock().unwrap().insert(key, value);
