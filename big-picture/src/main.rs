@@ -1,28 +1,20 @@
-use crate::models::Input;
+use crate::inputs::Input;
 use crate::ui::widgets::header;
 use crate::ui::widgets::header::Header;
 use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
 use gami_sdk::GameData;
-use gilrs::{Button, Event, Gilrs};
-use iced::futures::channel::mpsc;
+use gilrs::{Event, Gilrs};
 use iced::futures::sink::SinkExt;
 use iced::futures::Stream;
-use iced::keyboard::key::Named;
-use iced::keyboard::Key;
 use iced::stream;
 use iced::widget::{column, text, Column};
 use iced::Subscription;
-use iced::{
-    keyboard,
-    time::{self, Duration},
-    Element, Task, Theme,
-};
-use log::log;
-use std::time::Instant;
+use iced::{keyboard, Element, Task, Theme};
+use std::time::{Duration, Instant};
 use tokio::task;
 
-mod models;
+mod inputs;
 mod ui;
 
 #[derive(Clone, Debug)]
