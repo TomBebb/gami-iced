@@ -1,7 +1,7 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction, ADDONS};
-use gami_sdk::{GameData, GameInstallStatus, GameLibrary};
+use gami_sdk::{GameCommon, GameData, GameInstallStatus, GameLibrary};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
@@ -301,21 +301,21 @@ impl LibraryPage {
                     .get_game_library(&game.library_type)
                     .cloned()
                     .expect("Failed to load library");
-                addon.launch(&game.into());
+                addon.launch(game.get_ref());
             }
             Message::GameAction(GameAction::Install, game) => {
                 let addon = ADDONS
                     .get_game_library(&game.library_type)
                     .cloned()
                     .expect("Failed to load library");
-                addon.install(&game.into());
+                addon.install(game.get_ref());
             }
             Message::GameAction(GameAction::Uninstall, game) => {
                 let addon = ADDONS
                     .get_game_library(&game.library_type)
                     .cloned()
                     .expect("Failed to load library");
-                addon.uninstall(&game.into());
+                addon.uninstall(game.get_ref());
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;

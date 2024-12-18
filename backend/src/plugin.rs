@@ -17,23 +17,22 @@ pub struct GameLibraryProxy {
     pub _lib: Arc<Library>,
 }
 impl GameLibrary for GameLibraryProxy {
-    fn launch(&self, game: &GameLibraryRef) {
-        self.inner.launch(game)
-    }
-
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
         self.inner.scan()
     }
+    fn launch(&self, game: GameLibraryRef) {
+        self.inner.launch(game)
+    }
 
-    fn install(&self, game: &GameLibraryRef) {
+    fn install(&self, game: GameLibraryRef) {
         self.inner.install(game)
     }
 
-    fn uninstall(&self, game: &GameLibraryRef) {
+    fn uninstall(&self, game: GameLibraryRef) {
         self.inner.uninstall(game)
     }
 
-    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus {
+    fn check_install_status(&self, game: GameLibraryRef) -> GameInstallStatus {
         self.inner.check_install_status(game)
     }
 }

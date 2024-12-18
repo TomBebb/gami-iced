@@ -49,3 +49,7 @@ macro_rules! register_plugin {
         };
     };
 }
+
+pub trait GameCommon {
+    fn get_ref(&self) -> GameLibraryRef;
+}
