@@ -13,7 +13,7 @@ iced = { version = "0.13.1", features = [
 gami-backend = { path = "../backend" }
 gami-sdk = { path = "../sdk" }
 log = "0.4.22"
-tokio = { version = "1.42.0", default-features = false, features = ["macros"] }
+tokio = { version = "1.42.0", default-features = false, features = ["macros", "time"] }
 env_logger = "0.11.5"
 chrono = "0.4.39"
 gilrs = "0.11.0"

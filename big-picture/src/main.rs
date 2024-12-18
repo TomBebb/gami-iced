@@ -5,11 +5,21 @@ use gami_backend::db;
 use gami_backend::db::ops::GamesFilters;
 use gami_sdk::GameData;
 use gilrs::{Button, Event, Gilrs};
+use iced::futures::channel::mpsc;
+use iced::futures::sink::SinkExt;
+use iced::futures::Stream;
 use iced::keyboard::key::Named;
 use iced::keyboard::Key;
+use iced::stream;
 use iced::widget::{column, text, Column};
-use iced::{keyboard, Element, Task, Theme};
+use iced::Subscription;
+use iced::{
+    keyboard,
+    time::{self, Duration},
+    Element, Task, Theme,
+};
 use log::log;
+use std::time::Instant;
 use tokio::task;
 
 mod models;
@@ -29,6 +39,7 @@ struct App {
     pub filter: GamesFilters,
     pub curr_index: usize,
 }
+
 impl Default for App {
     fn default() -> Self {
         Self {
@@ -63,11 +74,22 @@ impl App {
         Task::none()
     }
 }
+fn timed_worker() -> impl Stream<Item = Message> {
+    stream::channel(100, |mut output| async move {
+        loop {
+            output
+                .send(Message::Header(header::Message::UpdateTime(Instant::now())))
+                .await
+                .unwrap();
+            tokio::time::sleep(Duration::from_secs(60)).await;
+        }
+    })
+}
 #[tokio::main]
 pub async fn main() -> iced::Result {
     env_logger::init();
 
-    task::spawn_blocking(move || {
+    let gp = task::spawn_blocking(move || {
         let mut gilrs = Gilrs::new().unwrap();
 
         let mut active_gamepad = None;
@@ -86,6 +108,7 @@ pub async fn main() -> iced::Result {
     log::info!("Starting Big Picture Mode");
     iced::application("Gami Big Picture", App::update, App::view)
         .theme(|_| Theme::Dark)
+        .subscription(|_| Subscription::run(timed_worker))
         .subscription(|a| {
             keyboard::on_key_press(|key, mods| {
                 log::info!("Key press:{:?} w/ {:?}", key, mods);
@@ -93,5 +116,8 @@ pub async fn main() -> iced::Result {
                 mapped.map(Message::Input)
             })
         })
-        .run()
+        .run()?;
+
+    gp.await.unwrap();
+    Ok(())
 }
