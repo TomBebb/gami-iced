@@ -75,10 +75,13 @@ impl Default for ScannedGameLibraryMetadata {
 }
 impl GameCommon for ScannedGameLibraryMetadata {
     fn get_ref(&self) -> GameLibraryRef {
+        let id_str: &str = &self.library_id;
+        let ty_str: &str = &self.library_type;
+        let name_str: &str = &self.name;
         GameLibraryRef {
-            library_id: self.library_id.trim_end().into(),
-            library_type: self.library_type.trim_end().into(),
-            name: self.name.trim_end().into(),
+            library_id: id_str.into(),
+            library_type: ty_str.into(),
+            name: name_str.into(),
         }
     }
 }

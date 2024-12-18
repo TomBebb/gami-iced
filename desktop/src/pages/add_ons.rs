@@ -36,7 +36,7 @@ impl AddOns {
         let metadatas = ADDONS.get_addon_metadatas().to_vec();
         let curr_config = metadatas
             .iter()
-            .map(|v| v.id.trim_end())
+            .map(|v| v.id)
             .map(get_json)
             .next()
             .unwrap_or_default();
@@ -63,7 +63,7 @@ impl AddOns {
         let curr_config = self.curr_config.lock().unwrap();
         let items: Element<AddOnMessage> = Column::with_children(self.curr.iter().map(|(k, v)| {
             row![
-                text(v.name.trim_start().to_owned())
+                text(v.name.to_owned())
                     .font(Font {
                         weight: Weight::Semibold,
                         ..Font::default()
@@ -81,7 +81,7 @@ impl AddOns {
         row![
             scrollable(column(self.metadatas.iter().enumerate().map(
                 |(index, m)| {
-                    button(m.name.trim())
+                    button(&m.name)
                         .on_press_maybe(if index == self.selected {
                             None
                         } else {
@@ -105,7 +105,7 @@ impl AddOns {
         .into()
     }
     pub fn update(&mut self, message: AddOnMessage) -> Task<AddOnMessage> {
-        let id = self.metadatas[self.selected].id.trim_end();
+        let id = self.metadatas[self.selected].id;
         let curr_config = self.curr_config.clone();
         let selected = self.selected;
         match message {
