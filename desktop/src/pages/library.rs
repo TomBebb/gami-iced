@@ -303,28 +303,21 @@ impl LibraryPage {
                     .get_game_library(&game.library_type)
                     .cloned()
                     .expect("Failed to load library");
-                addon.launch(&game.into());
-
-                let settings = settings::load().unwrap();
-                match settings.general.post_launch_action {
-                    PostLaunchAction::Exit => return window::get_oldest().and_then(window::close),
-                    PostLaunchAction::Minimize =>  return window::get_oldest().and_then(|v| window::minimize(v, true)),
-                    PostLaunchAction::DoNothing => (),
-                }
+                addon.launch(game.get_ref());
             }
             Message::GameAction(GameAction::Install, game) => {
                 let addon = ADDONS
                     .get_game_library(&game.library_type)
                     .cloned()
                     .expect("Failed to load library");
-                addon.install(&game.into());
+                addon.install(game.get_ref());
             }
             Message::GameAction(GameAction::Uninstall, game) => {
                 let addon = ADDONS
                     .get_game_library(&game.library_type)
                     .cloned()
                     .expect("Failed to load library");
-                addon.uninstall(&game.into());
+                addon.uninstall(game.get_ref());
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;

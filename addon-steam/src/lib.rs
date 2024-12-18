@@ -13,6 +13,7 @@ pub use models::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
 use std::collections::{BTreeMap, HashMap};
+use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::{self, Runtime};
@@ -27,11 +28,17 @@ const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
         .unwrap()
 });
 fn run_cmd(cmd: &'static str, id: &str) {
-    let raw = format!("steam://{}//{}", cmd, id);
-    debug!("steam cmd: {}", raw);
-    open::that_in_background(&raw);
+    let raw = format!("steam://{}/{}", cmd, id);
+    let mut cmd = Command::new(if cfg!(target_os = "linux") {
+        "xdg-open"
+    } else {
+        "open"
+    });
+    cmd.arg(&raw);
+    debug!("run : {:?} raw={}", cmd, raw);
+    cmd.spawn().unwrap().wait().unwrap();
 }
-fn run_cmd_ref(cmd: &'static str, my_ref: &GameLibraryRef) {
+fn run_cmd_ref(cmd: &'static str, my_ref: GameLibraryRef) {
     run_cmd(cmd, &my_ref.library_id)
 }
 fn from_epoch(secs: u64) -> SystemTime {
@@ -67,9 +74,6 @@ impl SteamLibrary {
     }
 }
 impl GameLibrary for SteamLibrary {
-    fn launch(&self, game: &GameLibraryRef) {
-        run_cmd_ref("launch", game)
-    }
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata> {
         RUNTIME.block_on(async move {
             let conf = Config::load().await;
@@ -105,13 +109,16 @@ impl GameLibrary for SteamLibrary {
                 .collect()
         })
     }
-    fn install(&self, game: &GameLibraryRef) {
+    fn launch(&self, game: GameLibraryRef) {
+        run_cmd_ref("rungameid", game)
+    }
+    fn install(&self, game: GameLibraryRef) {
         run_cmd_ref("install", game)
     }
-    fn uninstall(&self, game: &GameLibraryRef) {
+    fn uninstall(&self, game: GameLibraryRef) {
         run_cmd_ref("uninstall", game)
     }
-    fn check_install_status(&self, _game: &GameLibraryRef) -> GameInstallStatus {
+    fn check_install_status(&self, _game: GameLibraryRef) -> GameInstallStatus {
         GameInstallStatus::Installing
     }
 }

@@ -1,10 +1,13 @@
+use crate::GameCommon;
 use ::safer_ffi::prelude::*;
 use chrono::{DateTime, Duration, Utc};
 use safer_ffi::option::TaggedOption;
+use safer_ffi::string::str_ref;
 use safer_ffi::String;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::string::String as RString;
+
 pub trait IsGameLibraryRef {
     fn get_name(&self) -> &str;
     fn get_library_type(&self) -> &str;
@@ -13,38 +16,19 @@ pub trait IsGameLibraryRef {
 #[derive(Debug, Clone)]
 #[derive_ReprC]
 #[repr(C)]
-pub struct GameLibraryRef {
-    pub name: String,
-    pub library_type: String,
-    pub library_id: String,
+pub struct GameLibraryRef<'a> {
+    pub name: str_ref<'a>,
+    pub library_type: str_ref<'a>,
+    pub library_id: str_ref<'a>,
 }
-impl From<GameData> for GameLibraryRef {
-    fn from(data: GameData) -> Self {
-        Self {
-            name: data.name.into(),
-            library_type: data.library_type.into(),
-            library_id: data.library_id.into(),
-        }
-    }
-}
-impl IsGameLibraryRef for GameLibraryRef {
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-    fn get_library_type(&self) -> &str {
-        &self.library_type
-    }
-
-    fn get_library_id(&self) -> &str {
-        &self.library_id
-    }
-}
-impl fmt::Display for GameLibraryRef {
+impl<'a> fmt::Display for GameLibraryRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{} ({}: {})",
-            self.name, self.library_type, self.library_id
+            self.name.as_str(),
+            self.library_type.as_str(),
+            self.library_id.as_str()
         )
     }
 }
@@ -89,19 +73,18 @@ impl Default for ScannedGameLibraryMetadata {
         }
     }
 }
-impl IsGameLibraryRef for ScannedGameLibraryMetadata {
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-    fn get_library_type(&self) -> &str {
-        &self.library_type
-    }
-
-    fn get_library_id(&self) -> &str {
-        &self.library_id
+impl GameCommon for ScannedGameLibraryMetadata {
+    fn get_ref(&self) -> GameLibraryRef {
+        let id_str: &str = &self.library_id;
+        let ty_str: &str = &self.library_type;
+        let name_str: &str = &self.name;
+        GameLibraryRef {
+            library_id: id_str.into(),
+            library_type: ty_str.into(),
+            name: name_str.into(),
+        }
     }
 }
-
 #[derive(Clone, Debug, Default)]
 pub struct GameData {
     pub id: i32,
@@ -118,7 +101,15 @@ pub struct GameData {
     pub library_type: RString,
     pub library_id: RString,
 }
-
+impl GameCommon for GameData {
+    fn get_ref(&self) -> GameLibraryRef {
+        GameLibraryRef {
+            library_id: self.library_id.as_str().into(),
+            library_type: self.library_type.as_str().into(),
+            name: self.name.as_str().into(),
+        }
+    }
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigSchemaMetadata {
     pub hint: RString,
