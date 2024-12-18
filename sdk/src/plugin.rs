@@ -40,11 +40,11 @@ pub trait PluginRegistrar {
 }
 
 pub trait GameLibrary: Send {
-    fn launch(&self, game: &GameLibraryRef);
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;
-    fn install(&self, game: &GameLibraryRef);
-    fn uninstall(&self, game: &GameLibraryRef);
-    fn check_install_status(&self, game: &GameLibraryRef) -> GameInstallStatus;
+    fn launch(&self, game: GameLibraryRef);
+    fn install(&self, game: GameLibraryRef);
+    fn uninstall(&self, game: GameLibraryRef);
+    fn check_install_status(&self, game: GameLibraryRef) -> GameInstallStatus;
 }
 pub static CORE_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub static RUSTC_VERSION: &str = env!("RUSTC_VERSION");
