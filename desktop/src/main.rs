@@ -80,7 +80,9 @@ pub async fn main() -> iced::Result {
 
     log::info!("Starting Application");
     gami_backend::db::init().await;
+
+    let settings = settings::load().ok().unwrap_or_default();
     iced::application(AppTitle, App::update, App::view)
-        .theme(|_| Theme::Dark)
+        .theme(move |_| settings.appearance.theme.into())
         .run()
 }
