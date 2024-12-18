@@ -2,6 +2,31 @@ use iced::Theme;
 
 use bitcode::{Decode, Encode};
 use std::fmt;
+use std::fmt::Write;
+
+#[derive(Encode, Decode, Default, Debug, PartialEq, Clone, Copy)]
+pub enum PostLaunchAction {
+    #[default]
+    DoNothing,
+    Minimize,
+    Exit,
+}
+impl PostLaunchAction {
+    pub const ALL: [PostLaunchAction; 3] = [
+        PostLaunchAction::DoNothing,
+        PostLaunchAction::Minimize,
+        PostLaunchAction::Exit,
+    ];
+}
+impl fmt::Display for PostLaunchAction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(match self {
+            Self::DoNothing => "Do Nothing",
+            Self::Minimize => "Minimize",
+            Self::Exit => "Exit",
+        })
+    }
+}
 
 #[derive(Encode, Decode, Default, Debug, PartialEq, Clone, Copy)]
 

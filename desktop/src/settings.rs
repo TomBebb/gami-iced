@@ -1,4 +1,4 @@
-use crate::models::MyTheme;
+use crate::models::{MyTheme, PostLaunchAction};
 use bitcode::{Decode, Encode};
 use gami_sdk::BASE_DATA_DIR;
 use std::cell::LazyCell;
@@ -9,7 +9,13 @@ const SETTINGS_PATH: LazyCell<PathBuf> =
 #[derive(Encode, Decode, Default, Debug, PartialEq, Clone)]
 pub struct Settings {
     pub appearance: AppearanceSettings,
+    pub general: GeneralSettings,
 }
+#[derive(Encode, Decode, Default, Debug, PartialEq, Clone)]
+pub struct GeneralSettings {
+    pub post_launch_action: PostLaunchAction,
+}
+
 #[derive(Encode, Decode, Default, Debug, PartialEq, Clone)]
 pub struct AppearanceSettings {
     pub theme: MyTheme,

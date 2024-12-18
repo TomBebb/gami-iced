@@ -1,3 +1,5 @@
+use crate::models::PostLaunchAction;
+use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction, ADDONS};
@@ -9,7 +11,7 @@ use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
     Container, Svg,
 };
-use iced::{ContentFit, Element, Fill, Font, Length, Task, Theme};
+use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
@@ -302,6 +304,13 @@ impl LibraryPage {
                     .cloned()
                     .expect("Failed to load library");
                 addon.launch(&game.into());
+
+                let settings = settings::load().unwrap();
+                match settings.general.post_launch_action {
+                    PostLaunchAction::Exit => return window::get_oldest().and_then(window::close),
+                    PostLaunchAction::Minimize =>  return window::get_oldest().and_then(|v| window::minimize(v, true)),
+                    PostLaunchAction::DoNothing => (),
+                }
             }
             Message::GameAction(GameAction::Install, game) => {
                 let addon = ADDONS

@@ -1,6 +1,6 @@
-use crate::models::MyTheme;
+use crate::models::{MyTheme, PostLaunchAction};
 use crate::settings;
-use crate::settings::{AppearanceSettings, Settings};
+use crate::settings::{AppearanceSettings, GeneralSettings, Settings};
 use iced::font::Weight;
 use iced::widget::{column, pick_list, row, text};
 use iced::{Element, Font, Length, Task};
@@ -55,7 +55,27 @@ impl SettingsPage {
                 (
                     TabId::General,
                     TabLabel::Text("General".into()),
-                    text("TODO: General").into(),
+                    column![row![
+                        text("After game launch do this action:")
+                            .font(Font {
+                                weight: Weight::Semibold,
+                                ..Font::default()
+                            })
+                            .width(Length::FillPortion(3)),
+                        pick_list(
+                            PostLaunchAction::ALL,
+                            Some(self.settings.general.post_launch_action),
+                            |action| Message::Changed(Settings {
+                                general: GeneralSettings {
+                                    post_launch_action: action
+                                },
+                                ..self.settings.clone()
+                            }),
+                        )
+                        .placeholder("Select your theme")
+                        .width(Length::FillPortion(7)),
+                    ]]
+                    .into(),
                 ),
                 (
                     TabId::Appearance,
