@@ -41,7 +41,9 @@ impl AppPage {
                 return lib.update(v).map(PageMessage::Library);
             }
             (AppPage::Achievements(page), PageMessage::Achievements(v)) => page.update(v),
-            (AppPage::Settings(page), PageMessage::Settings(v)) => page.update(v),
+            (AppPage::Settings(page), PageMessage::Settings(v)) => {
+                return page.update(v).map(PageMessage::Settings)
+            }
             _ => unimplemented!(),
         }
         Task::none()

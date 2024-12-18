@@ -3,7 +3,7 @@ use crate::settings;
 use crate::settings::{AppearanceSettings, Settings};
 use iced::font::Weight;
 use iced::widget::{column, pick_list, row, text};
-use iced::{Element, Font, Length};
+use iced::{Element, Font, Length, Task};
 use iced_aw::{TabLabel, Tabs};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -16,8 +16,10 @@ pub enum TabId {
 
 #[derive(Clone, Debug)]
 pub enum Message {
+    LoadSettings,
     TabSelected(TabId),
     Changed(Settings),
+    Loaded(Settings),
 }
 #[derive(Default, Clone, Debug)]
 pub struct SettingsPage {
@@ -25,14 +27,27 @@ pub struct SettingsPage {
     settings: Settings,
 }
 impl SettingsPage {
-    pub fn update(&mut self, msg: Message) {
+    pub fn update(&mut self, msg: Message) -> Task<Message> {
         match msg {
-            Message::TabSelected(tab) => self.active_tab = tab,
+            Message::LoadSettings => {
+                return Task::perform(
+                    async { settings::load_async().await.unwrap() },
+                    Message::Loaded,
+                )
+            }
+            Message::TabSelected(tab) => {
+                self.active_tab = tab;
+            }
             Message::Changed(settings) => {
                 settings::save(&settings).unwrap();
                 self.settings = settings;
             }
+            Message::Loaded(settings) => {
+                self.settings = settings;
+            }
         }
+
+        return Task::none();
     }
     pub fn view(&self) -> Element<Message> {
         Tabs::new_with_tabs(

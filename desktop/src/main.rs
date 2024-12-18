@@ -53,6 +53,12 @@ impl App {
                                 .map(PageMessage::Library)
                                 .map(Message::Page);
                         }
+                        if let AppPage::Settings(page) = &mut self.page {
+                            return page
+                                .update(pages::settings::Message::LoadSettings)
+                                .map(PageMessage::Settings)
+                                .map(Message::Page);
+                        }
                     }
                 }
             }
