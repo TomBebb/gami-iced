@@ -5,7 +5,7 @@ use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
 use iced::application::Title;
 use iced::widget::Row;
-use iced::{Element, Task, Theme};
+use iced::{Element, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 

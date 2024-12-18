@@ -2,7 +2,6 @@ use iced::Theme;
 
 use bitcode::{Decode, Encode};
 use std::fmt;
-use std::fmt::Write;
 
 #[derive(Encode, Decode, Default, Debug, PartialEq, Clone, Copy)]
 pub enum PostLaunchAction {
