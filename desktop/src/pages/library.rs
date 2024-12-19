@@ -72,6 +72,7 @@ pub enum Message {
     SearchChanged(String),
     SortFieldChanged(SortField),
     ToggleSortDirection,
+    CloseEditor,
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -203,7 +204,13 @@ impl LibraryPage {
     }
 
     fn editor(game: &GameData) -> Column<Message> {
-        column![row![text("Name"), text_input("Enter name", &game.name)]]
+        column![
+            button(Svg::new(Handle::from_memory(include_bytes!(
+                "../icons/tabler--arrow-back.svg"
+            ))))
+            .on_press(Message::CloseEditor),
+            row![text("Name"), text_input("Enter name", &game.name)]
+        ]
     }
 
     fn game_details<'a>(&'a self, curr: &'a GameData) -> Column<'a, Message> {
@@ -373,6 +380,9 @@ impl LibraryPage {
             }
             Message::GameAction(GameAction::Edit, game) => {
                 self.edit_game = Some(game);
+            }
+            Message::CloseEditor => {
+                self.edit_game = None;
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;
