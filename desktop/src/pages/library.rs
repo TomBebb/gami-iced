@@ -9,7 +9,7 @@ use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
-    Container, Svg,
+    Column, Container, Svg,
 };
 use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
@@ -116,80 +116,9 @@ impl LibraryPage {
         })
         .into()
     }
-    pub fn view(&self) -> Element<Message> {
-        let curr: Option<&GameData> = self.games.as_slice().get(self.curr_index);
-        let items: Element<Message> = match self.view_type {
-            LibraryViewType::Table => self.table.view().map(Message::Table),
 
-            LibraryViewType::List => row![
-                scrollable(column(
-                    self.games
-                        .iter()
-                        .enumerate()
-                        .map(|(index, game)| {
-                            let raw_icon_url =
-                                game.icon_url.as_ref().map(String::as_str).unwrap_or("");
-                            (
-                                game,
-                                Element::from(
-                                    button(
-                                        row![
-                                            image(if raw_icon_url.is_empty() {
-                                                "".into()
-                                            } else {
-                                                Url::parse(raw_icon_url).unwrap().path().to_owned()
-                                            })
-                                            .width(32),
-                                            text(&game.name).width(Fill),
-                                            Svg::new(Self::auto_installer_icon(
-                                                game.install_status
-                                            ))
-                                            .width(Length::Shrink),
-                                        ]
-                                        .width(Fill)
-                                        .spacing(2),
-                                    )
-                                    .style(if index == self.curr_index {
-                                        button::primary
-                                    } else {
-                                        button::text
-                                    })
-                                    .on_press(Message::SelectGame(index)),
-                                ),
-                            )
-                        })
-                        .map(|(game, raw)| self.game_menu(game, raw))
-                        .collect::<Vec<Element<Message>>>(),
-                ))
-                .width(Fill),
-                scrollable(
-                    if let Some(curr) = curr {
-                        let last_played = curr
-                            .last_played
-                            .map(|t| t.to_string())
-                            .unwrap_or("None".into());
-                        column![
-                            text(&curr.name),
-                            text(&curr.description),
-                            column![
-                                text("Last played:").font(Font {
-                                    weight: Weight::Semibold,
-                                    ..Font::default()
-                                }),
-                                text(last_played)
-                            ]
-                        ]
-                    } else {
-                        column![]
-                    }
-                    .spacing(2)
-                )
-                .width(Fill)
-            ]
-            .into(),
-            LibraryViewType::Grid => text("TODO: GRID").into(),
-        };
-        let toolbar = Element::from(
+    fn toolbar(&self) -> Element<'_, Message> {
+        Element::from(
             row![
                 text_input("Enter search", &self.filters.search)
                     .on_input(Message::SearchChanged)
@@ -267,7 +196,86 @@ impl LibraryPage {
             ]
             .spacing(3)
             .align_y(Vertical::Center),
-        );
+        )
+    }
+
+    fn game_details<'a>(&'a self, curr: &'a GameData) -> Column<'a, Message> {
+        let last_played = curr
+            .last_played
+            .map(|t| t.to_string())
+            .unwrap_or("None".into());
+        column![
+            text(&curr.name),
+            text(&curr.description),
+            column![
+                text("Last played:").font(Font {
+                    weight: Weight::Semibold,
+                    ..Font::default()
+                }),
+                text(last_played)
+            ]
+        ]
+    }
+    pub fn view(&self) -> Element<Message> {
+        let curr: Option<&GameData> = self.games.as_slice().get(self.curr_index);
+        let items: Element<Message> = match self.view_type {
+            LibraryViewType::Table => self.table.view().map(Message::Table),
+
+            LibraryViewType::List => row![
+                scrollable(column(
+                    self.games
+                        .iter()
+                        .enumerate()
+                        .map(|(index, game)| {
+                            let raw_icon_url =
+                                game.icon_url.as_ref().map(String::as_str).unwrap_or("");
+                            (
+                                game,
+                                Element::from(
+                                    button(
+                                        row![
+                                            image(if raw_icon_url.is_empty() {
+                                                "".into()
+                                            } else {
+                                                Url::parse(raw_icon_url).unwrap().path().to_owned()
+                                            })
+                                            .width(32),
+                                            text(&game.name).width(Fill),
+                                            Svg::new(Self::auto_installer_icon(
+                                                game.install_status
+                                            ))
+                                            .width(Length::Shrink),
+                                        ]
+                                        .width(Fill)
+                                        .spacing(2),
+                                    )
+                                    .style(if index == self.curr_index {
+                                        button::primary
+                                    } else {
+                                        button::text
+                                    })
+                                    .on_press(Message::SelectGame(index)),
+                                ),
+                            )
+                        })
+                        .map(|(game, raw)| self.game_menu(game, raw))
+                        .collect::<Vec<Element<Message>>>(),
+                ))
+                .width(Fill),
+                scrollable(
+                    if let Some(curr) = curr {
+                        self.game_details(curr)
+                    } else {
+                        column![]
+                    }
+                    .spacing(2)
+                )
+                .width(Fill)
+            ]
+            .into(),
+            LibraryViewType::Grid => text("TODO: GRID").into(),
+        };
+        let toolbar = self.toolbar();
         column![toolbar, items].into()
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
@@ -304,13 +312,13 @@ impl LibraryPage {
                     .cloned()
                     .expect("Failed to load library");
                 addon.launch(game.get_ref());
-                
-                let settings = settings::load().unwrap();   
+
+                let settings = settings::load().unwrap();
                 match settings.general.post_launch_action {
-                    PostLaunchAction::DoNothing =>  {},
+                    PostLaunchAction::DoNothing => {}
                     PostLaunchAction::Exit => {
                         return window::get_oldest().and_then(window::close);
-                    },
+                    }
                     PostLaunchAction::Minimize => {
                         return window::get_oldest().and_then(|w| window::minimize(w, true));
                     }
