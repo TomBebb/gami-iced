@@ -278,7 +278,7 @@ impl LibraryPage {
                         .map(|(game, raw)| self.game_menu(game, raw))
                         .collect::<Vec<Element<Message>>>(),
                 ))
-                .width(Fill),
+                .width(Length::FillPortion(3)),
                 scrollable(
                     if let Some(curr) = curr {
                         self.game_details(curr)
@@ -287,7 +287,7 @@ impl LibraryPage {
                     }
                     .spacing(2)
                 )
-                .width(Fill)
+                .width(Length::FillPortion(7)),
             ]
             .into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
