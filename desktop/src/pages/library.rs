@@ -2,7 +2,7 @@ use crate::models::PostLaunchAction;
 use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
-use gami_backend::{db, get_actions, GameAction, ADDONS};
+use gami_backend::{db, get_actions, GameAction, GameTextField, ADDONS};
 use gami_sdk::{GameCommon, GameData, GameInstallStatus, GameLibrary};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
@@ -73,6 +73,7 @@ pub enum Message {
     SortFieldChanged(SortField),
     ToggleSortDirection,
     CloseEditor,
+    EditorTextChanged(GameTextField, String),
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -209,7 +210,11 @@ impl LibraryPage {
                 "../icons/tabler--arrow-back.svg"
             ))))
             .on_press(Message::CloseEditor),
-            row![text("Name"), text_input("Enter name", &game.name)]
+            row![
+                text("Name"),
+                text_input("Enter name", &game.name)
+                    .on_input(|txt| Message::EditorTextChanged(GameTextField::Name, txt))
+            ]
         ]
     }
 
@@ -383,6 +388,25 @@ impl LibraryPage {
             }
             Message::CloseEditor => {
                 self.edit_game = None;
+            }
+            Message::EditorTextChanged(field, value) => {
+                fn map_opt_empty(opt: String) -> Option<String> {
+                    if opt.is_empty() {
+                        None
+                    } else {
+                        Some(opt)
+                    }
+                }
+                if let Some(edit_game) = self.edit_game.as_mut() {
+                    match field {
+                        GameTextField::Name => edit_game.name = value,
+                        GameTextField::Description => edit_game.description = value,
+                        GameTextField::HeaderUrl => edit_game.header_url = map_opt_empty(value),
+                        GameTextField::IconUrl => edit_game.icon_url = map_opt_empty(value),
+                        GameTextField::LogoUrl => edit_game.logo_url = map_opt_empty(value),
+                        GameTextField::HeroUrl => edit_game.hero_url = map_opt_empty(value),
+                    }
+                }
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;
