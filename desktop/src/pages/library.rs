@@ -51,6 +51,7 @@ const VIEW_TYPES: LazyCell<[LibraryViewTypeMeta; 3]> = LazyCell::new(|| {
 });
 #[derive(Clone, Debug)]
 pub struct LibraryPage {
+    edit_game: Option<GameData>,
     curr_index: usize,
     view_type: LibraryViewType,
     games: Vec<GameData>,
@@ -89,6 +90,7 @@ impl LibraryPage {
     }
     pub fn new() -> Self {
         let me = Self {
+            edit_game: None,
             view_type: LibraryViewType::List,
             games: Vec::new(),
             curr_index: 0,
@@ -200,6 +202,10 @@ impl LibraryPage {
         )
     }
 
+    fn editor(game: &GameData) -> Column<Message> {
+        column![row![text("Name"), text_input("Enter name", &game.name)]]
+    }
+
     fn game_details<'a>(&'a self, curr: &'a GameData) -> Column<'a, Message> {
         let actions = get_actions(curr.install_status);
         let last_played = curr
@@ -293,7 +299,17 @@ impl LibraryPage {
             LibraryViewType::Grid => text("TODO: GRID").into(),
         };
         let toolbar = self.toolbar();
-        column![toolbar, items].into()
+
+        let inner = column![toolbar, items];
+        if let Some(game) = self.edit_game.as_ref() {
+            row![
+                Self::editor(game).width(Length::FillPortion(5)),
+                inner.width(Length::FillPortion(10))
+            ]
+            .into()
+        } else {
+            inner.into()
+        }
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
@@ -354,6 +370,9 @@ impl LibraryPage {
                     .cloned()
                     .expect("Failed to load library");
                 addon.uninstall(game.get_ref());
+            }
+            Message::GameAction(GameAction::Edit, game) => {
+                self.edit_game = Some(game);
             }
             Message::SelectGame(index) => {
                 self.curr_index = index;
