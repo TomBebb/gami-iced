@@ -74,6 +74,7 @@ pub enum Message {
     ToggleSortDirection,
     CloseEditor,
     EditorTextChanged(GameTextField, String),
+    SaveEditor,
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -214,7 +215,8 @@ impl LibraryPage {
                 text("Name"),
                 text_input("Enter name", &game.name)
                     .on_input(|txt| Message::EditorTextChanged(GameTextField::Name, txt))
-            ]
+            ],
+            button("Save").on_press(Message::SaveEditor)
         ]
     }
 
@@ -385,6 +387,11 @@ impl LibraryPage {
             }
             Message::GameAction(GameAction::Edit, game) => {
                 self.edit_game = Some(game);
+            }
+            Message::SaveEditor => {
+                if let Some(game) = self.edit_game.clone() {
+                    return Task::perform(db::ops::update_game(game), |_| Message::ReloadCache);
+                }
             }
             Message::CloseEditor => {
                 self.edit_game = None;
