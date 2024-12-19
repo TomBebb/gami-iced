@@ -9,7 +9,7 @@ use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
-    Column, Container, Svg,
+    Column, Container, Row, Svg,
 };
 use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
@@ -200,11 +200,26 @@ impl LibraryPage {
     }
 
     fn game_details<'a>(&'a self, curr: &'a GameData) -> Column<'a, Message> {
+        let actions = get_actions(curr.install_status);
         let last_played = curr
             .last_played
             .map(|t| t.to_string())
             .unwrap_or("None".into());
         column![
+            Row::with_children(actions.into_iter().map(|ga| {
+                button(
+                    row![
+                        Svg::new(Handle::from_memory(ga.icon)).width(Length::FillPortion(1)),
+                        text(ga.name).width(Length::FillPortion(4)),
+                    ]
+                    .align_y(Vertical::Center)
+                    .spacing(4),
+                )
+                .on_press(Message::GameAction(ga.kind, curr.clone()))
+                .into()
+            }))
+            .height(30)
+            .spacing(2),
             text(&curr.name),
             text(&curr.description),
             column![
