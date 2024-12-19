@@ -1,5 +1,9 @@
-use iced::widget::text;
-use iced::Element;
+use crate::models::{MyTheme, PostLaunchAction};
+use crate::settings;
+use crate::settings::{AppearanceSettings, GeneralSettings, Settings};
+use iced::font::Weight;
+use iced::widget::{column, pick_list, row, text};
+use iced::{Element, Font, Length, Task};
 use iced_aw::{TabLabel, Tabs};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -12,17 +16,38 @@ pub enum TabId {
 
 #[derive(Clone, Debug)]
 pub enum Message {
+    LoadSettings,
     TabSelected(TabId),
+    Changed(Settings),
+    Loaded(Settings),
 }
 #[derive(Default, Clone, Debug)]
 pub struct SettingsPage {
     active_tab: TabId,
+    settings: Settings,
 }
 impl SettingsPage {
-    pub fn update(&mut self, msg: Message) {
+    pub fn update(&mut self, msg: Message) -> Task<Message> {
         match msg {
-            Message::TabSelected(tab) => self.active_tab = tab,
+            Message::LoadSettings => {
+                return Task::perform(
+                    async { settings::load_async().await.unwrap() },
+                    Message::Loaded,
+                )
+            }
+            Message::TabSelected(tab) => {
+                self.active_tab = tab;
+            }
+            Message::Changed(settings) => {
+                settings::save(&settings).unwrap();
+                self.settings = settings;
+            }
+            Message::Loaded(settings) => {
+                self.settings = settings;
+            }
         }
+
+        return Task::none();
     }
     pub fn view(&self) -> Element<Message> {
         Tabs::new_with_tabs(
@@ -30,12 +55,50 @@ impl SettingsPage {
                 (
                     TabId::General,
                     TabLabel::Text("General".into()),
-                    text("TODO: General").into(),
+                    column![row![
+                        text("After game launch do this action:")
+                            .font(Font {
+                                weight: Weight::Semibold,
+                                ..Font::default()
+                            })
+                            .width(Length::FillPortion(3)),
+                        pick_list(
+                            PostLaunchAction::ALL,
+                            Some(self.settings.general.post_launch_action),
+                            |action| Message::Changed(Settings {
+                                general: GeneralSettings {
+                                    post_launch_action: action
+                                },
+                                ..self.settings.clone()
+                            }),
+                        )
+                        .placeholder("Select your theme")
+                        .width(Length::FillPortion(7)),
+                    ]]
+                    .into(),
                 ),
                 (
                     TabId::Appearance,
                     TabLabel::Text("Appearance".into()),
-                    text("TODO: Appearance").into(),
+                    column![row![
+                        text("Theme:")
+                            .font(Font {
+                                weight: Weight::Semibold,
+                                ..Font::default()
+                            })
+                            .width(Length::FillPortion(3)),
+                        pick_list(
+                            MyTheme::ALL,
+                            Some(self.settings.appearance.theme),
+                            |theme| Message::Changed(Settings {
+                                appearance: AppearanceSettings { theme },
+                                ..self.settings.clone()
+                            }),
+                        )
+                        .placeholder("Select your theme")
+                        .width(Length::FillPortion(7)),
+                    ]]
+                    .into(),
                 ),
                 (
                     TabId::Metadata,

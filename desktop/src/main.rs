@@ -5,11 +5,13 @@ use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
 use iced::application::Title;
 use iced::widget::Row;
-use iced::{Element, Task, Theme};
+use iced::{Element, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
+mod models;
 mod pages;
+mod settings;
 mod widgets;
 
 #[derive(Clone, Debug)]
@@ -51,6 +53,12 @@ impl App {
                                 .map(PageMessage::Library)
                                 .map(Message::Page);
                         }
+                        if let AppPage::Settings(page) = &mut self.page {
+                            return page
+                                .update(pages::settings::Message::LoadSettings)
+                                .map(PageMessage::Settings)
+                                .map(Message::Page);
+                        }
                     }
                 }
             }
@@ -72,7 +80,9 @@ pub async fn main() -> iced::Result {
 
     log::info!("Starting Application");
     gami_backend::db::init().await;
+
+    let settings = settings::load().ok().unwrap_or_default();
     iced::application(AppTitle, App::update, App::view)
-        .theme(|_| Theme::Dark)
+        .theme(move |_| settings.appearance.theme.into())
         .run()
 }
