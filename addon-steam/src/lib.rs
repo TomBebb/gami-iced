@@ -17,9 +17,13 @@ use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::{self, Runtime};
+use tokio::sync::Mutex;
 use url::Url;
 
-pub struct SteamLibrary;
+#[derive(Default)]
+pub struct SteamLibrary {
+    user_id: Mutex<Option<String>>,
+}
 
 const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     runtime::Builder::new_multi_thread()
@@ -57,12 +61,25 @@ pub fn auto_cache_map(id: &str, postfix: &str) -> TaggedOption<safer_ffi::string
 
 const ID: &str = "steam";
 impl SteamLibrary {
+    async fn auto_get_id(&self) -> String {
+        let my_id = self.user_id.lock().await.clone();
+
+        if let Some(id) = my_id {
+            id
+        } else {
+            let id = local_scanner::get_steam_id().await;
+
+            *self.user_id.lock().await = Some(id.clone());
+            id
+        }
+    }
     async fn get_owned_games(&self, conf: &Config) -> models::OwnedGamesResponse {
+        let steam_id = self.auto_get_id().await;
         let mut url =
             Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/").unwrap();
         url.query_pairs_mut()
             .append_pair("key", conf.api_key.as_str())
-            .append_pair("steamid", conf.steam_id.as_str())
+            .append_pair("steamid", steam_id.as_str())
             .append_pair("include_appinfo", "1")
             .append_pair("format", "json");
         reqwest::get(url)
@@ -78,7 +95,7 @@ impl GameLibrary for SteamLibrary {
         RUNTIME.block_on(async move {
             let conf = Config::load().await;
             let local_games = local_scanner::scan_local_dir_auto().await;
-            if conf.api_key.is_empty() || conf.steam_id.is_empty() {
+            if conf.api_key.is_empty() || (self.auto_get_id().await).is_empty() {
                 return local_games;
             }
             let local_by_id: BTreeMap<String, ScannedGameLibraryMetadata> = BTreeMap::from_iter(
@@ -125,7 +142,7 @@ impl GameLibrary for SteamLibrary {
 register_plugin!(register, ID, "Steam");
 #[no_mangle]
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
-    registrar.register_library("steam", Arc::new(SteamLibrary {}));
+    registrar.register_library("steam", Arc::new(SteamLibrary::default()));
 
     let mut conf: HashMap<String, ConfigSchemaMetadata> = HashMap::with_capacity(2);
     conf.insert(
