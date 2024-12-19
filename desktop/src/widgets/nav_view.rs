@@ -1,6 +1,6 @@
-use iced::widget::svg::Handle;
-use iced::widget::{button, row, text, Column, Svg};
-use iced::{Alignment, ContentFit, Element, Fill, Theme};
+use crate::icons::{get_icon, IconKind};
+use iced::widget::{button, row, text, Column};
+use iced::{Alignment, Element, Fill};
 use std::collections::HashMap;
 
 #[derive(Copy, Clone, Debug)]
@@ -14,28 +14,28 @@ pub enum NavLocation {
 }
 
 struct PageInfo<'a> {
-    icon: &'a [u8],
+    icon: IconKind,
     name: &'a str,
     location: NavLocation,
 }
 const PAGES: &[PageInfo] = &[
     PageInfo {
-        icon: include_bytes!("../icons/tabler--books.svg"),
+        icon: IconKind::Library,
         name: "Library",
         location: NavLocation::Top,
     },
     PageInfo {
-        icon: include_bytes!("../icons/tabler--trophy.svg"),
+        icon: IconKind::Achievements,
         name: "Achievements",
         location: NavLocation::Top,
     },
     PageInfo {
-        icon: include_bytes!("../icons/tabler--script.svg"),
+        icon: IconKind::Addons,
         name: "Add-ons",
         location: NavLocation::Bottom,
     },
     PageInfo {
-        icon: include_bytes!("../icons/tabler--settings.svg"),
+        icon: IconKind::Settings,
         name: "Settings",
         location: NavLocation::Bottom,
     },
@@ -60,10 +60,9 @@ impl NavView {
                             .enumerate()
                             .filter(|(_, info)| info.location == loc)
                             .map(|(index, &PageInfo { name, icon, .. })| {
-                                let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
                                 Element::from(
                                     button(Element::from(row![
-                                        svg.content_fit(ContentFit::Contain).width(30),
+                                        get_icon(icon),
                                         text(name).align_x(Alignment::End).width(Fill),
                                     ]))
                                     .width(Fill)

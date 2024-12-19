@@ -1,3 +1,4 @@
+use crate::icons::FONT_BYTES;
 use crate::pages::achievements::Achievements;
 use crate::pages::library;
 use crate::pages::library::LibraryPage;
@@ -6,7 +7,7 @@ use crate::widgets::nav_view::NavView;
 use iced::application::Title;
 use iced::futures::{SinkExt, Stream};
 use iced::widget::Row;
-use iced::{stream, Element, Subscription, Task};
+use iced::{font, stream, Element, Settings, Subscription, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
@@ -27,7 +28,6 @@ struct App {
     pub nav: NavView,
     pub page: AppPage,
 }
-
 impl App {
     pub fn view(&self) -> Row<Message> {
         let nav = Element::new(self.nav.view()).map(Message::NavView);
@@ -37,14 +37,14 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Startup => {
-                (if let AppPage::Library(inner_lib) = &mut self.page {
+                if let AppPage::Library(inner_lib) = &mut self.page {
                     inner_lib
                         .update(library::Message::ReloadCache)
                         .map(PageMessage::Library)
                         .map(Message::Page)
                 } else {
                     Task::none()
-                })
+                }
             }
             Message::NavView(v) => {
                 self.nav.update(v);
@@ -99,6 +99,10 @@ pub async fn main() -> iced::Result {
     let settings = settings::load().ok().unwrap_or_default();
     iced::application(AppTitle, App::update, App::view)
         .subscription(|_| Subscription::run(startup_msg_worker).map(|_| Message::Startup))
+        .settings(Settings {
+            fonts: vec![FONT_BYTES.into()].into(),
+            ..Settings::default()
+        })
         .theme(move |_| settings.appearance.theme.into())
         .run()
 }
