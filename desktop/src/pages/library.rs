@@ -107,6 +107,7 @@ impl LibraryPage {
             column(actions.iter().map(|ga| {
                 let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(ga.icon));
                 button(row![svg.width(24), text(ga.name)])
+                    .style(|theme, status| ga.color.button_style::<Message>(theme, status))
                     .on_press_with(|| Message::GameAction(ga.kind, game.clone()))
                     .width(Fill)
                     .into()
@@ -215,6 +216,7 @@ impl LibraryPage {
                     .align_y(Vertical::Center)
                     .spacing(4),
                 )
+                .style(|theme, status| ga.color.button_style::<Message>(theme, status))
                 .on_press(Message::GameAction(ga.kind, curr.clone()))
                 .into()
             }))

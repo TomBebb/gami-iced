@@ -1727,6 +1727,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "gami-sdk",
+ "iced",
  "libloading 0.8.6",
  "log",
  "safer-ffi",
