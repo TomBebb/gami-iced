@@ -1,9 +1,4 @@
 {
-  "steamId": {
-    "hint": "TODo",
-    "name": "Steam ID",
-    "kind": "Int"
-  },
   "apiKey": {
     "hint": "TODo",
     "name": "API Key",

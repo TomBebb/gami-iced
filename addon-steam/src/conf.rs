@@ -6,7 +6,6 @@ use std::path::PathBuf;
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub api_key: String,
-    pub steam_id: String,
 }
 
 impl Config {

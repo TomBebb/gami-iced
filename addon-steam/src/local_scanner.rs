@@ -34,7 +34,15 @@ const APPS_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("steamapps"));
 const USERS_CONF_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("config/loginusers.vdf"));
 pub(crate) const LIB_CACHE_PATH: Lazy<PathBuf> =
     Lazy::new(|| BASE_PATH.join("appcache/librarycache"));
-
+pub async fn get_steam_id() -> String {
+    let reader = fs::File::open(&*USERS_CONF_PATH).await.unwrap();
+    let parsed = full_parse(reader).await.unwrap();
+    if let KvValue::Object(users) = parsed.value {
+        users.keys().cloned().next().unwrap()
+    } else {
+        panic!("Steam users must be objects");
+    }
+}
 pub async fn scan_local_dir_auto() -> Vec<ScannedGameLibraryMetadata> {
     println!("Scanning local folders: {}", APPS_PATH.display());
     let mut reader = fs::read_dir(APPS_PATH.as_path()).await.unwrap();
