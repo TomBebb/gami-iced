@@ -60,17 +60,16 @@ impl App {
                                 self.page.clone()
                             }
                         };
-                        if let AppPage::Library(inner_lib) = &mut self.page {
-                            inner_lib
+                        match &mut self.page {
+                            AppPage::Library(inner_lib) => inner_lib
                                 .update(library::Message::ReloadCache)
                                 .map(PageMessage::Library)
-                                .map(Message::Page)
-                        } else if let AppPage::Settings(page) = &mut self.page {
-                            page.update(pages::settings::Message::LoadSettings)
+                                .map(Message::Page),
+                            AppPage::Settings(page) => page
+                                .update(pages::settings::Message::LoadSettings)
                                 .map(PageMessage::Settings)
-                                .map(Message::Page)
-                        } else {
-                            Task::none()
+                                .map(Message::Page),
+                            _ => Task::none(),
                         }
                     }
                 }
