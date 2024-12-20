@@ -1,5 +1,5 @@
 use crate::db::game;
-use crate::db::game::{ActiveModel, Column};
+use crate::db::game::Column;
 use crate::{db, ADDONS};
 use db::game::Entity as GameEntity;
 use gami_sdk::GameData;
