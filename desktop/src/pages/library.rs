@@ -206,21 +206,47 @@ impl LibraryPage {
     }
 
     fn editor(game: &GameData) -> Column<Message> {
+        fn editor_row<'a>(
+            name: &'a str,
+            value: impl Into<Element<'a, Message>>,
+        ) -> Row<'a, Message> {
+            row![
+                text(format!("{}:", name)).font(Font {
+                    weight: Weight::Semibold,
+                    ..Font::default()
+                }),
+                value.into(),
+            ]
+        }
+        fn editor_text_row<'a>(
+            field: GameTextField,
+            name: &'a str,
+            curr: &'a str,
+            placeholder: &'a str,
+        ) -> Row<'a, Message> {
+            editor_row(
+                name,
+                text_input(placeholder, curr)
+                    .on_input(move |txt| Message::EditorTextChanged(field, txt)),
+            )
+        }
         column![
             button(Svg::new(Handle::from_memory(include_bytes!(
                 "../icons/tabler--arrow-back.svg"
             ))))
             .on_press(Message::CloseEditor),
-            row![
-                text("Name"),
-                text_input("Enter name", &game.name)
-                    .on_input(|txt| Message::EditorTextChanged(GameTextField::Name, txt))
-            ],
-            row![
-                text("Description"),
-                text_input("Enter description", &game.description)
-                    .on_input(|txt| Message::EditorTextChanged(GameTextField::Description, txt))
-            ],
+            editor_text_row(
+                GameTextField::Name,
+                "Name",
+                game.name.as_str(),
+                "Enter name"
+            ),
+            editor_text_row(
+                GameTextField::Name,
+                "Description",
+                game.name.as_str(),
+                "Enter name"
+            ),
             button("Save").on_press(Message::SaveEditor)
         ]
     }
