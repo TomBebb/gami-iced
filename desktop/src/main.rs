@@ -10,7 +10,6 @@ use iced::{stream, Element, Subscription, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
-pub mod icons;
 mod models;
 mod pages;
 mod settings;
