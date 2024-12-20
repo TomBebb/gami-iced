@@ -233,10 +233,23 @@ impl LibraryPage {
             )
         }
         column![
-            button(Svg::new(Handle::from_memory(include_bytes!(
-                "../icons/tabler--arrow-back.svg"
-            ))))
-            .on_press(Message::CloseEditor),
+            row![
+                button(row![
+                    Svg::new(Handle::from_memory(include_bytes!(
+                        "../icons/tabler--arrow-back.svg"
+                    ))),
+                    text("Close")
+                ])
+                .on_press(Message::CloseEditor),
+                button(row![
+                    Svg::new(Handle::from_memory(include_bytes!(
+                        "../icons/tabler--device-floppy.svg"
+                    ))),
+                    text("Save")
+                ])
+                .style(button::success)
+                .on_press(Message::SaveEditor),
+            ],
             editor_text_row(
                 GameTextField::Name,
                 "Name",
@@ -244,7 +257,7 @@ impl LibraryPage {
                 "Enter name"
             ),
             editor_text_row(
-                GameTextField::Name,
+                GameTextField::Description,
                 "Description",
                 game.description.as_str(),
                 "Enter description"
@@ -273,7 +286,6 @@ impl LibraryPage {
                 game.logo_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
                 "Enter logo URL"
             ),
-            button("Save").on_press(Message::SaveEditor)
         ]
     }
 
