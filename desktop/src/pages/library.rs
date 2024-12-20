@@ -218,7 +218,7 @@ impl LibraryPage {
             ],
             row![
                 text("Description"),
-                text_input("Enter description", &game.name)
+                text_input("Enter description", &game.description)
                     .on_input(|txt| Message::EditorTextChanged(GameTextField::Description, txt))
             ],
             button("Save").on_press(Message::SaveEditor)
