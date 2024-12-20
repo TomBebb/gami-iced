@@ -216,6 +216,11 @@ impl LibraryPage {
                 text_input("Enter name", &game.name)
                     .on_input(|txt| Message::EditorTextChanged(GameTextField::Name, txt))
             ],
+            row![
+                text("Description"),
+                text_input("Enter description", &game.name)
+                    .on_input(|txt| Message::EditorTextChanged(GameTextField::Description, txt))
+            ],
             button("Save").on_press(Message::SaveEditor)
         ]
     }
