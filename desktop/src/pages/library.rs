@@ -9,7 +9,7 @@ use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
-    Column, Container, Row, Svg,
+    Column, Container, Row, Scrollable, Svg,
 };
 use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
@@ -324,75 +324,69 @@ impl LibraryPage {
     }
     pub fn view(&self) -> Element<Message> {
         let curr: Option<&GameData> = self.games.as_slice().get(self.curr_index);
-        let items: Element<Message> = match self.view_type {
+
+        let items: Scrollable<Message> = scrollable(match self.view_type {
             LibraryViewType::Table => self.table.view().map(Message::Table),
 
-            LibraryViewType::List => row![
-                scrollable(column(
-                    self.games
-                        .iter()
-                        .enumerate()
-                        .map(|(index, game)| {
-                            let raw_icon_url =
-                                game.icon_url.as_ref().map(String::as_str).unwrap_or("");
-                            (
-                                game,
-                                Element::from(
-                                    button(
-                                        row![
-                                            image(if raw_icon_url.is_empty() {
-                                                "".into()
-                                            } else {
-                                                Url::parse(raw_icon_url).unwrap().path().to_owned()
-                                            })
-                                            .width(32),
-                                            text(&game.name).width(Fill),
-                                            Svg::new(Self::auto_installer_icon(
-                                                game.install_status
-                                            ))
+            LibraryViewType::List => scrollable(column(
+                self.games
+                    .iter()
+                    .enumerate()
+                    .map(|(index, game)| {
+                        let raw_icon_url = game.icon_url.as_ref().map(String::as_str).unwrap_or("");
+                        (
+                            game,
+                            Element::from(
+                                button(
+                                    row![
+                                        image(if raw_icon_url.is_empty() {
+                                            "".into()
+                                        } else {
+                                            Url::parse(raw_icon_url).unwrap().path().to_owned()
+                                        })
+                                        .width(32),
+                                        text(&game.name).width(Fill),
+                                        Svg::new(Self::auto_installer_icon(game.install_status))
                                             .width(Length::Shrink),
-                                        ]
-                                        .width(Fill)
-                                        .spacing(2),
-                                    )
-                                    .style(if index == self.curr_index {
-                                        button::primary
-                                    } else {
-                                        button::text
-                                    })
-                                    .on_press(Message::SelectGame(index)),
-                                ),
-                            )
-                        })
-                        .map(|(game, raw)| self.game_menu(game, raw))
-                        .collect::<Vec<Element<Message>>>(),
-                ))
-                .width(Length::FillPortion(3)),
-                scrollable(
-                    if let Some(curr) = curr {
-                        self.game_details(curr)
-                    } else {
-                        column![]
-                    }
-                    .spacing(2)
-                )
-                .width(Length::FillPortion(7)),
-            ]
+                                    ]
+                                    .width(Fill)
+                                    .spacing(2),
+                                )
+                                .style(if index == self.curr_index {
+                                    button::primary
+                                } else {
+                                    button::text
+                                })
+                                .on_press(Message::SelectGame(index)),
+                            ),
+                        )
+                    })
+                    .map(|(game, raw)| self.game_menu(game, raw))
+                    .collect::<Vec<Element<Message>>>(),
+            ))
             .into(),
             LibraryViewType::Grid => text("TODO: GRID").into(),
-        };
+        });
         let toolbar = self.toolbar();
 
-        let inner = column![toolbar, items];
-        if let Some(game) = self.edit_game.as_ref() {
+        let raw_side_content = if let Some(game) = self.edit_game.as_ref() {
+            Some(Self::editor(game))
+        } else if let Some(curr) = curr {
+            Some(self.game_details(curr))
+        } else {
+            None
+        };
+
+        let wrapped_items: Element<Message> = if let Some(side) = raw_side_content {
             row![
-                Self::editor(game).width(Length::FillPortion(5)),
-                inner.width(Length::FillPortion(10))
+                items.width(Length::FillPortion(3)),
+                scrollable(side).width(Length::FillPortion(7)),
             ]
             .into()
         } else {
-            inner.into()
-        }
+            items.into()
+        };
+        column![toolbar, wrapped_items].into()
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
