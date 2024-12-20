@@ -211,11 +211,13 @@ impl LibraryPage {
             value: impl Into<Element<'a, Message>>,
         ) -> Row<'a, Message> {
             row![
-                text(format!("{}:", name)).font(Font {
-                    weight: Weight::Semibold,
-                    ..Font::default()
-                }),
-                value.into(),
+                text(format!("{}:", name))
+                    .font(Font {
+                        weight: Weight::Semibold,
+                        ..Font::default()
+                    })
+                    .width(Length::FillPortion(3)),
+                column![value.into()].width(Length::FillPortion(7))
             ]
         }
         fn editor_text_row<'a>(
@@ -244,8 +246,32 @@ impl LibraryPage {
             editor_text_row(
                 GameTextField::Name,
                 "Description",
-                game.name.as_str(),
-                "Enter name"
+                game.description.as_str(),
+                "Enter description"
+            ),
+            editor_text_row(
+                GameTextField::IconUrl,
+                "Icon URL",
+                game.icon_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
+                "Enter icon URL"
+            ),
+            editor_text_row(
+                GameTextField::HeroUrl,
+                "Hero URL",
+                game.hero_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
+                "Enter hero URL"
+            ),
+            editor_text_row(
+                GameTextField::HeaderUrl,
+                "Header URL",
+                game.header_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
+                "Enter header URL"
+            ),
+            editor_text_row(
+                GameTextField::LogoUrl,
+                "Logo URL",
+                game.logo_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
+                "Enter logo URL"
             ),
             button("Save").on_press(Message::SaveEditor)
         ]
