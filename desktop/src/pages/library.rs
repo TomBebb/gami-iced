@@ -9,7 +9,7 @@ use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
-    Column, Container, Row, Scrollable, Svg,
+    Button, Column, Container, Row, Scrollable, Svg,
 };
 use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
@@ -232,24 +232,34 @@ impl LibraryPage {
                     .on_input(move |txt| Message::EditorTextChanged(field, txt)),
             )
         }
+        fn editor_btn(
+            text_content: &'static str,
+            bytes: &'static [u8],
+        ) -> Button<'static, Message> {
+            button(
+                row![
+                    Svg::new(Handle::from_memory(bytes)).width(Length::FillPortion(1)),
+                    text(text_content).width(Length::FillPortion(9)),
+                ]
+                .spacing(10.0),
+            )
+        }
         column![
             row![
-                button(row![
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--arrow-back.svg"
-                    ))),
-                    text("Close")
-                ])
+                editor_btn(
+                    "Close",
+                    include_bytes!("../icons/tabler--arrow-back.svg").as_slice()
+                )
                 .on_press(Message::CloseEditor),
-                button(row![
-                    Svg::new(Handle::from_memory(include_bytes!(
-                        "../icons/tabler--device-floppy.svg"
-                    ))),
-                    text("Save")
-                ])
+                editor_btn(
+                    "Save",
+                    include_bytes!("../icons/tabler--device-floppy.svg").as_slice()
+                )
                 .style(button::success)
                 .on_press(Message::SaveEditor),
-            ],
+            ]
+            .padding(6)
+            .spacing(20.0),
             editor_text_row(
                 GameTextField::Name,
                 "Name",
