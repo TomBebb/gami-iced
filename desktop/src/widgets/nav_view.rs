@@ -1,6 +1,7 @@
 use iced::widget::svg::Handle;
-use iced::widget::{button, row, text, Column, Svg};
-use iced::{Alignment, ContentFit, Element, Fill, Theme};
+use iced::widget::tooltip::Position;
+use iced::widget::{button, container, text, tooltip, Column, Svg};
+use iced::{ContentFit, Element, Fill, Theme};
 use std::collections::HashMap;
 
 #[derive(Copy, Clone, Debug)]
@@ -61,20 +62,19 @@ impl NavView {
                             .filter(|(_, info)| info.location == loc)
                             .map(|(index, &PageInfo { name, icon, .. })| {
                                 let svg: Svg<'static, Theme> = Svg::new(Handle::from_memory(icon));
-                                Element::from(
-                                    button(Element::from(row![
-                                        svg.content_fit(ContentFit::Contain).width(30),
-                                        text(name).align_x(Alignment::End).width(Fill),
-                                    ]))
-                                    .width(Fill)
-                                    .on_press_maybe(
+                                Element::from(tooltip(
+                                    button(svg.content_fit(ContentFit::Contain)).on_press_maybe(
                                         if self.active_item == index {
                                             None
                                         } else {
                                             Some(Message::NavSelected(index))
                                         },
                                     ),
-                                )
+                                    container(text(name))
+                                        .padding(6)
+                                        .style(container::rounded_box),
+                                    Position::Right,
+                                ))
                             })
                             .collect::<Vec<Element<Message>>>(),
                     )
@@ -93,7 +93,7 @@ impl NavView {
                         .into_iter(),
                 ),
         )
-        .width(160)
+        .width(50)
     }
     pub fn update(&mut self, message: Message) {
         match message {
