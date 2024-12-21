@@ -192,7 +192,7 @@ impl LibraryPage {
                         )))
                         .content_fit(ContentFit::Contain)
                     )
-                    .style(button::success)
+                    .style(button::primary)
                     .height(30)
                     .on_press(Message::RefreshGames),
                     container(text("Re-sync your games library"))
