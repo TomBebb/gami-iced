@@ -42,6 +42,17 @@ pub enum GameInstallStatus {
     InLibrary,
     Queued,
 }
+
+impl fmt::Display for GameInstallStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            GameInstallStatus::Installed => "Installed",
+            GameInstallStatus::Installing => "Installing",
+            GameInstallStatus::InLibrary => "In library",
+            GameInstallStatus::Queued => "Queued",
+        })
+    }
+}
 impl Default for GameInstallStatus {
     fn default() -> Self {
         GameInstallStatus::InLibrary
