@@ -303,6 +303,23 @@ impl LibraryPage {
     }
 
     fn game_details<'a>(&'a self, curr: &'a GameData) -> Column<'a, Message> {
+        fn detail_row<'b>(
+            name: &'static str,
+            content: impl Into<Element<'b, Message>>,
+        ) -> Row<'b, Message> {
+            row![
+                text(name)
+                    .font(Font {
+                        weight: Weight::Semibold,
+                        ..Font::default()
+                    })
+                    .width(Length::FillPortion(3)),
+                container(content.into()).width(Length::FillPortion(7)),
+            ]
+        }
+        fn detail_row_text<'b>(name: &'static str, content: String) -> Row<'b, Message> {
+            detail_row(name, text(content))
+        }
         let actions = get_actions(curr.install_status);
         let last_played = curr
             .last_played
@@ -326,13 +343,16 @@ impl LibraryPage {
             .spacing(2),
             text(&curr.name),
             text(&curr.description),
-            column![
-                text("Last played:").font(Font {
-                    weight: Weight::Semibold,
-                    ..Font::default()
-                }),
-                text(last_played)
-            ]
+            detail_row_text("ID", curr.id.to_string()),
+            detail_row_text("Last Played", last_played),
+            detail_row_text("Install Status", curr.install_status.to_string()),
+            detail_row_text("Playtime", curr.play_time.to_string()),
+            detail_row_text(
+                "Release Date",
+                curr.release_date
+                    .map(|v| v.format("%Y-%m-%d").to_string())
+                    .unwrap_or("None".into())
+            ),
         ]
     }
     pub fn view(&self) -> Element<Message> {
