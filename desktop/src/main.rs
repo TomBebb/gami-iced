@@ -36,14 +36,14 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Startup => {
-                (if let AppPage::Library(inner_lib) = &mut self.page {
+                if let AppPage::Library(inner_lib) = &mut self.page {
                     inner_lib
                         .update(library::Message::ReloadCache)
                         .map(PageMessage::Library)
                         .map(Message::Page)
                 } else {
                     Task::none()
-                })
+                }
             }
             Message::NavView(v) => {
                 self.nav.update(v);
