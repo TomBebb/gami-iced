@@ -1,6 +1,7 @@
 use crate::models::PostLaunchAction;
 use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
+use crate::widgets::number_input::number_input;
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, GameAction, GameTextField, ADDONS};
 use gami_sdk::{GameCommon, GameData, GameInstallStatus, GameLibrary};
@@ -296,6 +297,8 @@ impl LibraryPage {
                 game.logo_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
                 "Enter logo URL"
             ),
+            number_input("Enter ID", game.id.clone())
+                .map(|v| Message::SearchChanged(format!("{:?}", v)))
         ]
     }
 
