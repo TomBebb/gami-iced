@@ -3,10 +3,12 @@ use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::pages::settings::SettingsPage;
 use crate::widgets::nav_view::NavView;
+use gami_backend::Direction;
 use iced::application::Title;
 use iced::futures::{SinkExt, Stream};
+use iced::keyboard::key::Named;
 use iced::widget::Row;
-use iced::{stream, Element, Subscription, Task};
+use iced::{keyboard, stream, Element, Subscription, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
@@ -20,6 +22,7 @@ enum Message {
     Startup,
     Page(PageMessage),
     NavView(widgets::nav_view::Message),
+    KeyDown(keyboard::Key, keyboard::Modifiers),
 }
 #[derive(Clone, Default)]
 struct App {
@@ -32,6 +35,16 @@ impl App {
         let nav = Element::new(self.nav.view()).map(Message::NavView);
         let page = self.page.view().map(Message::Page);
         iced::widget::row![nav, page]
+    }
+    pub fn move_dir_auto(&mut self, dir: Direction) -> Task<Message> {
+        if let AppPage::Library(inner_lib) = &mut self.page {
+            inner_lib
+                .update(library::Message::MoveInDir(dir))
+                .map(PageMessage::Library)
+                .map(Message::Page)
+        } else {
+            Task::none()
+        }
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
@@ -74,6 +87,16 @@ impl App {
                 }
             }
             Message::Page(p) => self.page.update(p).map(Message::Page),
+            Message::KeyDown(keyboard::Key::Named(Named::ArrowUp), _) => {
+                self.move_dir_auto(Direction::Up)
+            }
+            Message::KeyDown(keyboard::Key::Named(Named::ArrowDown), _) => {
+                self.move_dir_auto(Direction::Down)
+            }
+            msg => {
+                println!("{:?}", msg);
+                Task::none()
+            }
         }
     }
 }
@@ -97,6 +120,7 @@ pub async fn main() -> iced::Result {
 
     let settings = settings::load().ok().unwrap_or_default();
     iced::application(AppTitle, App::update, App::view)
+        .subscription(|_| keyboard::on_key_press(|key, mods| Some(Message::KeyDown(key, mods))))
         .subscription(|_| Subscription::run(startup_msg_worker).map(|_| Message::Startup))
         .theme(move |_| settings.appearance.theme.into())
         .run()

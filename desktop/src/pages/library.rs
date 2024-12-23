@@ -3,7 +3,7 @@ use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
-use gami_backend::{db, get_actions, GameAction, GameTextField, ADDONS};
+use gami_backend::{db, get_actions, Direction, GameAction, GameTextField, ADDONS};
 use gami_sdk::{GameCommon, GameData, GameInstallStatus, GameLibrary};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
@@ -76,6 +76,7 @@ pub enum Message {
     CloseEditor,
     EditorTextChanged(GameTextField, String),
     SaveEditor,
+    MoveInDir(Direction),
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -524,6 +525,19 @@ impl LibraryPage {
                     SortOrder::Descending => SortOrder::Ascending,
                 };
                 return self.update(Message::ReloadCache);
+            }
+            Message::MoveInDir(direction) => {
+                match self.view_type {
+                    LibraryViewType::Table | LibraryViewType::List => {
+                        // basic vertical
+                        match direction {
+                            Direction::Up => self.curr_index -= 1,
+                            Direction::Down => self.curr_index += 1,
+                            _ => {}
+                        }
+                    }
+                    LibraryViewType::Grid => todo!(),
+                }
             }
             v => println!("{:?}", v),
         }
