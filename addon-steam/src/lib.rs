@@ -13,6 +13,8 @@ pub use models::*;
 use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
 use std::collections::{BTreeMap, HashMap};
+use std::ffi::{OsStr, OsString};
+use std::os::windows::process::CommandExt;
 use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -31,14 +33,40 @@ const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
         .build()
         .unwrap()
 });
+
+fn wrap_in_quotes<T: AsRef<OsStr>>(path: T) -> OsString {
+    let mut result = OsString::from("\"");
+    result.push(path);
+    result.push("\"");
+
+    result
+}
+#[cfg(target_os = "windows")]
+fn map_open_url_command(url: &str) -> Command {
+    let mut cmd = Command::new("cmd");
+    cmd.arg("/c")
+        .arg("start")
+        .raw_arg("\"\"")
+        .raw_arg(wrap_in_quotes(url))
+        .creation_flags(CREATE_NO_WINDOW);
+    cmd
+}
+#[cfg(target_os = "linux")]
+fn map_open_url_command(url: &str) -> Command {
+    let mut cmd = Command::new("xdg-open");
+    cmd.arg(url);
+    cmd
+}
+#[cfg(target_os = "macos")]
+fn map_open_url_command(url: &str) -> Command {
+    let mut cmd = Command::new("/usr/bin/open");
+    cmd.arg(url);
+    cmd
+}
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 fn run_cmd(cmd: &'static str, id: &str) {
     let raw = format!("steam://{}/{}", cmd, id);
-    let mut cmd = Command::new(if cfg!(target_os = "linux") {
-        "xdg-open"
-    } else {
-        "open"
-    });
-    cmd.arg(&raw);
+    let mut cmd = map_open_url_command(&raw);
     debug!("run : {:?} raw={}", cmd, raw);
     cmd.spawn().unwrap().wait().unwrap();
 }
