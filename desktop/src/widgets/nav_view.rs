@@ -36,6 +36,11 @@ const PAGES: &[PageInfo] = &[
         location: NavLocation::Bottom,
     },
     PageInfo {
+        icon: include_bytes!("../icons/tabler--tools.svg"),
+        name: "Tools",
+        location: NavLocation::Bottom,
+    },
+    PageInfo {
         icon: include_bytes!("../icons/tabler--settings.svg"),
         name: "Settings",
         location: NavLocation::Bottom,

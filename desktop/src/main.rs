@@ -2,6 +2,7 @@ use crate::pages::achievements::Achievements;
 use crate::pages::library;
 use crate::pages::library::LibraryPage;
 use crate::pages::settings::SettingsPage;
+use crate::pages::tools::ToolsPage;
 use crate::widgets::nav_view::NavView;
 use gami_backend::Direction;
 use iced::application::Title;
@@ -66,7 +67,8 @@ impl App {
                             0 => AppPage::Library(LibraryPage::new()),
                             1 => AppPage::Achievements(Achievements::default()),
                             2 => AppPage::AddOns(AddOns::new()),
-                            3 => AppPage::Settings(SettingsPage::default()),
+                            3 => AppPage::Tools(ToolsPage::default()),
+                            4 => AppPage::Settings(SettingsPage::default()),
                             _ => {
                                 log::error!("No such page with index {}", index);
                                 self.page.clone()

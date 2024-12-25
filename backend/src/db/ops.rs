@@ -1,7 +1,10 @@
 use crate::db::game;
 use crate::db::game::Column;
+use crate::db::game_genres::Relation::Genre;
 use crate::{db, ADDONS};
 use db::game::Entity as GameEntity;
+use db::game_genres::Entity as GameGenresEntity;
+use db::genre::Entity as GenreEntity;
 use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
@@ -18,6 +21,17 @@ pub async fn delete_game(game_id: i32) {
         .await
         .unwrap();
 }
+
+pub async fn clear_all() {
+    let mut conn = db::connect().await;
+    GameEntity::delete_many().exec(&mut conn).await.unwrap();
+    GenreEntity::delete_many().exec(&mut conn).await.unwrap();
+    GameGenresEntity::delete_many()
+        .exec(&mut conn)
+        .await
+        .unwrap();
+}
+
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
