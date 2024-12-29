@@ -9,7 +9,7 @@ use iced::application::Title;
 use iced::futures::{SinkExt, Stream};
 use iced::keyboard::key::Named;
 use iced::widget::Row;
-use iced::{keyboard, stream, window, Element, Subscription, Task};
+use iced::{keyboard, stream, Element, Subscription, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
