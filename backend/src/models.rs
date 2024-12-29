@@ -16,3 +16,10 @@ pub enum GameDateField {
 pub enum GameDurationField {
     TimePlayed,
 }
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Direction {
+    Left,
+    Right,
+    Up,
+    Down,
+}

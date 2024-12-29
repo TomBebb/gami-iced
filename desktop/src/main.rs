@@ -4,10 +4,12 @@ use crate::pages::library::LibraryPage;
 use crate::pages::settings::SettingsPage;
 use crate::pages::tools::ToolsPage;
 use crate::widgets::nav_view::NavView;
+use gami_backend::Direction;
 use iced::application::Title;
 use iced::futures::{SinkExt, Stream};
+use iced::keyboard::key::Named;
 use iced::widget::Row;
-use iced::{stream, window, Element, Subscription, Task};
+use iced::{keyboard, stream, Element, Subscription, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
@@ -21,6 +23,7 @@ enum Message {
     Startup,
     Page(PageMessage),
     NavView(widgets::nav_view::Message),
+    KeyDown(keyboard::Key, keyboard::Modifiers),
 }
 #[derive(Clone, Default)]
 struct App {
@@ -34,18 +37,28 @@ impl App {
         let page = self.page.view().map(Message::Page);
         iced::widget::row![nav, page]
     }
+    pub fn move_dir_auto(&mut self, dir: Direction) -> Task<Message> {
+        if let AppPage::Library(inner_lib) = &mut self.page {
+            inner_lib
+                .update(library::Message::MoveInDir(dir))
+                .map(PageMessage::Library)
+                .map(Message::Page)
+        } else {
+            Task::none()
+        }
+    }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Startup => window::get_oldest()
-                .and_then(window::gain_focus::<Message>)
-                .chain(if let AppPage::Library(inner_lib) = &mut self.page {
+            Message::Startup => {
+                if let AppPage::Library(inner_lib) = &mut self.page {
                     inner_lib
                         .update(library::Message::ReloadCache)
                         .map(PageMessage::Library)
                         .map(Message::Page)
                 } else {
                     Task::none()
-                }),
+                }
+            }
             Message::NavView(v) => {
                 self.nav.update(v);
                 match v {
@@ -76,6 +89,16 @@ impl App {
                 }
             }
             Message::Page(p) => self.page.update(p).map(Message::Page),
+            Message::KeyDown(keyboard::Key::Named(Named::ArrowUp), _) => {
+                self.move_dir_auto(Direction::Up)
+            }
+            Message::KeyDown(keyboard::Key::Named(Named::ArrowDown), _) => {
+                self.move_dir_auto(Direction::Down)
+            }
+            msg => {
+                println!("{:?}", msg);
+                Task::none()
+            }
         }
     }
 }
@@ -99,7 +122,12 @@ pub async fn main() -> iced::Result {
 
     let settings = settings::load().ok().unwrap_or_default();
     iced::application(AppTitle, App::update, App::view)
-        .subscription(|_| Subscription::run(startup_msg_worker).map(|_| Message::Startup))
+        .subscription(|_| {
+            Subscription::batch([
+                keyboard::on_key_press(|key, mods| Some(Message::KeyDown(key, mods))),
+                Subscription::run(startup_msg_worker).map(|_| Message::Startup),
+            ])
+        })
         .theme(move |_| settings.appearance.theme.into())
         .run()
 }
