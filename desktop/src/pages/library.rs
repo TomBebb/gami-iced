@@ -532,7 +532,9 @@ impl LibraryPage {
                         // basic vertical
                         match direction {
                             Direction::Up if self.curr_index != 0 => self.curr_index -= 1,
-                            Direction::Down if self.curr_index + 1 < self.games.len() => self.curr_index += 1,
+                            Direction::Down if self.curr_index + 1 < self.games.len() => {
+                                self.curr_index += 1
+                            }
                             _ => {}
                         }
                     }
