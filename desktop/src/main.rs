@@ -7,7 +7,7 @@ use crate::widgets::nav_view::NavView;
 use iced::application::Title;
 use iced::futures::{SinkExt, Stream};
 use iced::widget::Row;
-use iced::{stream, Element, Subscription, Task};
+use iced::{stream, window, Element, Subscription, Task};
 use pages::add_ons::AddOns;
 use pages::app_page::{AppPage, PageMessage};
 
@@ -36,16 +36,16 @@ impl App {
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Startup => {
-                if let AppPage::Library(inner_lib) = &mut self.page {
+            Message::Startup => window::get_oldest()
+                .and_then(window::gain_focus::<Message>)
+                .chain(if let AppPage::Library(inner_lib) = &mut self.page {
                     inner_lib
                         .update(library::Message::ReloadCache)
                         .map(PageMessage::Library)
                         .map(Message::Page)
                 } else {
                     Task::none()
-                }
-            }
+                }),
             Message::NavView(v) => {
                 self.nav.update(v);
                 match v {
