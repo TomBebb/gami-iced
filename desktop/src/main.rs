@@ -122,8 +122,12 @@ pub async fn main() -> iced::Result {
 
     let settings = settings::load().ok().unwrap_or_default();
     iced::application(AppTitle, App::update, App::view)
-        .subscription(|_| keyboard::on_key_press(|key, mods| Some(Message::KeyDown(key, mods))))
-        .subscription(|_| Subscription::run(startup_msg_worker).map(|_| Message::Startup))
+        .subscription(|_| {
+            Subscription::batch([
+                keyboard::on_key_press(|key, mods| Some(Message::KeyDown(key, mods))),
+                Subscription::run(startup_msg_worker).map(|_| Message::Startup),
+            ])
+        })
         .theme(move |_| settings.appearance.theme.into())
         .run()
 }
