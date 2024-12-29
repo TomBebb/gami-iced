@@ -1,5 +1,4 @@
 use crate::pages;
-use iced::application::Update;
 use iced::{Element, Task};
 
 #[derive(Debug, Clone)]

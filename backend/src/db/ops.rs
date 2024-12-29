@@ -1,6 +1,5 @@
 use crate::db::game;
 use crate::db::game::Column;
-use crate::db::game_genres::Relation::Genre;
 use crate::{db, ADDONS};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
