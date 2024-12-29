@@ -531,8 +531,8 @@ impl LibraryPage {
                     LibraryViewType::Table | LibraryViewType::List => {
                         // basic vertical
                         match direction {
-                            Direction::Up => self.curr_index -= 1,
-                            Direction::Down => self.curr_index += 1,
+                            Direction::Up if self.curr_index != 0 => self.curr_index -= 1,
+                            Direction::Down if self.curr_index + 1 < self.games.len() => self.curr_index += 1,
                             _ => {}
                         }
                     }
