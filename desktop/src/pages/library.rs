@@ -368,17 +368,28 @@ impl LibraryPage {
                     .enumerate()
                     .map(|(index, game)| {
                         let raw_icon_url = game.icon_url.as_ref().map(String::as_str).unwrap_or("");
+                        let icon_url: Option<Url> = if raw_icon_url.is_empty() {
+                            None
+                        } else {
+                            Some(Url::parse(raw_icon_url).unwrap())
+                        };
+                        let icon_path = if let Some(url) = icon_url.as_ref() {
+                            let mut raw = urlencoding::decode(url.path()).unwrap();
+                            if cfg!(windows) {
+                                let my_path: String = (&raw[1..]).into();
+                                raw = my_path.into();
+                            }
+                            raw
+                        } else {
+                            "".into()
+                        };
+
                         (
                             game,
                             Element::from(
                                 button(
                                     row![
-                                        image(if raw_icon_url.is_empty() {
-                                            "".into()
-                                        } else {
-                                            Url::parse(raw_icon_url).unwrap().path().to_owned()
-                                        })
-                                        .width(32),
+                                        image(icon_path.as_ref()).width(32),
                                         text(&game.name).width(Fill),
                                         Svg::new(Self::auto_installer_icon(game.install_status))
                                             .width(Length::Shrink),
