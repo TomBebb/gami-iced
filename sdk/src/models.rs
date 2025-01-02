@@ -96,6 +96,16 @@ impl GameCommon for ScannedGameLibraryMetadata {
         }
     }
 }
+
+#[derive(Clone, Debug, Default)]
+pub enum CompletionStatus {
+    Playing,
+    #[default]
+    Backlog,
+    OnHold,
+    Played,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct GameData {
     pub id: i32,
@@ -111,6 +121,7 @@ pub struct GameData {
     pub hero_url: Option<RString>,
     pub library_type: RString,
     pub library_id: RString,
+    pub play_status: CompletionStatus,
 }
 impl GameCommon for GameData {
     fn get_ref(&self) -> GameLibraryRef {
