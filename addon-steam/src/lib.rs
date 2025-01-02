@@ -32,6 +32,7 @@ pub struct SteamLibrary {
 
 const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     runtime::Builder::new_multi_thread()
+        .enable_time()
         .enable_io()
         .build()
         .unwrap()
