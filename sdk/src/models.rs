@@ -1,6 +1,6 @@
 use crate::GameCommon;
 use ::safer_ffi::prelude::*;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, TimeDelta, Utc};
 use safer_ffi::option::TaggedOption;
 use safer_ffi::string::str_ref;
 use safer_ffi::{String, Vec};
@@ -84,6 +84,24 @@ impl Default for ScannedGameLibraryMetadata {
         }
     }
 }
+
+impl Into<GameData> for ScannedGameLibraryMetadata {
+    fn into(self) -> GameData {
+        GameData {
+            name: self.name.into(),
+            library_type: self.library_type.into(),
+            library_id: self.library_id.into(),
+            last_played: self
+                .last_played_epoch
+                .into_rust()
+                .and_then(|v| DateTime::from_timestamp(v as i64, 0)),
+            install_status: self.install_status,
+            play_time: Duration::from(TimeDelta::seconds(self.playtime_secs as i64)),
+            icon_url: self.icon_url.into_rust().map(RString::from),
+            ..GameData::default()
+        }
+    }
+}
 impl GameCommon for ScannedGameLibraryMetadata {
     fn get_ref(&self) -> GameLibraryRef {
         let id_str: &str = &self.library_id;
@@ -110,8 +128,10 @@ pub struct GameMetadata {
     pub tags: Vec<String>,
     pub release_date_timestamp: TaggedOption<u32>,
     pub last_played_timestamp: TaggedOption<u32>,
+    pub icon_url: TaggedOption<String>,
+    pub cover_url: TaggedOption<String>,
+    pub header_url: TaggedOption<String>,
 }
-
 pub trait EditableEnum: fmt::Display + Sized + PartialEq + 'static {
     const ALL: &'static [Self];
 }
@@ -149,11 +169,26 @@ pub struct GameData {
     pub last_played: Option<DateTime<Utc>>,
     pub icon_url: Option<RString>,
     pub header_url: Option<RString>,
-    pub logo_url: Option<RString>,
-    pub hero_url: Option<RString>,
+    pub cover_url: Option<RString>,
     pub library_type: RString,
     pub library_id: RString,
     pub completion_status: CompletionStatus,
+}
+impl GameData {
+    pub fn extend(&mut self, metadata: GameMetadata) {
+        if let TaggedOption::Some(description) = metadata.description {
+            self.description = description.into();
+        }
+        if let TaggedOption::Some(icon_url) = metadata.icon_url {
+            self.icon_url = Some(icon_url.into());
+        }
+        if let TaggedOption::Some(header_url) = metadata.header_url {
+            self.header_url = Some(header_url.into());
+        }
+        if let TaggedOption::Some(cover_url) = metadata.cover_url {
+            self.cover_url = Some(cover_url.into());
+        }
+    }
 }
 impl GameCommon for GameData {
     fn get_ref(&self) -> GameLibraryRef {

@@ -1,11 +1,12 @@
 use crate::db::game;
 use crate::db::game::Column;
 use crate::{db, ADDONS};
+use chrono::{DateTime, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::GameData;
 use gami_sdk::GameLibrary;
+use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
@@ -34,7 +35,7 @@ pub async fn clear_all() {
 pub async fn sync_library() {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
-            let items = lib.scan();
+            let items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
             log::info!("Pushing {} games to DB", items.len());
             let conn = db::connect().await;
             let mut raw = Query::insert();
@@ -54,19 +55,23 @@ pub async fn sync_library() {
                     Column::LibraryType,
                     Column::LibraryId,
                 ]));
-            for item in items {
+            for mut item in items {
+                if let Some(scanner) = ADDONS.get_game_metadata(key) {
+                    if let Some(metadata) = scanner.get_metadata(GameCommon::get_ref(&item)) {
+                        item.extend(metadata);
+                    }
+                }
                 query_raw = query_raw.values_panic(vec![
                     item.library_type.to_string().into(),
                     item.library_id.to_string().into(),
                     item.name.to_string().into(),
-                    "".into(),
+                    item.description.into(),
                     (item.install_status as u8).into(),
-                    item.playtime_secs.into(),
-                    item.last_played_epoch.into_rust().into(),
-                    item.icon_url
-                        .into_rust()
-                        .map(<safer_ffi::String as Into<String>>::into)
+                    item.play_time.num_seconds().into(),
+                    item.last_played
+                        .map(|v: DateTime<Utc>| v.timestamp())
                         .into(),
+                    item.icon_url.into(),
                 ]);
             }
             let mut query = query_raw.to_string(SqliteQueryBuilder);
@@ -159,7 +164,6 @@ pub async fn update_game(game: GameData) {
     let mut conn = db::connect().await;
     GameEntity::update(game::ActiveModel {
         id: ActiveValue::Set(game.id),
-        logo_url: ActiveValue::Set(game.logo_url),
         icon_url: ActiveValue::Set(game.icon_url),
         name: ActiveValue::Set(game.name),
         header_url: ActiveValue::Set(game.header_url),
@@ -167,7 +171,7 @@ pub async fn update_game(game: GameData) {
         library_id: ActiveValue::Set(game.library_id),
         install_status: ActiveValue::Set(game.install_status.into()),
         description: ActiveValue::Set(game.description),
-        hero_url: ActiveValue::Set(game.hero_url),
+        cover_url: ActiveValue::Set(game.cover_url),
         last_played: ActiveValue::Set(game.last_played),
         play_time_secs: ActiveValue::Set(game.play_time.num_seconds()),
         release_date: ActiveValue::Set(game.release_date),

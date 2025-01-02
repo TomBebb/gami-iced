@@ -4,8 +4,7 @@ pub enum GameTextField {
     Description,
     IconUrl,
     HeaderUrl,
-    LogoUrl,
-    HeroUrl,
+    CoverUrl,
 }
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GameDateField {

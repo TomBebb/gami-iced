@@ -1,4 +1,7 @@
-use gami_sdk::{ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata, GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR};
+use gami_sdk::{
+    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata,
+    GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
+};
 use libloading::Library;
 use std::collections::HashMap;
 use std::ffi::OsStr;
