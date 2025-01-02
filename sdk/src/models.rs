@@ -3,7 +3,7 @@ use ::safer_ffi::prelude::*;
 use chrono::{DateTime, Duration, Utc};
 use safer_ffi::option::TaggedOption;
 use safer_ffi::string::str_ref;
-use safer_ffi::String;
+use safer_ffi::{String, Vec};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::string::String as RString;
@@ -95,6 +95,21 @@ impl GameCommon for ScannedGameLibraryMetadata {
             name: name_str.into(),
         }
     }
+}
+
+#[derive_ReprC]
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct GameMetadata {
+    pub description: TaggedOption<String>,
+    pub developers: Vec<String>,
+    pub genres: Vec<String>,
+    pub platforms: Vec<String>,
+    pub publishers: Vec<String>,
+    pub series: Vec<String>,
+    pub tags: Vec<String>,
+    pub release_date_timestamp: TaggedOption<u32>,
+    pub last_played_timestamp: TaggedOption<u32>,
 }
 
 pub trait EditableEnum: fmt::Display + Sized + PartialEq + 'static {
