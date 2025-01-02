@@ -45,6 +45,7 @@ impl GameLibrary for GameLibraryProxy {
 #[derive(Default)]
 pub struct ExternalAddons {
     game_libs: HashMap<String, GameLibraryProxy>,
+    meta_scanners: HashMap<String, GameMetadataScannerProxy>,
     metas: Vec<PluginMetadata>,
     libraries: Vec<Arc<Library>>,
 }
@@ -65,6 +66,10 @@ impl ExternalAddons {
         self.game_libs.get(name)
     }
 
+    pub fn get_game_metadata(&self, name: &str) -> Option<&GameMetadataScannerProxy> {
+        self.meta_scanners.get(name)
+    }
+
     pub unsafe fn auto_load_addons(&mut self) -> io::Result<()> {
         log::info!("Automatically loading addons");
 
@@ -82,7 +87,11 @@ impl ExternalAddons {
                 println!("Loaded {}", path.display());
             }
         }
-        log::info!("loaded addons");
+        log::info!(
+            "loaded addons; library: {:?}; metadata: {:?}",
+            self.game_libs.keys(),
+            self.meta_scanners.keys()
+        );
         Ok(())
     }
 
@@ -122,6 +131,7 @@ impl ExternalAddons {
 
         // add all loaded plugins to the functions map
         self.game_libs.extend(registrar.game_libs);
+        self.meta_scanners.extend(registrar.game_meta_scanners);
         // and make sure ExternalFunctions keeps a reference to the library
         self.libraries.push(library);
         self.metas.push(metadata);
@@ -159,7 +169,11 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
         };
         self.game_libs.insert(name.to_string(), proxy);
     }
-    fn register_metadata(&mut self, name: &str, lib: Arc<dyn GameMetadataScanner + Send + Sync>) {
+    fn register_metadata_scanner(
+        &mut self,
+        name: &str,
+        lib: Arc<dyn GameMetadataScanner + Send + Sync>,
+    ) {
         let proxy = GameMetadataScannerProxy {
             inner: lib,
             _lib: Arc::clone(&self.lib),

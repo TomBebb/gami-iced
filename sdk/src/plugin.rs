@@ -37,7 +37,7 @@ pub trait PluginRegistrar {
         schema: HashMap<std::string::String, ConfigSchemaMetadata>,
     );
     fn register_library(&mut self, name: &str, function: Arc<dyn GameLibrary + Send + Sync>);
-    fn register_metadata(
+    fn register_metadata_scanner(
         &mut self,
         name: &str,
         function: Arc<dyn GameMetadataScanner + Send + Sync>,

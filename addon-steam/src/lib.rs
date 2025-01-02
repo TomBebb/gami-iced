@@ -174,7 +174,7 @@ register_plugin!(register, ID, "Steam");
 #[no_mangle]
 extern "C" fn register(registrar: &mut dyn PluginRegistrar) {
     registrar.register_library("steam", Arc::new(SteamLibrary::default()));
-    registrar.register_metadata("steam", Arc::new(StoreMetadataScanner));
+    registrar.register_metadata_scanner("steam", Arc::new(StoreMetadataScanner));
 
     let mut conf: HashMap<String, ConfigSchemaMetadata> = HashMap::with_capacity(2);
     conf.insert(
