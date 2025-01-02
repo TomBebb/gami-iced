@@ -4,7 +4,9 @@ use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, Direction, GameAction, GameTextField, ADDONS};
-use gami_sdk::{EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary};
+use gami_sdk::{
+    CompletionStatus, EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary,
+};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
@@ -75,6 +77,7 @@ pub enum Message {
     ToggleSortDirection,
     CloseEditor,
     EditorTextChanged(GameTextField, String),
+    EditorCompletionStatusChanged(CompletionStatus),
     SaveEditor,
     MoveInDir(Direction),
 }
@@ -309,9 +312,11 @@ impl LibraryPage {
                 game.logo_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
                 "Enter logo URL"
             ),
-            editor_enum_row("Completion Status", game.completion_status, |_| {
-                Message::ReloadCache
-            }),
+            editor_enum_row(
+                "Completion Status",
+                game.completion_status,
+                Message::EditorCompletionStatusChanged
+            ),
             number_input("Enter ID", game.id.clone())
                 .map(|v| Message::SearchChanged(format!("{:?}", v)))
         ]
@@ -536,6 +541,11 @@ impl LibraryPage {
                         GameTextField::LogoUrl => edit_game.logo_url = map_opt_empty(value),
                         GameTextField::HeroUrl => edit_game.hero_url = map_opt_empty(value),
                     }
+                }
+            }
+            Message::EditorCompletionStatusChanged(status) => {
+                if let Some(edit_game) = self.edit_game.as_mut() {
+                    edit_game.completion_status = status;
                 }
             }
             Message::SelectGame(index) => {
