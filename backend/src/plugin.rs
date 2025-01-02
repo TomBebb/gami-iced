@@ -1,6 +1,6 @@
 use gami_sdk::{
-    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, PluginDeclaration,
-    PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
+    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadataScanner,
+    PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
 use std::collections::HashMap;
@@ -14,6 +14,11 @@ use std::{fs, io};
 #[derive(Clone)]
 pub struct GameLibraryProxy {
     pub inner: Arc<dyn GameLibrary + Send + Sync>,
+    pub _lib: Arc<Library>,
+}
+#[derive(Clone)]
+pub struct GameMetadataScannerProxy {
+    pub inner: Arc<dyn GameMetadataScanner + Send + Sync>,
     pub _lib: Arc<Library>,
 }
 impl GameLibrary for GameLibraryProxy {
@@ -126,6 +131,7 @@ impl ExternalAddons {
 }
 struct PluginRegistrar {
     game_libs: HashMap<String, GameLibraryProxy>,
+    game_meta_scanners: HashMap<String, GameMetadataScannerProxy>,
     configs: HashMap<String, HashMap<String, ConfigSchemaMetadata>>,
     lib: Arc<Library>,
 }
@@ -136,6 +142,7 @@ impl PluginRegistrar {
             lib,
             configs: HashMap::default(),
             game_libs: HashMap::default(),
+            game_meta_scanners: HashMap::default(),
         }
     }
 }
@@ -151,5 +158,12 @@ impl gami_sdk::PluginRegistrar for PluginRegistrar {
             _lib: Arc::clone(&self.lib),
         };
         self.game_libs.insert(name.to_string(), proxy);
+    }
+    fn register_metadata(&mut self, name: &str, lib: Arc<dyn GameMetadataScanner + Send + Sync>) {
+        let proxy = GameMetadataScannerProxy {
+            inner: lib,
+            _lib: Arc::clone(&self.lib),
+        };
+        self.game_meta_scanners.insert(name.to_string(), proxy);
     }
 }
