@@ -96,6 +96,33 @@ impl GameCommon for ScannedGameLibraryMetadata {
         }
     }
 }
+
+pub trait EditableEnum: fmt::Display + Sized + PartialEq + 'static {
+    const ALL: &'static [Self];
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub enum CompletionStatus {
+    #[default]
+    Backlog,
+    Playing,
+    Played,
+    OnHold,
+}
+
+impl EditableEnum for CompletionStatus {
+    const ALL: &'static [Self] = &[Self::Backlog, Self::Playing, Self::Played, Self::OnHold];
+}
+impl fmt::Display for CompletionStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            CompletionStatus::Backlog => "Backlog",
+            CompletionStatus::Playing => "Playing",
+            CompletionStatus::Played => "Played",
+            CompletionStatus::OnHold => "OnHold",
+        })
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct GameData {
     pub id: i32,
@@ -111,6 +138,7 @@ pub struct GameData {
     pub hero_url: Option<RString>,
     pub library_type: RString,
     pub library_id: RString,
+    pub completion_status: CompletionStatus,
 }
 impl GameCommon for GameData {
     fn get_ref(&self) -> GameLibraryRef {

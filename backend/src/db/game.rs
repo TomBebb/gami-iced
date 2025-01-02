@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, Utc};
-use gami_sdk::{GameData, GameInstallStatus, IsGameLibraryRef};
+use gami_sdk::{CompletionStatus, GameData, GameInstallStatus, IsGameLibraryRef};
 use sea_orm::entity::prelude::*;
 use sea_orm::{DeriveActiveEnum, DeriveEntityModel, EnumIter};
 #[derive(EnumIter, DeriveActiveEnum, Copy, Clone, Debug, PartialEq, Eq)]
@@ -31,6 +31,36 @@ impl Into<GameInstallStatus> for DbGameInstallStatus {
         }
     }
 }
+
+#[derive(EnumIter, DeriveActiveEnum, Copy, Clone, Debug, PartialEq, Eq)]
+#[sea_orm(rs_type = "u8", db_type = "Integer")]
+#[repr(u8)]
+pub enum DbGameCompletionStatus {
+    Backlog = 0,
+    Playing = 1,
+    Played = 2,
+    OnHold = 3,
+}
+impl From<CompletionStatus> for DbGameCompletionStatus {
+    fn from(value: CompletionStatus) -> Self {
+        match value {
+            CompletionStatus::Backlog => Self::Backlog,
+            CompletionStatus::Playing => Self::Playing,
+            CompletionStatus::Played => Self::Played,
+            CompletionStatus::OnHold => Self::OnHold,
+        }
+    }
+}
+impl Into<CompletionStatus> for DbGameCompletionStatus {
+    fn into(self) -> CompletionStatus {
+        match self {
+            Self::Backlog => CompletionStatus::Backlog,
+            Self::Playing => CompletionStatus::Playing,
+            Self::Played => CompletionStatus::Played,
+            Self::OnHold => CompletionStatus::OnHold,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "games")]
 pub struct Model {
@@ -48,6 +78,7 @@ pub struct Model {
     pub hero_url: Option<String>,
     pub library_type: String,
     pub library_id: String,
+    pub completion_status: DbGameCompletionStatus,
 }
 impl Into<GameData> for Model {
     fn into(self) -> GameData {
@@ -65,6 +96,7 @@ impl Into<GameData> for Model {
             logo_url: self.logo_url,
             release_date: self.release_date,
             play_time: Duration::seconds(self.play_time_secs),
+            completion_status: self.completion_status.into(),
         }
     }
 }
@@ -84,6 +116,7 @@ impl Default for Game {
             hero_url: None,
             library_type: String::new(),
             library_id: String::new(),
+            completion_status: CompletionStatus::Backlog.into(),
         }
     }
 }

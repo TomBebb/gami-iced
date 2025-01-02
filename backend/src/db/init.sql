@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS "games"
     INT
     NOT
     NULL,
+    "completion_status"
+    INT
+    DEFAULT 0,
     "library_type"
     TEXT
     NOT

@@ -99,6 +99,7 @@ pub enum SortField {
     LastPlayed,
     Playtime,
     ReleaseDate,
+    CompletionStatus,
 }
 impl fmt::Display for SortField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -107,15 +108,17 @@ impl fmt::Display for SortField {
             Self::LastPlayed => "Last played",
             Self::Playtime => "Playtime",
             Self::ReleaseDate => "Release date",
+            Self::CompletionStatus => "Completion status",
         })
     }
 }
 impl SortField {
-    pub const ALL: [SortField; 4] = [
+    pub const ALL: [SortField; 5] = [
         SortField::Name,
         SortField::LastPlayed,
         SortField::Playtime,
         SortField::ReleaseDate,
+        SortField::CompletionStatus,
     ];
 }
 impl Into<Column> for SortField {
@@ -125,6 +128,7 @@ impl Into<Column> for SortField {
             Self::LastPlayed => Column::LastPlayed,
             Self::Playtime => Column::PlayTimeSecs,
             Self::ReleaseDate => Column::ReleaseDate,
+            Self::CompletionStatus => Column::CompletionStatus,
         }
     }
 }
@@ -167,6 +171,7 @@ pub async fn update_game(game: GameData) {
         last_played: ActiveValue::Set(game.last_played),
         play_time_secs: ActiveValue::Set(game.play_time.num_seconds()),
         release_date: ActiveValue::Set(game.release_date),
+        completion_status: ActiveValue::Set(game.completion_status.into()),
     })
     .exec(&mut conn)
     .await
