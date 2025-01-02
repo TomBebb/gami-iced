@@ -8,9 +8,9 @@ pub struct AppDetailsData {
     pub short_description: String,
     pub about_the_game: String,
     pub website: Option<String>,
-    pub developers: Vec<String>,
-    pub publishers: Vec<String>,
-    pub genres: Vec<AppGenre>,
+    pub developers: Option<Vec<String>>,
+    pub publishers: Option<Vec<String>>,
+    pub genres: Option<Vec<AppGenre>>,
     pub release_date: Option<AppReleaseDate>,
 }
 
