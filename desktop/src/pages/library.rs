@@ -4,7 +4,7 @@ use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{db, get_actions, Direction, GameAction, GameTextField, ADDONS};
-use gami_sdk::{GameCommon, GameData, GameInstallStatus, GameLibrary};
+use gami_sdk::{EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary};
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
@@ -234,6 +234,17 @@ impl LibraryPage {
                     .on_input(move |txt| Message::EditorTextChanged(field, txt)),
             )
         }
+        fn editor_enum_row<'a, TEnum, TMapper>(
+            name: &'a str,
+            curr: TEnum,
+            mapper: TMapper,
+        ) -> Row<'a, Message>
+        where
+            TEnum: Copy + EditableEnum,
+            TMapper: Fn(TEnum) -> Message + 'a,
+        {
+            editor_row(name, pick_list(TEnum::ALL, Some(curr), mapper))
+        }
         fn editor_btn(
             text_content: &'static str,
             bytes: &'static [u8],
@@ -298,6 +309,9 @@ impl LibraryPage {
                 game.logo_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
                 "Enter logo URL"
             ),
+            editor_enum_row("Completion Status", game.completion_status, |_| {
+                Message::ReloadCache
+            }),
             number_input("Enter ID", game.id.clone())
                 .map(|v| Message::SearchChanged(format!("{:?}", v)))
         ]

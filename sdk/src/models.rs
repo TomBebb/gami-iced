@@ -97,7 +97,11 @@ impl GameCommon for ScannedGameLibraryMetadata {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+pub trait EditableEnum: fmt::Display + Sized + PartialEq + 'static {
+    const ALL: &'static [Self];
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum CompletionStatus {
     #[default]
     Backlog,
@@ -106,6 +110,19 @@ pub enum CompletionStatus {
     OnHold,
 }
 
+impl EditableEnum for CompletionStatus {
+    const ALL: &'static [Self] = &[Self::Backlog, Self::Playing, Self::Played, Self::OnHold];
+}
+impl fmt::Display for CompletionStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            CompletionStatus::Backlog => "Backlog",
+            CompletionStatus::Playing => "Playing",
+            CompletionStatus::Played => "Played",
+            CompletionStatus::OnHold => "OnHold",
+        })
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct GameData {
     pub id: i32,
