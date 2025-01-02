@@ -167,6 +167,7 @@ pub async fn update_game(game: GameData) {
         last_played: ActiveValue::Set(game.last_played),
         play_time_secs: ActiveValue::Set(game.play_time.num_seconds()),
         release_date: ActiveValue::Set(game.release_date),
+        completion_status: ActiveValue::Set(game.completion_status.into()),
     })
     .exec(&mut conn)
     .await
