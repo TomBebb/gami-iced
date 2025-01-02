@@ -361,6 +361,7 @@ impl LibraryPage {
             detail_row_text("ID", curr.id.to_string()),
             detail_row_text("Last Played", last_played),
             detail_row_text("Install Status", curr.install_status.to_string()),
+            detail_row_text("Completion Status", curr.completion_status.to_string()),
             detail_row_text("Playtime", curr.play_time.to_string()),
             detail_row_text(
                 "Release Date",
