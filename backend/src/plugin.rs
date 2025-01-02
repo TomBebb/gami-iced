@@ -1,7 +1,4 @@
-use gami_sdk::{
-    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadataScanner,
-    PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
-};
+use gami_sdk::{ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata, GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR};
 use libloading::Library;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -14,11 +11,6 @@ use std::{fs, io};
 #[derive(Clone)]
 pub struct GameLibraryProxy {
     pub inner: Arc<dyn GameLibrary + Send + Sync>,
-    pub _lib: Arc<Library>,
-}
-#[derive(Clone)]
-pub struct GameMetadataScannerProxy {
-    pub inner: Arc<dyn GameMetadataScanner + Send + Sync>,
     pub _lib: Arc<Library>,
 }
 impl GameLibrary for GameLibraryProxy {
@@ -41,7 +33,17 @@ impl GameLibrary for GameLibraryProxy {
         self.inner.check_install_status(game)
     }
 }
+#[derive(Clone)]
+pub struct GameMetadataScannerProxy {
+    pub inner: Arc<dyn GameMetadataScanner + Send + Sync>,
+    pub _lib: Arc<Library>,
+}
 
+impl GameMetadataScanner for GameMetadataScannerProxy {
+    fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata> {
+        self.inner.get_metadata(game)
+    }
+}
 #[derive(Default)]
 pub struct ExternalAddons {
     game_libs: HashMap<String, GameLibraryProxy>,
