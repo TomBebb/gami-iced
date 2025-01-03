@@ -7,7 +7,6 @@ use safer_ffi::{String, Vec};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
-use std::ops::Deref;
 use std::string::String as RString;
 
 pub trait IsGameLibraryRef {
