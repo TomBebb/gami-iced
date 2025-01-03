@@ -27,5 +27,5 @@ pub enum Direction {
 pub enum LibrarySyncState {
     LibraryScan,
     FetchingMetadata,
-    Done
+    Done,
 }

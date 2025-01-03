@@ -3,7 +3,9 @@ use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
-use gami_backend::{db, get_actions, Direction, GameAction, GameTextField, ADDONS};
+use gami_backend::{
+    db, get_actions, Direction, GameAction, GameTextField, LibrarySyncState, ADDONS,
+};
 use gami_sdk::{
     CompletionStatus, EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary,
 };
@@ -80,6 +82,7 @@ pub enum Message {
     EditorCompletionStatusChanged(CompletionStatus),
     SaveEditor,
     MoveInDir(Direction),
+    LibrarySyncStatusChanged(LibrarySyncState),
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -453,7 +456,12 @@ impl LibraryPage {
                 return self.table.update(tbl).map(Message::Table);
             }
             Message::RefreshGames => {
-                return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
+                return Task::perform(
+                    db::ops::sync_library(|v| {
+                        self.update(Message::LibrarySyncStatusChanged(v));
+                    }),
+                    |_| Message::ReloadCache,
+                );
             }
             Message::SearchChanged(query) => {
                 self.filters.search = query;
