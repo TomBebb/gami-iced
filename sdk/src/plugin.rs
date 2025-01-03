@@ -46,6 +46,10 @@ pub trait PluginRegistrar {
 
 pub trait GameMetadataScanner: Send {
     fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata>;
+    fn get_metadatas<'a>(
+        &self,
+        games: &[GameLibraryRef<'a>],
+    ) -> HashMap<GameLibraryRef<'a>, GameMetadata>;
 }
 pub trait GameLibrary: Send {
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;

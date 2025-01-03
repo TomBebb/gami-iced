@@ -6,6 +6,8 @@ use safer_ffi::string::str_ref;
 use safer_ffi::{String, Vec};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::hash::Hash;
+use std::ops::Deref;
 use std::string::String as RString;
 
 pub trait IsGameLibraryRef {
@@ -13,13 +15,57 @@ pub trait IsGameLibraryRef {
     fn get_library_type(&self) -> &str;
     fn get_library_id(&self) -> &str;
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 #[derive_ReprC]
 #[repr(C)]
 pub struct GameLibraryRef<'a> {
     pub name: str_ref<'a>,
     pub library_type: str_ref<'a>,
     pub library_id: str_ref<'a>,
+}
+
+pub struct GameLibraryRefOwned {
+    pub name: RString,
+    pub library_type: RString,
+    pub library_id: RString,
+}
+impl From<GameLibraryRef<'_>> for GameLibraryRefOwned {
+    fn from(game_library: GameLibraryRef<'_>) -> Self {
+        Self {
+            name: game_library.name.into(),
+            library_type: game_library.library_type.into(),
+            library_id: game_library.library_id.into(),
+        }
+    }
+}
+impl GameLibraryRefOwned {
+    pub fn as_ref(&self) -> GameLibraryRef {
+        GameLibraryRef {
+            name: self.name.as_str().into(),
+            library_type: self.library_type.as_str().into(),
+            library_id: self.library_id.as_str().into(),
+        }
+    }
+}
+
+impl<'a> PartialEq for GameLibraryRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        &*self.name == &*other.name
+            && &*self.library_type == &*other.library_type
+            && &*self.library_id == &*other.library_id
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !Self::eq(self, other)
+    }
+}
+impl<'a> Eq for GameLibraryRef<'a> {}
+impl<'a> Hash for GameLibraryRef<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.library_type.hash(state);
+        self.library_id.hash(state);
+    }
 }
 impl<'a> fmt::Display for GameLibraryRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

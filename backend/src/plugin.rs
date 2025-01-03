@@ -46,6 +46,12 @@ impl GameMetadataScanner for GameMetadataScannerProxy {
     fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata> {
         self.inner.get_metadata(game)
     }
+    fn get_metadatas<'a>(
+        &self,
+        games: &[GameLibraryRef<'a>],
+    ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
+        self.inner.get_metadatas(games)
+    }
 }
 #[derive(Default)]
 pub struct ExternalAddons {

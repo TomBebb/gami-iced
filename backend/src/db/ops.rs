@@ -5,8 +5,8 @@ use chrono::{DateTime, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::GameLibrary;
 use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
+use gami_sdk::{GameLibrary, GameLibraryRef};
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
@@ -55,12 +55,23 @@ pub async fn sync_library() {
                     Column::LibraryType,
                     Column::LibraryId,
                 ]));
-            for mut item in items {
-                if let Some(scanner) = ADDONS.get_game_metadata(key) {
-                    if let Some(metadata) = scanner.get_metadata(GameCommon::get_ref(&item)) {
-                        item.extend(metadata);
-                    }
+            log::info!("Scanning {} games metadata ", items.len());
+            let metadatas = ADDONS
+                .get_game_metadata(key)
+                .map(|scanner| {
+                    scanner.get_metadatas(
+                        &items
+                            .iter()
+                            .map(GameCommon::get_ref)
+                            .collect::<Vec<GameLibraryRef>>(),
+                    )
+                })
+                .unwrap_or_default();
+            for mut item in items.iter().cloned() {
+                if let Some(metadata) = metadatas.get(&GameCommon::get_ref(&item)) {
+                    item.extend(metadata.clone());
                 }
+
                 query_raw = query_raw.values_panic(vec![
                     item.library_type.to_string().into(),
                     item.library_id.to_string().into(),
