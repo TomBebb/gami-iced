@@ -456,12 +456,8 @@ impl LibraryPage {
                 return self.table.update(tbl).map(Message::Table);
             }
             Message::RefreshGames => {
-                return Task::perform(
-                    db::ops::sync_library(|v| {
-                        self.update(Message::LibrarySyncStatusChanged(v));
-                    }),
-                    |_| Message::ReloadCache,
-                );
+                return Task::stream(db::ops::sync_library())
+                    .map(Message::LibrarySyncStatusChanged);
             }
             Message::SearchChanged(query) => {
                 self.filters.search = query;
