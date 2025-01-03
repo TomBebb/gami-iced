@@ -16,7 +16,7 @@ use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
     Button, Column, Container, Row, Scrollable, Svg,
 };
-use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
+use iced::{window, Center, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
@@ -62,6 +62,7 @@ pub struct LibraryPage {
     games: Vec<GameData>,
     table: LibraryTable,
     filters: GamesFilters,
+    sync_state: LibrarySyncState,
 }
 
 #[derive(Debug, Clone)]
@@ -107,6 +108,7 @@ impl LibraryPage {
             curr_index: 0,
             table: LibraryTable::new(),
             filters: GamesFilters::default(),
+            sync_state: LibrarySyncState::Done,
         };
         me
     }
@@ -448,7 +450,13 @@ impl LibraryPage {
         } else {
             items.into()
         };
-        column![toolbar, wrapped_items].into()
+
+        let status: Element<Message> = if self.sync_state == LibrarySyncState::Done {
+            row![].into()
+        } else {
+            row![text(self.sync_state.to_string())].height(30).into()
+        };
+        column![toolbar, status, wrapped_items].into()
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
@@ -574,6 +582,10 @@ impl LibraryPage {
                     LibraryViewType::Grid => todo!(),
                 }
             }
+            Message::LibrarySyncStatusChanged(status) => { 
+                println!("New status: {}", status);
+                self.sync_state = status}
+            ,
             v => println!("{:?}", v),
         }
 

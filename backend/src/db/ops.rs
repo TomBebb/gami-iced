@@ -59,12 +59,13 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         Column::LibraryType,
                         Column::LibraryId,
                     ]));
-                log::info!("Scanning {} games metadata ", items.len());
+                log::info!("Pre-Scanning {} games metadata ", items.len());
 
                 output
                     .send(LibrarySyncState::FetchingMetadata)
                     .await
                     .unwrap();
+                log::info!("Scanning {} games metadata ", items.len());
                 let metadatas = ADDONS
                     .get_game_metadata(key)
                     .map(|scanner| {
