@@ -22,3 +22,10 @@ pub enum Direction {
     Up,
     Down,
 }
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum LibrarySyncState {
+    LibraryScan,
+    FetchingMetadata,
+    Done
+}

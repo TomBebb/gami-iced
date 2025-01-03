@@ -1,6 +1,6 @@
 use crate::db::game;
 use crate::db::game::Column;
-use crate::{db, ADDONS};
+use crate::{db, LibrarySyncState, ADDONS};
 use chrono::{DateTime, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
@@ -11,7 +11,9 @@ use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
 };
+use std::cell::Cell;
 use std::fmt;
+use std::sync::Arc;
 
 pub async fn delete_game(game_id: i32) {
     let mut conn = db::connect().await;
@@ -32,9 +34,10 @@ pub async fn clear_all() {
         .unwrap();
 }
 
-pub async fn sync_library() {
+pub async fn sync_library(mut set_state: impl FnMut(LibrarySyncState)) {
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
+            set_state(LibrarySyncState::LibraryScan);
             let items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
             log::info!("Pushing {} games to DB", items.len());
             let conn = db::connect().await;
@@ -56,6 +59,7 @@ pub async fn sync_library() {
                     Column::LibraryId,
                 ]));
             log::info!("Scanning {} games metadata ", items.len());
+            set_state(LibrarySyncState::FetchingMetadata);
             let metadatas = ADDONS
                 .get_game_metadata(key)
                 .map(|scanner| {
@@ -91,6 +95,7 @@ pub async fn sync_library() {
             }
             conn.execute_unprepared(&query).await.unwrap();
             log::info!("Pushed games to DB");
+            set_state(LibrarySyncState::Done);
         }
     }
 }
