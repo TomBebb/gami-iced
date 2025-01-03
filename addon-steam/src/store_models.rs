@@ -34,5 +34,5 @@ pub struct AppReleaseDate {
 #[serde(rename_all = "snake_case")]
 pub struct AppDetails {
     pub success: bool,
-    pub data: AppDetailsData,
+    pub data: Option<AppDetailsData>,
 }

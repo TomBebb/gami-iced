@@ -25,7 +25,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         .unwrap();
 
     let AppDetails { data, .. } = res.into_iter().map(|v| v.1).next().unwrap();
-    Some(GameMetadata {
+    data.map(|data| GameMetadata {
         description: if data.detailed_description.is_empty() {
             TaggedOption::None
         } else {
@@ -51,22 +51,23 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
 async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
 ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
-    let games_to_process = Arc::new(Mutex::new(games.to_vec()));
     let data = Arc::new(Mutex::new(HashMap::<GameLibraryRef, GameMetadata>::new()));
-    for i in 0..8 {
-        task::spawn(async {
-            while let Some(game) = games_to_process.clone().lock().unwrap().pop() {
-                let my_data = data.clone();
-                let mut curr = my_data.lock().unwrap();
-                if let Some(metadata) = get_metadata(game).await {
-                    curr.insert(game.clone(), metadata);
-                }
+    let mut tasks = Vec::with_capacity(games.len());
+    for game in games {
+        tasks.push(task::spawn(async {
+            let my_data = data.clone();
+            let mut curr = my_data.lock().unwrap();
+            if let Some(metadata) = get_metadata(*game).await {
+                curr.insert(game.clone(), metadata);
             }
-        })
-        .await;
+        }));
     }
 
+    for task in tasks {
+        task.await;
+    }
     let my_data = data.lock().unwrap().clone();
+
     drop(data);
     my_data
 }
