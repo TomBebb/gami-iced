@@ -10,7 +10,7 @@ use url::Url;
 
 pub struct StoreMetadataScanner;
 async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
-    if &*game.library_type == "steam" {
+    if &*game.library_type != "steam" {
         return None;
     }
     let mut url = Url::parse("https://store.steampowered.com/api/appdetails").unwrap();
