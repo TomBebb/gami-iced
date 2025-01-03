@@ -39,9 +39,7 @@ CREATE TABLE IF NOT EXISTS "games"
     TEXT,
     "header_url"
     TEXT,
-    "logo_url"
-    TEXT,
-    "hero_url"
+    "cover_url"
     TEXT,
     PRIMARY
     KEY

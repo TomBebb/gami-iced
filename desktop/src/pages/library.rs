@@ -295,9 +295,9 @@ impl LibraryPage {
                 "Enter icon URL"
             ),
             editor_text_row(
-                GameTextField::HeroUrl,
-                "Hero URL",
-                game.hero_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
+                GameTextField::CoverUrl,
+                "Cover URL",
+                game.cover_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
                 "Enter hero URL"
             ),
             editor_text_row(
@@ -305,12 +305,6 @@ impl LibraryPage {
                 "Header URL",
                 game.header_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
                 "Enter header URL"
-            ),
-            editor_text_row(
-                GameTextField::LogoUrl,
-                "Logo URL",
-                game.logo_url.as_ref().map(|v| v.as_str()).unwrap_or(""),
-                "Enter logo URL"
             ),
             editor_enum_row(
                 "Completion Status",
@@ -538,8 +532,7 @@ impl LibraryPage {
                         GameTextField::Description => edit_game.description = value,
                         GameTextField::HeaderUrl => edit_game.header_url = map_opt_empty(value),
                         GameTextField::IconUrl => edit_game.icon_url = map_opt_empty(value),
-                        GameTextField::LogoUrl => edit_game.logo_url = map_opt_empty(value),
-                        GameTextField::HeroUrl => edit_game.hero_url = map_opt_empty(value),
+                        GameTextField::CoverUrl => edit_game.cover_url = map_opt_empty(value),
                     }
                 }
             }

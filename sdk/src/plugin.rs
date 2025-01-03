@@ -1,6 +1,6 @@
 use crate::{
-    models::ConfigSchemaMetadata, GameInstallStatus, GameLibraryRef, ScannedGameLibraryMetadata,
-    BASE_DATA_DIR,
+    models::ConfigSchemaMetadata, GameInstallStatus, GameLibraryRef, GameMetadata,
+    ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use safer_ffi::string::String;
 use std::cell::LazyCell;
@@ -37,8 +37,20 @@ pub trait PluginRegistrar {
         schema: HashMap<std::string::String, ConfigSchemaMetadata>,
     );
     fn register_library(&mut self, name: &str, function: Arc<dyn GameLibrary + Send + Sync>);
+    fn register_metadata_scanner(
+        &mut self,
+        name: &str,
+        function: Arc<dyn GameMetadataScanner + Send + Sync>,
+    );
 }
 
+pub trait GameMetadataScanner: Send {
+    fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata>;
+    fn get_metadatas<'a>(
+        &self,
+        games: &[GameLibraryRef<'a>],
+    ) -> HashMap<GameLibraryRef<'a>, GameMetadata>;
+}
 pub trait GameLibrary: Send {
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;
     fn launch(&self, game: GameLibraryRef);
