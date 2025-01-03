@@ -132,6 +132,25 @@ pub struct GameMetadata {
     pub cover_url: TaggedOption<String>,
     pub header_url: TaggedOption<String>,
 }
+
+impl Default for GameMetadata {
+    fn default() -> Self {
+        Self {
+            description: TaggedOption::None,
+            developers: Vec::EMPTY,
+            genres: Vec::EMPTY,
+            tags: Vec::EMPTY,
+            platforms: Vec::EMPTY,
+            publishers: Vec::EMPTY,
+            series: Vec::EMPTY,
+            release_date_timestamp: TaggedOption::None,
+            last_played_timestamp: TaggedOption::None,
+            icon_url: TaggedOption::None,
+            cover_url: TaggedOption::None,
+            header_url: TaggedOption::None,
+        }
+    }
+}
 pub trait EditableEnum: fmt::Display + Sized + PartialEq + 'static {
     const ALL: &'static [Self];
 }

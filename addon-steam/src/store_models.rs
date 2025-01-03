@@ -12,6 +12,9 @@ pub struct AppDetailsData {
     pub publishers: Option<Vec<String>>,
     pub genres: Option<Vec<AppGenre>>,
     pub release_date: Option<AppReleaseDate>,
+    pub header_image: Option<String>,
+    pub capsule_image: Option<String>,
+    pub capsule_imagev5: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
