@@ -582,10 +582,10 @@ impl LibraryPage {
                     LibraryViewType::Grid => todo!(),
                 }
             }
-            Message::LibrarySyncStatusChanged(status) => { 
+            Message::LibrarySyncStatusChanged(status) => {
                 println!("New status: {}", status);
-                self.sync_state = status}
-            ,
+                self.sync_state = status
+            }
             v => println!("{:?}", v),
         }
 
