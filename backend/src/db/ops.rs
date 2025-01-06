@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::db::game;
 use crate::db::game::Column;
 use crate::{db, LibrarySyncState, ADDONS};
@@ -10,9 +11,7 @@ use gami_sdk::{GameLibrary, GameLibraryRef};
 use iced::futures::{SinkExt, Stream};
 use iced::stream::channel;
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
-use sea_orm::{
-    ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
-};
+use sea_orm::{ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns};
 use std::fmt;
 
 pub async fn delete_game(game_id: i32) {
@@ -36,10 +35,27 @@ pub async fn clear_all() {
 
 pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
     channel(1, move |mut output| async move {
+        let conn = db::connect().await;
         for key in ADDONS.get_keys() {
             if let Some(lib) = ADDONS.get_game_library(key) {
                 output.send(LibrarySyncState::LibraryScan).await.unwrap();
-                let items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
+                let mut items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
+                let existing_query = GameEntity::find()
+                    .select_column(Column::LibraryId)
+                    .filter(Column::LibraryType.eq(key))
+                    .filter(Column::LibraryId.is_in(items.iter().map(|v| v.library_id.as_str())));
+                let existing_items: HashSet<String> = existing_query
+                    .all(&conn)
+                    .await
+                    .unwrap()
+                    .into_iter()
+                    .map(|v| v.library_id)
+                    .collect();
+
+                items = items
+                    .into_iter()
+                    .filter(|v| !existing_items.contains(&v.library_id))
+                    .collect();
                 log::info!("Pushing {} games to DB", items.len());
                 let conn = db::connect().await;
                 let mut raw = Query::insert();
@@ -83,29 +99,28 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         item.extend(metadata.clone());
                     }
 
-                    query_raw = query_raw.values_panic(vec![
-                        item.library_type.to_string().into(),
-                        item.library_id.to_string().into(),
-                        item.name.to_string().into(),
-                        item.description.into(),
-                        (item.install_status as u8).into(),
-                        item.play_time.num_seconds().into(),
-                        item.last_played
-                            .map(|v: DateTime<Utc>| v.timestamp())
-                            .into(),
-                        item.icon_url.into(),
-                        item.release_date.into(),
-                    ]);
-                }
-                let mut query = query_raw.to_string(SqliteQueryBuilder);
-                if query.ends_with(')') {
-                    query.push_str(" DO NOTHING");
-                }
-                conn.execute_unprepared(&query).await.unwrap();
-                log::info!("Pushed games to DB");
+                query_raw = query_raw.values_panic(vec![
+                    item.library_type.to_string().into(),
+                    item.library_id.to_string().into(),
+                    item.name.to_string().into(),
+                    item.description.into(),
+                    (item.install_status as u8).into(),
+                    item.play_time.num_seconds().into(),
+                    item.last_played
+                        .map(|v: DateTime<Utc>| v.timestamp())
+                        .into(),
+                    item.icon_url.into(),
+                    item.release_date.into(),
+                ]);
             }
+            let mut query = query_raw.to_string(SqliteQueryBuilder);
+            if query.ends_with(')') {
+                query.push_str(" DO NOTHING");
+            }
+            conn.execute_unprepared(&query).await.unwrap();
+            log::info!("Pushed games to DB");
         }
-    })
+    }
 }
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub enum SortOrder {
