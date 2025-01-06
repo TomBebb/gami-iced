@@ -10,7 +10,9 @@ use gami_sdk::{GameLibrary, GameLibraryRef};
 use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
     ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
+    SelectColumns,
 };
+use std::collections::HashSet;
 use std::fmt;
 
 pub async fn delete_game(game_id: i32) {
@@ -33,11 +35,29 @@ pub async fn clear_all() {
 }
 
 pub async fn sync_library() {
+    let conn = db::connect().await;
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
-            let items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
+            let mut items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
+
+            let existing_query = GameEntity::find()
+                .select_column(Column::LibraryId)
+                .filter(Column::LibraryType.eq(key))
+                .filter(Column::LibraryId.is_in(items.iter().map(|v| v.library_id.as_str())));
+            let existing_items: HashSet<String> = existing_query
+                .all(&conn)
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|v| v.library_id)
+                .collect();
             log::info!("Pushing {} games to DB", items.len());
-            let conn = db::connect().await;
+
+            items = items
+                .into_iter()
+                .filter(|v| !existing_items.contains(&v.library_id))
+                .collect();
+
             let mut raw = Query::insert();
             let mut query_raw = raw
                 .into_table(GameEntity)
