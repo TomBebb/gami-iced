@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, NaiveDate, Utc};
 use gami_sdk::{CompletionStatus, GameData, GameInstallStatus, IsGameLibraryRef};
 use sea_orm::entity::prelude::*;
 use sea_orm::{DeriveActiveEnum, DeriveEntityModel, EnumIter};
@@ -70,7 +70,7 @@ pub struct Model {
     pub description: String,
     pub play_time_secs: i64,
     pub install_status: DbGameInstallStatus,
-    pub release_date: Option<DateTime<Utc>>,
+    pub release_date: Option<NaiveDate>,
     pub last_played: Option<DateTime<Utc>>,
     pub icon_url: Option<String>,
     pub header_url: Option<String>,

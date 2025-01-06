@@ -54,6 +54,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         Column::PlayTimeSecs,
                         Column::LastPlayed,
                         Column::IconUrl,
+                        Column::ReleaseDate,
                     ])
                     .on_conflict(OnConflict::columns([
                         Column::LibraryType,
@@ -82,29 +83,28 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         item.extend(metadata.clone());
                     }
 
-                    query_raw = query_raw.values_panic(vec![
-                        item.library_type.to_string().into(),
-                        item.library_id.to_string().into(),
-                        item.name.to_string().into(),
-                        item.description.into(),
-                        (item.install_status as u8).into(),
-                        item.play_time.num_seconds().into(),
-                        item.last_played
-                            .map(|v: DateTime<Utc>| v.timestamp())
-                            .into(),
-                        item.icon_url.into(),
-                    ]);
-                }
-                let mut query = query_raw.to_string(SqliteQueryBuilder);
-                if query.ends_with(')') {
-                    query.push_str(" DO NOTHING");
-                }
-                conn.execute_unprepared(&query).await.unwrap();
-                log::info!("Pushed games to DB");
-                output.send(LibrarySyncState::Done).await.unwrap();
+                query_raw = query_raw.values_panic(vec![
+                    item.library_type.to_string().into(),
+                    item.library_id.to_string().into(),
+                    item.name.to_string().into(),
+                    item.description.into(),
+                    (item.install_status as u8).into(),
+                    item.play_time.num_seconds().into(),
+                    item.last_played
+                        .map(|v: DateTime<Utc>| v.timestamp())
+                        .into(),
+                    item.icon_url.into(),
+                    item.release_date.into(),
+                ]);
             }
+            let mut query = query_raw.to_string(SqliteQueryBuilder);
+            if query.ends_with(')') {
+                query.push_str(" DO NOTHING");
+            }
+            conn.execute_unprepared(&query).await.unwrap();
+            log::info!("Pushed games to DB");
         }
-    })
+    }
 }
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub enum SortOrder {
