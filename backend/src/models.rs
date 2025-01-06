@@ -28,15 +28,17 @@ pub enum Direction {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LibrarySyncState {
     LibraryScan,
-    FetchingMetadata,
+    FetchingMetadata { total: u32, current: u32 },
     Done,
 }
 impl fmt::Display for LibrarySyncState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match *self {
-            Self::LibraryScan => "Scanning Library",
-            Self::FetchingMetadata => "Fetching Metadata",
-            Self::Done => "Done",
-        })
+        match *self {
+            Self::LibraryScan => f.write_str("Scanning Library"),
+            Self::FetchingMetadata { current, total } => {
+                write!(f, "Fetching Metadata: {} / {}", current, total)
+            }
+            Self::Done => f.write_str("Done"),
+        }
     }
 }
