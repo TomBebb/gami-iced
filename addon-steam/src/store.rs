@@ -33,7 +33,6 @@ fn to_month(month: &str) -> u8 {
 const RELEASE_DATE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(RELEASE_DATE_RAW).unwrap());
 
 fn parse_release_date(date: &str) -> Option<NaiveDate> {
-    println!("Parsing: {:?}", date);
     RELEASE_DATE_REGEX.captures(date).map(|parts| {
         if parts.get(3).is_some() {
             NaiveDate::from_ymd_opt(
@@ -60,7 +59,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
     url.query_pairs_mut()
         .append_pair("appids", &*game.library_id);
 
-    println!("Fetch URL: {}", url);
+    log::debug!("Fetch URL: {}", url);
     let raw_res = reqwest::get(url)
         .await
         .unwrap()
