@@ -16,7 +16,7 @@ use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
     Button, Column, Container, Row, Scrollable, Svg,
 };
-use iced::{window, Center, ContentFit, Element, Fill, Font, Length, Task, Theme};
+use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
@@ -584,7 +584,10 @@ impl LibraryPage {
             }
             Message::LibrarySyncStatusChanged(status) => {
                 println!("New status: {}", status);
-                self.sync_state = status
+                self.sync_state = status;
+                if status == LibrarySyncState::Done {
+                    return self.update(Message::ReloadCache);
+                }
             }
             v => println!("{:?}", v),
         }
