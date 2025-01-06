@@ -23,7 +23,7 @@ pub struct GameLibraryRef<'a> {
     pub library_id: str_ref<'a>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct GameLibraryRefOwned {
     pub name: RString,
     pub library_type: RString,

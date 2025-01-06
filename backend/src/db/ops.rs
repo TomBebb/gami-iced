@@ -1,20 +1,16 @@
-use crate::db::game;
-use crate::db::game::Column;
+use crate::db::game::{ActiveModel, Column};
 use crate::{db, LibrarySyncState, ADDONS};
-use chrono::{DateTime, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
+use gami_sdk::{GameCommon, GameData, GameLibraryRefOwned, GameMetadata, GameMetadataScanner};
 use gami_sdk::{GameLibrary, GameLibraryRef};
 use iced::futures::{SinkExt, Stream};
 use iced::stream::channel;
-use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
-    ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
-    SelectColumns,
+    ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 
 pub async fn delete_game(game_id: i32) {
@@ -60,25 +56,6 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .filter(|v| !existing_items.contains(&v.library_id))
                     .collect();
                 log::info!("Pushing {} games to DB", items.len());
-                let conn = db::connect().await;
-                let mut raw = Query::insert();
-                let mut query_raw = raw
-                    .into_table(GameEntity)
-                    .columns(vec![
-                        Column::LibraryType,
-                        Column::LibraryId,
-                        Column::Name,
-                        Column::Description,
-                        Column::InstallStatus,
-                        Column::PlayTimeSecs,
-                        Column::LastPlayed,
-                        Column::IconUrl,
-                        Column::ReleaseDate,
-                    ])
-                    .on_conflict(OnConflict::columns([
-                        Column::LibraryType,
-                        Column::LibraryId,
-                    ]));
                 log::info!("Pre-Scanning {} games metadata ", items.len());
 
                 output
@@ -86,6 +63,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .await
                     .unwrap();
                 log::info!("Scanning {} games metadata ", items.len());
+
                 let metadatas = ADDONS
                     .get_game_metadata(key)
                     .map(|scanner| {
@@ -97,31 +75,39 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         )
                     })
                     .unwrap_or_default();
-                for mut item in items.iter().cloned() {
-                    if let Some(metadata) = metadatas.get(&GameCommon::get_ref(&item)) {
-                        item.extend(metadata.clone());
-                    }
+                let mut metadatas: BTreeMap<GameLibraryRefOwned, GameMetadata> = metadatas
+                    .into_iter()
+                    .map(|(k, v)| (GameLibraryRefOwned::from(k), v))
+                    .collect();
 
-                    query_raw = query_raw.values_panic(vec![
-                        item.library_type.to_string().into(),
-                        item.library_id.to_string().into(),
-                        item.name.to_string().into(),
-                        item.description.into(),
-                        (item.install_status as u8).into(),
-                        item.play_time.num_seconds().into(),
-                        item.last_played
-                            .map(|v: DateTime<Utc>| v.timestamp())
-                            .into(),
-                        item.icon_url.into(),
-                        item.release_date.into(),
-                    ]);
+                for item in &mut items {
+                    if let Some(metadata) =
+                        metadatas.remove(&GameLibraryRefOwned::from(item.get_ref()))
+                    {
+                        item.extend(metadata);
+                    }
                 }
-                let mut query = query_raw.to_string(SqliteQueryBuilder);
-                if query.ends_with(')') {
-                    query.push_str(" DO NOTHING");
-                }
-                conn.execute_unprepared(&query).await.unwrap();
+
+                GameEntity::insert_many(items.iter().cloned().map(|g| ActiveModel {
+                    id: ActiveValue::NotSet,
+                    name: ActiveValue::Set(g.name),
+                    description: ActiveValue::Set(g.description),
+                    install_status: ActiveValue::Set(g.install_status.into()),
+                    play_time_secs: ActiveValue::Set(g.play_time.num_seconds().into()),
+                    last_played: ActiveValue::Set(g.last_played),
+                    release_date: ActiveValue::Set(g.release_date),
+                    icon_url: ActiveValue::Set(g.icon_url),
+                    header_url: ActiveValue::Set(g.header_url),
+                    cover_url: ActiveValue::Set(g.cover_url),
+                    library_type: ActiveValue::Set(g.library_type),
+                    library_id: ActiveValue::Set(g.library_id),
+                    completion_status: ActiveValue::Set(g.completion_status.into()),
+                }))
+                .exec(&conn)
+                .await
+                .unwrap();
                 log::info!("Pushed games to DB");
+                output.send(LibrarySyncState::Done).await.unwrap();
             }
         }
     })
@@ -205,7 +191,7 @@ pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
 
 pub async fn update_game(game: GameData) {
     let mut conn = db::connect().await;
-    GameEntity::update(game::ActiveModel {
+    GameEntity::update(ActiveModel {
         id: ActiveValue::Set(game.id),
         icon_url: ActiveValue::Set(game.icon_url),
         name: ActiveValue::Set(game.name),
