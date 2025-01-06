@@ -1,6 +1,9 @@
 use crate::store_models::AppDetails;
 use crate::RUNTIME;
+use chrono::NaiveDate;
 use gami_sdk::{GameLibraryRef, GameMetadata, GameMetadataScanner};
+use once_cell::sync::Lazy;
+use regex::Regex;
 use safer_ffi::option::TaggedOption;
 use safer_ffi::{String as FfiString, Vec as FfiVec};
 use std::collections::HashMap;
@@ -8,6 +11,45 @@ use std::sync::{Arc, Mutex};
 use tokio_test::task;
 use url::Url;
 
+const RELEASE_DATE_RAW: &str =
+    r"^([0-9]{1,2}) ([A-Z][a-z]+), ([0-9]+)|([A-Z][a-z]+) ([0-9]+), ([0-9]+)$";
+fn to_month(month: &str) -> u8 {
+    match month {
+        "Jan" => 1,
+        "Feb" => 2,
+        "Mar" => 3,
+        "Apr" => 4,
+        "May" => 5,
+        "Jun" => 6,
+        "Jul" => 7,
+        "Aug" => 8,
+        "Sep" => 9,
+        "Oct" => 10,
+        "Nov" => 11,
+        "Dec" => 12,
+        _ => panic!("Invalid month: {:?}", month),
+    }
+}
+const RELEASE_DATE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(RELEASE_DATE_RAW).unwrap());
+
+fn parse_release_date(date: &str) -> Option<NaiveDate> {
+    RELEASE_DATE_REGEX.captures(date).map(|parts| {
+        if parts.get(3).is_some() {
+            NaiveDate::from_ymd_opt(
+                parts[3].parse().unwrap(),
+                to_month(&parts[2]) as u32,
+                parts[1].parse().unwrap(),
+            )
+        } else {
+            NaiveDate::from_ymd_opt(
+                parts[6].parse().unwrap(),
+                to_month(&parts[4]) as u32,
+                parts[5].parse().unwrap(),
+            )
+        }
+        .unwrap()
+    })
+}
 pub struct StoreMetadataScanner;
 async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
     if &*game.library_type != "steam" {
@@ -17,12 +59,18 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
     url.query_pairs_mut()
         .append_pair("appids", &*game.library_id);
 
-    let res = reqwest::get(url)
+    log::debug!("Fetch URL: {}", url);
+    let raw_res = reqwest::get(url)
         .await
         .unwrap()
-        .json::<HashMap<String, AppDetails>>()
+        .json::<Option<HashMap<String, AppDetails>>>()
         .await
         .unwrap();
+    let res = if let Some(res) = raw_res {
+        res
+    } else {
+        return None;
+    };
 
     let AppDetails { data, .. } = res.into_iter().map(|v| v.1).next().unwrap();
     data.map(|data| GameMetadata {
@@ -44,6 +92,14 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
             })
             .map(FfiVec::from)
             .unwrap_or(FfiVec::EMPTY),
+        release_date_timestamp: data
+            .release_date
+            .and_then(|v| v.date)
+            .as_ref()
+            .and_then(|v| if v.is_empty() { None } else { Some(v) })
+            .and_then(|v| parse_release_date(&v))
+            .map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp() as u32)
+            .into(),
         ..Default::default()
     })
 }

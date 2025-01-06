@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS "games"
     NOT
     NULL,
     "release_date"
-    TIMESTAMP,
+    DATE,
     "last_played"
     TIMESTAMP,
     "icon_url"

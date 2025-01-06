@@ -50,6 +50,7 @@ pub async fn sync_library() {
                     Column::PlayTimeSecs,
                     Column::LastPlayed,
                     Column::IconUrl,
+                    Column::ReleaseDate,
                 ])
                 .on_conflict(OnConflict::columns([
                     Column::LibraryType,
@@ -83,6 +84,7 @@ pub async fn sync_library() {
                         .map(|v: DateTime<Utc>| v.timestamp())
                         .into(),
                     item.icon_url.into(),
+                    item.release_date.into(),
                 ]);
             }
             let mut query = query_raw.to_string(SqliteQueryBuilder);
