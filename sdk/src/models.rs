@@ -1,6 +1,6 @@
 use crate::GameCommon;
 use ::safer_ffi::prelude::*;
-use chrono::{DateTime, Duration, TimeDelta, Utc};
+use chrono::{DateTime, Duration, NaiveDate, TimeDelta, Utc};
 use safer_ffi::option::TaggedOption;
 use safer_ffi::string::str_ref;
 use safer_ffi::{String, Vec};
@@ -230,7 +230,7 @@ pub struct GameData {
     pub description: RString,
     pub play_time: Duration,
     pub install_status: GameInstallStatus,
-    pub release_date: Option<DateTime<Utc>>,
+    pub release_date: Option<NaiveDate>,
     pub last_played: Option<DateTime<Utc>>,
     pub icon_url: Option<RString>,
     pub header_url: Option<RString>,
