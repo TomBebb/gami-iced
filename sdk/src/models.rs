@@ -253,6 +253,13 @@ impl GameData {
         if let TaggedOption::Some(cover_url) = metadata.cover_url {
             self.cover_url = Some(cover_url.into());
         }
+        if let TaggedOption::Some(release_date) = metadata.release_date_timestamp {
+            self.release_date = Some(
+                DateTime::from_timestamp(release_date as i64, 0)
+                    .unwrap()
+                    .date_naive(),
+            );
+        }
     }
 }
 impl GameCommon for GameData {
