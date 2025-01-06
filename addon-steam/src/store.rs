@@ -32,22 +32,24 @@ fn to_month(month: &str) -> u8 {
 }
 const RELEASE_DATE_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(RELEASE_DATE_RAW).unwrap());
 
-fn parse_release_date(date: &str) -> NaiveDate {
-    let parts = RELEASE_DATE_REGEX.captures(date).unwrap();
-    if parts.get(3).is_some() {
-        NaiveDate::from_ymd_opt(
-            parts[3].parse().unwrap(),
-            to_month(&parts[2]) as u32,
-            parts[1].parse().unwrap(),
-        )
-    } else {
-        NaiveDate::from_ymd_opt(
-            parts[6].parse().unwrap(),
-            to_month(&parts[4]) as u32,
-            parts[5].parse().unwrap(),
-        )
-    }
-    .unwrap()
+fn parse_release_date(date: &str) -> Option<NaiveDate> {
+    println!("Parsing: {:?}", date);
+    RELEASE_DATE_REGEX.captures(date).map(|parts| {
+        if parts.get(3).is_some() {
+            NaiveDate::from_ymd_opt(
+                parts[3].parse().unwrap(),
+                to_month(&parts[2]) as u32,
+                parts[1].parse().unwrap(),
+            )
+        } else {
+            NaiveDate::from_ymd_opt(
+                parts[6].parse().unwrap(),
+                to_month(&parts[4]) as u32,
+                parts[5].parse().unwrap(),
+            )
+        }
+        .unwrap()
+    })
 }
 pub struct StoreMetadataScanner;
 async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
@@ -59,12 +61,17 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         .append_pair("appids", &*game.library_id);
 
     println!("Fetch URL: {}", url);
-    let res = reqwest::get(url)
+    let raw_res = reqwest::get(url)
         .await
         .unwrap()
-        .json::<HashMap<String, AppDetails>>()
+        .json::<Option<HashMap<String, AppDetails>>>()
         .await
         .unwrap();
+    let res = if let Some(res) = raw_res {
+        res
+    } else {
+        return None;
+    };
 
     let AppDetails { data, .. } = res.into_iter().map(|v| v.1).next().unwrap();
     data.map(|data| GameMetadata {
@@ -91,7 +98,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
             .and_then(|v| v.date)
             .as_ref()
             .and_then(|v| if v.is_empty() { None } else { Some(v) })
-            .map(|v| parse_release_date(&v))
+            .and_then(|v| parse_release_date(&v))
             .map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp() as u32)
             .into(),
         ..Default::default()
