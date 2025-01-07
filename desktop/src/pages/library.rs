@@ -131,6 +131,20 @@ impl LibraryPage {
     fn toolbar(&self) -> Element<'_, Message> {
         Element::from(
             row![
+                tooltip(
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--filter.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::secondary)
+                    .height(30),
+                    container(text("Filter games"))
+                        .padding(6)
+                        .style(container::rounded_box),
+                    tooltip::Position::Bottom,
+                ),
                 text_input("Enter search", &self.filters.search)
                     .on_input(Message::SearchChanged)
                     .width(Length::FillPortion(7)),
