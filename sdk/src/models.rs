@@ -212,7 +212,7 @@ pub trait EditableEnum: fmt::Display + Sized + PartialEq + 'static {
     const ALL: &'static [Self];
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum CompletionStatus {
     #[default]
     Backlog,
