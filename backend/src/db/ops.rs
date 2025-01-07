@@ -89,7 +89,7 @@ pub async fn sync_library() {
                 })
                 .unwrap_or_default();
             for mut item in items.iter().cloned() {
-                if let Some(metadata) = metadatas.get(&GameCommon::get_ref(&item)) {
+                if let Some(metadata) = metadatas.get(&GameCommon::get_owned_ref(&item)) {
                     item.extend(metadata.clone());
                 }
 

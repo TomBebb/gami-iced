@@ -142,7 +142,7 @@ impl GameMetadataScanner for StoreMetadataScanner {
     fn get_metadatas<'a>(
         &self,
         games: &[GameLibraryRef<'a>],
-    ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
+    ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
         RUNTIME.block_on(async move { get_metadatas(games).await })
     }
 }

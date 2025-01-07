@@ -1,6 +1,7 @@
 use gami_sdk::{
-    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata,
-    GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
+    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameLibraryRefOwned,
+    GameMetadata, GameMetadataScanner, PluginDeclaration, PluginMetadata,
+    ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
 use std::collections::HashMap;
@@ -49,7 +50,7 @@ impl GameMetadataScanner for GameMetadataScannerProxy {
     fn get_metadatas<'a>(
         &self,
         games: &[GameLibraryRef<'a>],
-    ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
+    ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
         self.inner.get_metadatas(games)
     }
 }
