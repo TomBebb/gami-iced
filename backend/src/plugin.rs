@@ -1,5 +1,5 @@
 use gami_sdk::{
-    BoxFuture, ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata,
+    BoxFuture, ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata, GameLibraryRefOwned,
     GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
@@ -51,7 +51,7 @@ impl GameMetadataScanner for GameMetadataScannerProxy {
         &self,
         games: &[GameLibraryRef<'a>],
         on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
-    ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
+    ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
         self.inner.get_metadatas(games, on_process_one)
     }
 }

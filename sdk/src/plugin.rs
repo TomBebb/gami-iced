@@ -1,6 +1,6 @@
 use crate::{
-    models::ConfigSchemaMetadata, BoxFuture, GameInstallStatus, GameLibraryRef, GameMetadata,
-    ScannedGameLibraryMetadata, BASE_DATA_DIR,
+    models::ConfigSchemaMetadata, BoxFuture, GameInstallStatus, GameLibraryRef, GameLibraryRefOwned,
+    GameMetadata, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use safer_ffi::string::String;
 use std::cell::LazyCell;
@@ -51,7 +51,7 @@ pub trait GameMetadataScanner: Send {
         &self,
         games: &[GameLibraryRef<'a>],
         on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
-    ) -> HashMap<GameLibraryRef<'a>, GameMetadata>;
+    ) -> HashMap<GameLibraryRefOwned, GameMetadata>;
 }
 pub trait GameLibrary: Send {
     fn scan(&self) -> Vec<ScannedGameLibraryMetadata>;

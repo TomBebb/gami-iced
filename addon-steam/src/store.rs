@@ -1,7 +1,7 @@
 use crate::store_models::AppDetails;
 use crate::RUNTIME;
 use chrono::NaiveDate;
-use gami_sdk::{BoxFuture, GameLibraryRef, GameMetadata, GameMetadataScanner};
+use gami_sdk::{BoxFuture, GameLibraryRef, GameLibraryRefOwned, GameMetadata, GameMetadataScanner};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use safer_ffi::option::TaggedOption;
@@ -9,7 +9,7 @@ use safer_ffi::{String as FfiString, Vec as FfiVec};
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::{Arc, Mutex};
-use tokio_test::task;
+use tokio::task::JoinSet;
 use url::Url;
 
 const RELEASE_DATE_RAW: &str =
@@ -60,7 +60,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
     url.query_pairs_mut()
         .append_pair("appids", &*game.library_id);
 
-    log::debug!("Fetch URL: {}", url);
+    println!("Fetch URL: {}", url);
     let raw_res = reqwest::get(url)
         .await
         .unwrap()
@@ -108,24 +108,31 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
 async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
     on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
-) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
-    let data = Arc::new(Mutex::new(HashMap::<GameLibraryRef, GameMetadata>::new()));
-    let mut tasks = Vec::with_capacity(games.len());
+) -> HashMap<GameLibraryRefOwned, GameMetadata> {
+    let games: Vec<GameLibraryRefOwned> = games
+        .into_iter()
+        .cloned()
+        .map(GameLibraryRefOwned::from)
+        .collect();
+    let data = Arc::new(Mutex::new(
+        HashMap::<GameLibraryRefOwned, GameMetadata>::new(),
+    ));
+    let mut tasks = JoinSet::new();
     for game in games {
-        tasks.push(task::spawn(async {
-            let my_data = data.clone();
-            let mut curr = my_data.lock().unwrap();
-            if let Some(metadata) = get_metadata(*game).await {
-                curr.insert(game.clone(), metadata);
+        let my_data = data.clone();
+
+        tasks.spawn(async move {
+            if let Some(metadata) = get_metadata(game.as_ref()).await {
+                let mut curr = my_data.lock().unwrap();
+                curr.insert(game, metadata);
             }
             on_process_one().await;
-        }));
+        });
     }
-
-    for task in tasks {
-        task.await;
+    while let Some(res) = tasks.join_next().await {
+        res.unwrap();
     }
-    let my_data = data.lock().unwrap().clone();
+    let my_data = data.clone().lock().unwrap().clone();
 
     drop(data);
     my_data
@@ -139,7 +146,7 @@ impl GameMetadataScanner for StoreMetadataScanner {
         &self,
         games: &[GameLibraryRef<'a>],
         on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
-    ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
-        RUNTIME.block_on(async move { get_metadatas(games, on_process_one).await })
+    ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
+            RUNTIME.block_on(async move { get_metadatas(games, on_process_one).await })
     }
 }
