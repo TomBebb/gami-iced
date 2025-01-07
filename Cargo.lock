@@ -1734,6 +1734,7 @@ dependencies = [
  "log",
  "safer-ffi",
  "sea-orm",
+ "tokio",
 ]
 
 [[package]]

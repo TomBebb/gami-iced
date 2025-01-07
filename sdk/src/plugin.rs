@@ -1,10 +1,11 @@
 use crate::{
-    models::ConfigSchemaMetadata, GameInstallStatus, GameLibraryRef, GameMetadata,
+    models::ConfigSchemaMetadata, BoxFuture, GameInstallStatus, GameLibraryRef, GameMetadata,
     ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use safer_ffi::string::String;
 use std::cell::LazyCell;
 use std::collections::HashMap;
+use std::future::Future;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -49,6 +50,7 @@ pub trait GameMetadataScanner: Send {
     fn get_metadatas<'a>(
         &self,
         games: &[GameLibraryRef<'a>],
+        on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
     ) -> HashMap<GameLibraryRef<'a>, GameMetadata>;
 }
 pub trait GameLibrary: Send {

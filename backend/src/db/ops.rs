@@ -3,15 +3,23 @@ use crate::{db, LibrarySyncState, ADDONS};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::{GameCommon, GameData, GameLibraryRefOwned, GameMetadata, GameMetadataScanner};
+use gami_sdk::{
+    BoxFuture, GameCommon, GameData, GameLibraryRefOwned, GameMetadata, GameMetadataScanner,
+};
 use gami_sdk::{GameLibrary, GameLibraryRef};
+use iced::futures::channel::mpsc::Sender;
 use iced::futures::{SinkExt, Stream};
 use iced::stream::channel;
 use sea_orm::{
     ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
+use std::cell::Cell;
 use std::collections::{BTreeMap, HashSet};
 use std::fmt;
+use std::future::Future;
+use std::pin::{pin, Pin};
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Arc;
 
 pub async fn delete_game(game_id: i32) {
     let mut conn = db::connect().await;
@@ -85,22 +93,37 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                 let metadatas = ADDONS
                     .get_game_metadata(key)
                     .map(|scanner| {
+                        let total_processed = Arc::new(AtomicU32::new(0));
+                        let total_items = items.len() as u32;
+                        let listener: Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>>> =
+                            Box::new(|| {
+                                Box::pin(async  {
+                                    let my_total = total_processed.clone();
+                                    let curr = my_total.load(Ordering::Relaxed) + 1;
+                                    my_total.store(curr, Ordering::Relaxed);
+                                    log::info!("Process metadata: {}", curr);
+                                    output
+                                        .send(LibrarySyncState::FetchingMetadata {
+                                            total: total_items,
+                                            current: curr,
+                                        })
+                                        .await
+                                        .unwrap();
+                                })
+                            });
                         scanner.get_metadatas(
                             &items
                                 .iter()
                                 .map(GameCommon::get_ref)
                                 .collect::<Vec<GameLibraryRef>>(),
+                            listener,
                         )
                     })
                     .unwrap_or_default();
-                let mut metadatas: BTreeMap<GameLibraryRefOwned, GameMetadata> = metadatas
-                    .into_iter()
-                    .map(|(k, v)| (GameLibraryRefOwned::from(k), v))
-                    .collect();
-
                 for item in &mut items {
-                    if let Some(metadata) =
-                        metadatas.remove(&GameLibraryRefOwned::from(item.get_ref()))
+                    if let Some(metadata) = metadatas
+                        .get(&GameLibraryRefOwned::from(item.get_ref()).as_ref())
+                        .cloned()
                     {
                         item.extend(metadata);
                     }

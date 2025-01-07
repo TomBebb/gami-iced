@@ -1,10 +1,11 @@
 use gami_sdk::{
-    ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata,
+    BoxFuture, ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata,
     GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::future::Future;
 use std::sync::Arc;
 use std::{fs, io};
 
@@ -49,8 +50,9 @@ impl GameMetadataScanner for GameMetadataScannerProxy {
     fn get_metadatas<'a>(
         &self,
         games: &[GameLibraryRef<'a>],
+        on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
     ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
-        self.inner.get_metadatas(games)
+        self.inner.get_metadatas(games, on_process_one)
     }
 }
 #[derive(Default)]

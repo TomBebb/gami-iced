@@ -1,12 +1,13 @@
 use crate::store_models::AppDetails;
 use crate::RUNTIME;
 use chrono::NaiveDate;
-use gami_sdk::{GameLibraryRef, GameMetadata, GameMetadataScanner};
+use gami_sdk::{BoxFuture, GameLibraryRef, GameMetadata, GameMetadataScanner};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use safer_ffi::option::TaggedOption;
 use safer_ffi::{String as FfiString, Vec as FfiVec};
 use std::collections::HashMap;
+use std::future::Future;
 use std::sync::{Arc, Mutex};
 use tokio_test::task;
 use url::Url;
@@ -106,6 +107,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
 
 async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
+    on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
 ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
     let data = Arc::new(Mutex::new(HashMap::<GameLibraryRef, GameMetadata>::new()));
     let mut tasks = Vec::with_capacity(games.len());
@@ -116,6 +118,7 @@ async fn get_metadatas<'a>(
             if let Some(metadata) = get_metadata(*game).await {
                 curr.insert(game.clone(), metadata);
             }
+            on_process_one().await;
         }));
     }
 
@@ -135,7 +138,8 @@ impl GameMetadataScanner for StoreMetadataScanner {
     fn get_metadatas<'a>(
         &self,
         games: &[GameLibraryRef<'a>],
+        on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
     ) -> HashMap<GameLibraryRef<'a>, GameMetadata> {
-        RUNTIME.block_on(async move { get_metadatas(games).await })
+        RUNTIME.block_on(async move { get_metadatas(games, on_process_one).await })
     }
 }
