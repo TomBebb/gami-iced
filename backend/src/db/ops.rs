@@ -3,21 +3,17 @@ use crate::{db, LibrarySyncState, ADDONS};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::{
-    BoxFuture, GameCommon, GameData, GameLibraryRefOwned, GameMetadata, GameMetadataScanner,
-};
+use gami_sdk::{GameCommon, GameData, GameLibraryRefOwned, GameMetadataScanner};
 use gami_sdk::{GameLibrary, GameLibraryRef};
-use iced::futures::channel::mpsc::Sender;
 use iced::futures::{SinkExt, Stream};
 use iced::stream::channel;
 use sea_orm::{
     ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
-use std::cell::Cell;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 use std::fmt;
 use std::future::Future;
-use std::pin::{pin, Pin};
+use std::pin::Pin;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
@@ -54,6 +50,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .await
                     .unwrap();
                 let mut items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
+                let total_rows = Arc::new( AtomicU32::new(items.len() as u32));
                 let existing_query = GameEntity::find()
                     .select_column(Column::LibraryId)
                     .filter(Column::LibraryType.eq(key))
@@ -93,22 +90,22 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                 let metadatas = ADDONS
                     .get_game_metadata(key)
                     .map(|scanner| {
-                        let total_processed = Arc::new(AtomicU32::new(0));
-                        let total_items = items.len() as u32;
                         let listener: Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>>> =
                             Box::new(|| {
-                                Box::pin(async {
-                                    let my_total = total_processed.clone();
+                                let total_processed = Arc::new(AtomicU32::new(0));
+                                let my_total = total_processed.clone();
+                                Box::pin(async move {
                                     let curr = my_total.load(Ordering::Relaxed) + 1;
                                     my_total.store(curr, Ordering::Relaxed);
-                                    log::info!("Process metadata: {}", curr);
+                                    log::info!("Process metadata: {} / {}", curr, total_rows.clone().load(Ordering::Relaxed));
+                                    /*
                                     output
                                         .send(LibrarySyncState::FetchingMetadata {
                                             total: total_items,
                                             current: curr,
                                         })
                                         .await
-                                        .unwrap();
+                                        .unwrap();*/
                                 })
                             });
                         scanner.get_metadatas(
@@ -120,7 +117,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         )
                     })
                     .unwrap_or_default();
-                for item in &mut items {
+                for mut item in items.iter_mut() {
                     if let Some(metadata) = metadatas
                         .get(&GameLibraryRefOwned::from(item.get_ref()))
                         .cloned()
