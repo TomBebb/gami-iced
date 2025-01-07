@@ -52,4 +52,7 @@ macro_rules! register_plugin {
 
 pub trait GameCommon {
     fn get_ref(&self) -> GameLibraryRef;
+    fn get_owned_ref(&self) -> GameLibraryRefOwned {
+        self.get_ref().to_owned()
+    }
 }

@@ -23,12 +23,23 @@ pub struct GameLibraryRef<'a> {
     pub library_id: str_ref<'a>,
 }
 
+impl<'a> GameLibraryRef<'a> {
+    pub fn to_owned(self) -> GameLibraryRefOwned {
+        GameLibraryRefOwned {
+            library_id: self.library_id.into(),
+            library_type: self.library_type.into(),
+            name: self.name.into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GameLibraryRefOwned {
     pub name: RString,
     pub library_type: RString,
     pub library_id: RString,
 }
+
 impl From<GameLibraryRef<'_>> for GameLibraryRefOwned {
     fn from(game_library: GameLibraryRef<'_>) -> Self {
         Self {
