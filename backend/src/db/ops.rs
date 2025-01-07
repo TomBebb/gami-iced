@@ -38,6 +38,13 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
         for key in ADDONS.get_keys() {
             if let Some(lib) = ADDONS.get_game_library(key) {
                 output.send(LibrarySyncState::LibraryScan).await.unwrap();
+                output
+                    .send(LibrarySyncState::FetchingMetadata {
+                        total: 99999,
+                        current: 0,
+                    })
+                    .await
+                    .unwrap();
                 let mut items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
                 let existing_query = GameEntity::find()
                     .select_column(Column::LibraryId)
@@ -66,6 +73,14 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .await
                     .unwrap();
                 log::info!("Scanning {} games metadata ", items.len());
+
+                output
+                    .send(LibrarySyncState::FetchingMetadata {
+                        total: items.len() as u32,
+                        current: 0,
+                    })
+                    .await
+                    .unwrap();
 
                 let metadatas = ADDONS
                     .get_game_metadata(key)
