@@ -117,9 +117,10 @@ async fn get_metadatas<'a>(
     ));
     let mut tasks = JoinSet::new();
     for game in games {
+        let my_data = data.clone();
+
         tasks.spawn(async move {
             if let Some(metadata) = get_metadata(game.as_ref()).await {
-                let my_data = data.clone();
                 let mut curr = my_data.lock().unwrap();
                 curr.insert(game, metadata);
             }
