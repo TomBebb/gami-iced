@@ -1,6 +1,6 @@
 use crate::{
-    models::ConfigSchemaMetadata, BoxFuture, GameInstallStatus, GameLibraryRef, GameLibraryRefOwned,
-    GameMetadata, ScannedGameLibraryMetadata, BASE_DATA_DIR,
+    models::ConfigSchemaMetadata, BoxFuture, GameInstallStatus, GameLibraryRef,
+    GameLibraryRefOwned, GameMetadata, ScannedGameLibraryMetadata, BASE_DATA_DIR,
 };
 use safer_ffi::string::String;
 use std::cell::LazyCell;

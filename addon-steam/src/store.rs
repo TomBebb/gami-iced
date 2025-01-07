@@ -8,6 +8,8 @@ use safer_ffi::option::TaggedOption;
 use safer_ffi::{String as FfiString, Vec as FfiVec};
 use std::collections::HashMap;
 use std::future::Future;
+use std::ops::Deref;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use tokio::task::JoinSet;
 use url::Url;
@@ -107,7 +109,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
 
 async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
-    on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
+    on_process_one: Arc<dyn Send + Sync + Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'a>>>,
 ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
     let games: Vec<GameLibraryRefOwned> = games
         .into_iter()
@@ -126,7 +128,7 @@ async fn get_metadatas<'a>(
                 let mut curr = my_data.lock().unwrap();
                 curr.insert(game, metadata);
             }
-            on_process_one().await;
+            let on_proc = on_process_one.clone();
         });
     }
     while let Some(res) = tasks.join_next().await {
@@ -147,6 +149,6 @@ impl GameMetadataScanner for StoreMetadataScanner {
         games: &[GameLibraryRef<'a>],
         on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
     ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
-            RUNTIME.block_on(async move { get_metadatas(games, on_process_one).await })
+        RUNTIME.block_on(async move { get_metadatas(games, on_process_one).await })
     }
 }

@@ -97,7 +97,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                         let total_items = items.len() as u32;
                         let listener: Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>>> =
                             Box::new(|| {
-                                Box::pin(async  {
+                                Box::pin(async {
                                     let my_total = total_processed.clone();
                                     let curr = my_total.load(Ordering::Relaxed) + 1;
                                     my_total.store(curr, Ordering::Relaxed);
@@ -122,7 +122,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .unwrap_or_default();
                 for item in &mut items {
                     if let Some(metadata) = metadatas
-                        .get(&GameLibraryRefOwned::from(item.get_ref()).as_ref())
+                        .get(&GameLibraryRefOwned::from(item.get_ref()))
                         .cloned()
                     {
                         item.extend(metadata);

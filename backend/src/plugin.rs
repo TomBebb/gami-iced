@@ -1,6 +1,7 @@
 use gami_sdk::{
-    BoxFuture, ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef, GameMetadata, GameLibraryRefOwned,
-    GameMetadataScanner, PluginDeclaration, PluginMetadata, ScannedGameLibraryMetadata, ADDONS_DIR,
+    BoxFuture, ConfigSchemaMetadata, GameInstallStatus, GameLibrary, GameLibraryRef,
+    GameLibraryRefOwned, GameMetadata, GameMetadataScanner, PluginDeclaration, PluginMetadata,
+    ScannedGameLibraryMetadata, ADDONS_DIR,
 };
 use libloading::Library;
 use std::collections::HashMap;
