@@ -17,7 +17,6 @@ use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
 use std::collections::{BTreeMap, HashMap};
 use std::ffi::{OsStr, OsString};
-use std::os::windows::process::CommandExt;
 use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -47,6 +46,7 @@ fn wrap_in_quotes<T: AsRef<OsStr>>(path: T) -> OsString {
 }
 #[cfg(target_os = "windows")]
 fn map_open_url_command(url: &str) -> Command {
+    use std::os::windows::process::CommandExt;
     let mut cmd = Command::new("cmd");
     cmd.arg("/c")
         .arg("start")
