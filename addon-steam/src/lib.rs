@@ -46,6 +46,7 @@ fn wrap_in_quotes<T: AsRef<OsStr>>(path: T) -> OsString {
 }
 #[cfg(target_os = "windows")]
 fn map_open_url_command(url: &str) -> Command {
+    use std::os::windows::process::CommandExt;
     let mut cmd = Command::new("cmd");
     cmd.arg("/c")
         .arg("start")
