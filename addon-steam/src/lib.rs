@@ -17,7 +17,6 @@ use once_cell::sync::Lazy;
 use safer_ffi::option::TaggedOption;
 use std::collections::{BTreeMap, HashMap};
 use std::ffi::{OsStr, OsString};
-use std::os::windows::process::CommandExt;
 use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
