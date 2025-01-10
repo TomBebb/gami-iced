@@ -171,6 +171,7 @@ impl LibraryPage {
                     )))
                     .content_fit(ContentFit::Contain)
                 )
+                .style(button::danger)
                 .width(Length::FillPortion(1))
                 .on_press_maybe(
                     value.map(|_| Message::Filter(FilterMessage::SetCompletionStatus(None)))
