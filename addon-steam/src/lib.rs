@@ -1,5 +1,4 @@
 mod conf;
-mod curl;
 mod kv;
 mod local_scanner;
 mod models;
@@ -7,9 +6,7 @@ mod store;
 mod store_models;
 
 use crate::conf::Config;
-use crate::curl::Collector;
 use crate::store::StoreMetadataScanner;
-use ::curl::easy::Easy2;
 use gami_sdk::{
     register_plugin, ConfigSchemaKind, ConfigSchemaMetadata, GameLibrary, PluginRegistrar,
 };
@@ -25,7 +22,6 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::{self, Runtime};
 use tokio::sync::Mutex;
-use tokio::task;
 use url::Url;
 
 #[derive(Default)]
@@ -36,6 +32,7 @@ pub struct SteamLibrary {
 const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     runtime::Builder::new_multi_thread()
         .enable_time()
+        .enable_io()
         .build()
         .unwrap()
 });
@@ -108,26 +105,21 @@ impl SteamLibrary {
             id
         }
     }
-    async fn get_owned_games(&self, conf: Config) -> models::OwnedGamesResponse {
+    async fn get_owned_games(&self, conf: &Config) -> models::OwnedGamesResponse {
         let steam_id = self.auto_get_id().await;
-        task::spawn_blocking(move || {
-            let mut url =
-                Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001")
-                    .unwrap();
-            url.query_pairs_mut()
-                .append_pair("key", conf.api_key.as_str())
-                .append_pair("steamid", steam_id.as_str())
-                .append_pair("include_appinfo", "1")
-                .append_pair("format", "json");
-
-            let mut req = Easy2::new(Collector::default());
-            req.url(url.as_str()).unwrap();
-            req.perform().unwrap();
-            let text: &str = std::str::from_utf8(req.get_ref().as_ref()).unwrap();
-            serde_json::from_str(text).unwrap()
-        })
-        .await
-        .unwrap()
+        let mut url =
+            Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001").unwrap();
+        url.query_pairs_mut()
+            .append_pair("key", conf.api_key.as_str())
+            .append_pair("steamid", steam_id.as_str())
+            .append_pair("include_appinfo", "1")
+            .append_pair("format", "json");
+        reqwest::get(url)
+            .await
+            .unwrap()
+            .json::<models::OwnedGamesResponse>()
+            .await
+            .unwrap()
     }
 }
 impl GameLibrary for SteamLibrary {
@@ -143,7 +135,7 @@ impl GameLibrary for SteamLibrary {
                     .into_iter()
                     .map(|g| (g.library_id.to_string(), g)),
             );
-            self.get_owned_games(conf)
+            self.get_owned_games(&conf)
                 .await
                 .response
                 .games
