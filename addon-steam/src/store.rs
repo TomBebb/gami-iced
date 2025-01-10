@@ -7,11 +7,8 @@ use regex::Regex;
 use safer_ffi::option::TaggedOption;
 use safer_ffi::{String as FfiString, Vec as FfiVec};
 use std::collections::HashMap;
-use std::future::Future;
-use std::ops::Deref;
-use std::pin::Pin;
 use std::sync::{Arc, Mutex};
-use tokio::task::JoinSet;
+use tokio::sync::mpsc;
 use url::Url;
 
 const RELEASE_DATE_RAW: &str =
@@ -62,7 +59,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
     url.query_pairs_mut()
         .append_pair("appids", &*game.library_id);
 
-    println!("Fetch URL: {}", url);
+    log::info!("Fetch URL: {}", url);
     let raw_res = reqwest::get(url)
         .await
         .unwrap()
@@ -109,8 +106,10 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
 
 async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
-    on_process_one: Arc<dyn Send + Sync + Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'a>>>,
+    on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
 ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
+    let (tx, mut rx) = mpsc::channel(32);
+
     let games: Vec<GameLibraryRefOwned> = games
         .into_iter()
         .cloned()
@@ -119,20 +118,21 @@ async fn get_metadatas<'a>(
     let data = Arc::new(Mutex::new(
         HashMap::<GameLibraryRefOwned, GameMetadata>::new(),
     ));
-    let mut tasks = JoinSet::new();
     for game in games {
         let my_data = data.clone();
-
-        tasks.spawn(async move {
-            if let Some(metadata) = get_metadata(game.as_ref()).await {
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            let game_ref: GameLibraryRef = game.as_ref();
+            if let Some(metadata) = get_metadata(game_ref).await {
                 let mut curr = my_data.lock().unwrap();
                 curr.insert(game, metadata);
             }
-            let on_proc = on_process_one.clone();
+            tx.send(()).await.unwrap();
         });
     }
-    while let Some(res) = tasks.join_next().await {
-        res.unwrap();
+    while let Some(message) = rx.recv().await {
+        println!("GOT = {:?}", message);
+        on_process_one().await;
     }
     let my_data = data.clone().lock().unwrap().clone();
 
@@ -141,7 +141,7 @@ async fn get_metadatas<'a>(
 }
 impl GameMetadataScanner for StoreMetadataScanner {
     fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata> {
-        RUNTIME.block_on(async move { get_metadata(game).await })
+        RUNTIME.block_on(async move { get_metadata(game.into()).await })
     }
 
     fn get_metadatas<'a>(
