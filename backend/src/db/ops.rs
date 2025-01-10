@@ -1,7 +1,7 @@
 use crate::db::game;
 use crate::db::game::Column;
 use crate::{db, ADDONS};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
@@ -193,6 +193,19 @@ pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     raw.into_iter().map(Into::into).collect()
 }
 
+pub async fn update_game_played(id: i32) -> DateTime<Utc> {
+    let mut conn = db::connect().await;
+    let curr = Local::now().into();
+    GameEntity::update(game::ActiveModel {
+        id: ActiveValue::Unchanged(id),
+        last_played: ActiveValue::Set(Some(curr)),
+        ..Default::default()
+    })
+    .exec(&mut conn)
+    .await
+    .unwrap();
+    curr
+}
 pub async fn update_game(game: GameData) {
     let mut conn = db::connect().await;
     GameEntity::update(game::ActiveModel {
