@@ -1,7 +1,7 @@
 use crate::db::game;
 use crate::db::game::{Column, DbGameCompletionStatus, DbGameInstallStatus};
 use crate::{db, GameFilter, ADDONS};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
