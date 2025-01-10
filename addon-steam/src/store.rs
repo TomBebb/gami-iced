@@ -109,7 +109,7 @@ async fn get_metadatas<'a>(
     on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
 ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
     let (tx, mut rx) = mpsc::channel(32);
-
+    let total_games = games.len();
     let games: Vec<GameLibraryRefOwned> = games
         .into_iter()
         .cloned()
@@ -130,9 +130,14 @@ async fn get_metadatas<'a>(
             tx.send(()).await.unwrap();
         });
     }
+    let mut index = 0;
     while let Some(message) = rx.recv().await {
         println!("GOT = {:?}", message);
         on_process_one().await;
+        index += 1;
+        if index >= total_games {
+            break;
+        }
     }
     let my_data = data.clone().lock().unwrap().clone();
 
