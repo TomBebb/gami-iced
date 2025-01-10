@@ -1,14 +1,16 @@
+use crate::curl::Collector;
 use crate::store_models::AppDetails;
 use crate::RUNTIME;
 use chrono::NaiveDate;
+use curl::easy::Easy2;
+use curl::multi::{Easy2Handle, Multi};
 use gami_sdk::{BoxFuture, GameLibraryRef, GameLibraryRefOwned, GameMetadata, GameMetadataScanner};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use safer_ffi::option::TaggedOption;
 use safer_ffi::{String as FfiString, Vec as FfiVec};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
+use std::time::Duration;
 use url::Url;
 
 const RELEASE_DATE_RAW: &str =
@@ -51,21 +53,19 @@ fn parse_release_date(date: &str) -> Option<NaiveDate> {
     })
 }
 pub struct StoreMetadataScanner;
-async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
-    if &*game.library_type != "steam" {
-        return None;
-    }
+
+fn request_metadata(game: GameLibraryRef) -> Easy2<Collector> {
+    let mut request = Easy2::new(Collector::default());
     let mut url = Url::parse("https://store.steampowered.com/api/appdetails").unwrap();
     url.query_pairs_mut()
         .append_pair("appids", &*game.library_id);
 
-    log::info!("Fetch URL: {}", url);
-    let raw_res = reqwest::get(url)
-        .await
-        .unwrap()
-        .json::<Option<HashMap<String, AppDetails>>>()
-        .await
-        .unwrap();
+    request.url(url.as_str()).unwrap();
+    request
+}
+
+fn map_metadata(res: &str) -> Option<GameMetadata> {
+    let raw_res: Option<HashMap<String, AppDetails>> = serde_json::from_str(res).unwrap();
     let res = if let Some(res) = raw_res {
         res
     } else {
@@ -108,41 +108,57 @@ async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
     on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
 ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
-    let (tx, mut rx) = mpsc::channel(32);
-    let total_games = games.len();
-    let games: Vec<GameLibraryRefOwned> = games
-        .into_iter()
+    let mut multi = Multi::new();
+    multi.pipelining(true, true).unwrap();
+    let mut data = HashMap::<GameLibraryRefOwned, GameMetadata>::new();
+    let handles = games
+        .iter()
         .cloned()
-        .map(GameLibraryRefOwned::from)
-        .collect();
-    let data = Arc::new(Mutex::new(
-        HashMap::<GameLibraryRefOwned, GameMetadata>::new(),
-    ));
-    for game in games {
-        let my_data = data.clone();
-        let tx = tx.clone();
-        tokio::spawn(async move {
-            let game_ref: GameLibraryRef = game.as_ref();
-            if let Some(metadata) = get_metadata(game_ref).await {
-                let mut curr = my_data.lock().unwrap();
-                curr.insert(game, metadata);
-            }
-            tx.send(()).await.unwrap();
-        });
-    }
-    let mut index = 0;
-    while let Some(message) = rx.recv().await {
-        println!("GOT = {:?}", message);
-        on_process_one().await;
-        index += 1;
-        if index >= total_games {
-            break;
+        .enumerate()
+        .map(|(index, game)| {
+            let req = request_metadata(game);
+            let mut handle = multi.add2(req).unwrap();
+            handle.set_token(index).unwrap();
+            handle
+        })
+        .collect::<Vec<Easy2Handle<Collector>>>();
+    let mut still_alive = true;
+    while still_alive {
+        // We still need to process the last messages when
+        // `Multi::perform` returns "0".
+        if multi.perform().unwrap() == 0 {
+            still_alive = false;
         }
-    }
-    let my_data = data.clone().lock().unwrap().clone();
+        multi.messages(|message| {
+            let index = message.token().expect("failed to get token");
+            let handle: &Easy2Handle<Collector> = &handles[index];
 
-    drop(data);
-    my_data
+            let text: &str = std::str::from_utf8(handle.get_ref().as_ref()).unwrap();
+            if let Some(metadata) = map_metadata(text) {
+                data.insert(games[index].to_owned(), metadata);
+            }
+
+            on_process_one();
+        })
+    }
+    if still_alive {
+        // The sleeping time could be reduced to allow other processing.
+        // For instance, a thread could check a condition signalling the
+        // thread shutdown.
+        multi.wait(&mut [], Duration::from_secs(60)).unwrap();
+    }
+    data
+}
+
+async fn get_metadata<'a>(my_ref: GameLibraryRefOwned) -> Option<GameMetadata> {
+    tokio::task::spawn_blocking(move || {
+        let req = request_metadata(my_ref.as_ref());
+        req.perform().unwrap();
+        let text: &str = std::str::from_utf8(req.get_ref().as_ref()).unwrap();
+        map_metadata(text)
+    })
+    .await
+    .unwrap()
 }
 impl GameMetadataScanner for StoreMetadataScanner {
     fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata> {
