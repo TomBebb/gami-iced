@@ -1741,6 +1741,7 @@ name = "gami-desktop"
 version = "0.1.0"
 dependencies = [
  "bitcode",
+ "chrono",
  "env_logger",
  "gami-backend",
  "gami-sdk",

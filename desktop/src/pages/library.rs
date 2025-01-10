@@ -1,7 +1,6 @@
-use crate::models::PostLaunchAction;
-use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
+use chrono::{DateTime, Utc};
 use gami_backend::db::ops::{GameSyncArgs, SortField, SortOrder};
 use gami_backend::{db, get_actions, Direction, GameAction, GameFilter, GameTextField, ADDONS};
 use gami_sdk::{
@@ -14,7 +13,7 @@ use iced::widget::{
     button, checkbox, column, container, image, pick_list, row, scrollable, text, text_input,
     tooltip, Button, Column, Container, Row, Scrollable, Svg,
 };
-use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
+use iced::{ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
@@ -89,6 +88,7 @@ pub enum Message {
     EditorCompletionStatusChanged(CompletionStatus),
     SaveEditor,
     MoveInDir(Direction),
+    UpdateLastPlayed(i32, DateTime<Utc>),
     ToggleFilterDisplay,
     Filter(FilterMessage),
 }
@@ -535,7 +535,6 @@ impl LibraryPage {
         }
         column![toolbar, wrapped_items].into()
     }
-
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Table(tbl) => {
@@ -570,7 +569,11 @@ impl LibraryPage {
                     .cloned()
                     .expect("Failed to load library");
                 addon.launch(game.get_ref());
-
+                let game_id = game.id;
+                return Task::perform(db::ops::update_game_played(game.id), move |dt| {
+                    Message::UpdateLastPlayed(game_id, dt)
+                });
+                /*
                 let settings = settings::load().unwrap();
                 match settings.general.post_launch_action {
                     PostLaunchAction::DoNothing => {}
@@ -581,6 +584,8 @@ impl LibraryPage {
                         return window::get_oldest().and_then(|w| window::minimize(w, true));
                     }
                 }
+
+                 */
             }
             Message::GameAction(GameAction::Install, game) => {
                 let addon = ADDONS
@@ -657,6 +662,19 @@ impl LibraryPage {
                         }
                     }
                     LibraryViewType::Grid => todo!(),
+                }
+            }
+            Message::UpdateLastPlayed(game_id, dt) => {
+                log::info!(
+                    "Process game details update raw: {:?}; id: {:?}",
+                    game_id,
+                    dt,
+                );
+                if let Some(ref mut data) = self.games.as_mut_slice().get_mut(self.curr_index) {
+                    log::info!("Process game details update: {:?}; id: {:?}", data, game_id);
+                    if data.id == game_id {
+                        data.last_played = Some(dt);
+                    }
                 }
             }
             Message::ToggleFilterDisplay => {
