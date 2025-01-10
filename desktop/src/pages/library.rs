@@ -510,7 +510,7 @@ impl LibraryPage {
             }
             Message::ReloadCache => {
                 return Task::perform(
-                    db::ops::get_games(self.args.clone()),
+                    db::ops::get_games(self.args.clone(), self.filter.clone()),
                     Message::CacheReloaded,
                 );
             }
@@ -622,7 +622,10 @@ impl LibraryPage {
             Message::ToggleFilterDisplay => {
                 self.display_filter = !self.display_filter;
             }
-            Message::Filter(filter) => update_filter(&mut self.filter, filter),
+            Message::Filter(filter) => {
+                update_filter(&mut self.filter, filter);
+                return self.update(Message::ReloadCache);
+            }
             v => println!("{:?}", v),
         }
 

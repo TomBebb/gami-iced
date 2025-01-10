@@ -1,6 +1,6 @@
 use crate::db::game;
-use crate::db::game::Column;
-use crate::{db, ADDONS};
+use crate::db::game::{Column, DbGameInstallStatus};
+use crate::{db, GameFilter, ADDONS};
 use chrono::{DateTime, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
@@ -180,14 +180,29 @@ pub struct GameSyncArgs {
     pub search: String,
     pub sort: Sort,
 }
-pub async fn get_games(filters: GameSyncArgs) -> Vec<GameData> {
+pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> {
     let conn = db::connect().await;
     let mut query = GameEntity::find();
-    if !filters.search.is_empty() {
-        query = query.filter(Column::Name.contains(&filters.search));
+    if !args.search.is_empty() {
+        query = query.filter(Column::Name.contains(&args.search));
     }
-    let sort_field: Column = filters.sort.field.into();
-    let sort_ord: Order = filters.sort.order.into();
+
+    if filter.installed || filter.not_installed {
+        if filter.installed && filter.not_installed {
+            query = query.filter(
+                Column::InstallStatus
+                    .eq(DbGameInstallStatus::Installed)
+                    .or(Column::InstallStatus.eq(DbGameInstallStatus::InLibrary)),
+            );
+        }
+        query = query.filter(Column::InstallStatus.eq(if filter.installed {
+            DbGameInstallStatus::Installed
+        } else {
+            DbGameInstallStatus::InLibrary
+        }));
+    }
+    let sort_field: Column = args.sort.field.into();
+    let sort_ord: Order = args.sort.order.into();
     query = query.order_by(sort_field, sort_ord);
     let raw = query.all(&conn).await.unwrap();
     raw.into_iter().map(Into::into).collect()
