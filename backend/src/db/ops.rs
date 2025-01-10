@@ -1,5 +1,5 @@
 use crate::db::game;
-use crate::db::game::{Column, DbGameInstallStatus};
+use crate::db::game::{Column, DbGameCompletionStatus, DbGameInstallStatus};
 use crate::{db, GameFilter, ADDONS};
 use chrono::{DateTime, Utc};
 use db::game::Entity as GameEntity;
@@ -185,6 +185,10 @@ pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> 
     let mut query = GameEntity::find();
     if !args.search.is_empty() {
         query = query.filter(Column::Name.contains(&args.search));
+    }
+
+    if let Some(status) = filter.completion_status {
+        query = query.filter(Column::CompletionStatus.eq(DbGameCompletionStatus::from(status)));
     }
 
     if filter.installed || filter.not_installed {

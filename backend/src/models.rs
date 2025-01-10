@@ -27,7 +27,7 @@ pub enum Direction {
 
 #[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub struct GameFilter {
-    completion_status: Option<CompletionStatus>,
+    pub completion_status: Option<CompletionStatus>,
     pub installed: bool,
     pub not_installed: bool,
 }

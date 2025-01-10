@@ -68,6 +68,7 @@ pub struct LibraryPage {
 pub enum FilterMessage {
     SetInstalled(bool),
     SetNotInstalled(bool),
+    SetCompletionStatus(Option<CompletionStatus>),
 }
 
 #[derive(Debug, Clone)]
@@ -96,6 +97,7 @@ fn update_filter(filter: &mut GameFilter, message: FilterMessage) {
     match message {
         FilterMessage::SetInstalled(v) => filter.installed = v,
         FilterMessage::SetNotInstalled(v) => filter.not_installed = v,
+        FilterMessage::SetCompletionStatus(v) => filter.completion_status = v,
     }
 }
 impl LibraryPage {
@@ -154,7 +156,15 @@ impl LibraryPage {
                 .on_toggle(|v| Message::Filter(FilterMessage::SetInstalled(v))),
             checkbox("Not installed", filter.not_installed)
                 .on_toggle(|v| Message::Filter(FilterMessage::SetNotInstalled(v))),
+            column![
+                text("Completion Status"),
+                pick_list(CompletionStatus::ALL, self.filter.completion_status, |v| {
+                    Message::Filter(FilterMessage::SetCompletionStatus(Some(v)))
+                })
+            ]
         ]
+        .padding(2)
+        .spacing(3)
         .into()
     }
 
