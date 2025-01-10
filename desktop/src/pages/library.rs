@@ -1,7 +1,6 @@
-use crate::models::PostLaunchAction;
-use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
+use chrono::{DateTime, Utc};
 use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
 use gami_backend::{
     db, get_actions, Direction, GameAction, GameTextField, LibrarySyncState, ADDONS,
@@ -16,7 +15,7 @@ use iced::widget::{
     button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
     Button, Column, Container, Row, Scrollable, Svg,
 };
-use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
+use iced::{ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
@@ -84,6 +83,7 @@ pub enum Message {
     SaveEditor,
     MoveInDir(Direction),
     LibrarySyncStatusChanged(LibrarySyncState),
+    UpdateLastPlayed(i32, DateTime<Utc>),
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -108,7 +108,6 @@ impl LibraryPage {
             curr_index: 0,
             table: LibraryTable::new(),
             filters: GamesFilters::default(),
-            sync_state: LibrarySyncState::Done,
         };
         me
     }
@@ -450,13 +449,7 @@ impl LibraryPage {
         } else {
             items.into()
         };
-
-        let status: Element<Message> = if self.sync_state == LibrarySyncState::Done {
-            row![].into()
-        } else {
-            row![text(self.sync_state.to_string())].height(30).into()
-        };
-        column![toolbar, status, wrapped_items].into()
+        column![toolbar, wrapped_items].into()
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
@@ -464,8 +457,7 @@ impl LibraryPage {
                 return self.table.update(tbl).map(Message::Table);
             }
             Message::RefreshGames => {
-                return Task::stream(db::ops::sync_library())
-                    .map(Message::LibrarySyncStatusChanged);
+                return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
             }
             Message::SearchChanged(query) => {
                 self.filters.search = query;
@@ -493,17 +485,11 @@ impl LibraryPage {
                     .cloned()
                     .expect("Failed to load library");
                 addon.launch(game.get_ref());
+                let game_id = game.id;
 
-                let settings = settings::load().unwrap();
-                match settings.general.post_launch_action {
-                    PostLaunchAction::DoNothing => {}
-                    PostLaunchAction::Exit => {
-                        return window::get_oldest().and_then(window::close);
-                    }
-                    PostLaunchAction::Minimize => {
-                        return window::get_oldest().and_then(|w| window::minimize(w, true));
-                    }
-                }
+                return Task::perform(db::ops::update_game_played(game.id), move |dt| {
+                    Message::UpdateLastPlayed(game_id, dt)
+                });
             }
             Message::GameAction(GameAction::Install, game) => {
                 let addon = ADDONS
@@ -587,6 +573,19 @@ impl LibraryPage {
                 self.sync_state = status;
                 if status == LibrarySyncState::Done {
                     return self.update(Message::ReloadCache);
+                }
+            }
+            Message::UpdateLastPlayed(game_id, dt) => {
+                log::info!(
+                    "Process game details update raw: {:?}; id: {:?}",
+                    game_id,
+                    dt,
+                );
+                if let Some(ref mut data) = self.games.as_mut_slice().get_mut(self.curr_index) {
+                    log::info!("Process game details update: {:?}; id: {:?}", data, game_id);
+                    if data.id == game_id {
+                        data.last_played = Some(dt);
+                    }
                 }
             }
             v => println!("{:?}", v),

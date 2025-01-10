@@ -1,5 +1,7 @@
 use crate::db::game::{ActiveModel, Column};
 use crate::{db, LibrarySyncState, ADDONS};
+use crate::db::game;
+use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
@@ -7,6 +9,7 @@ use gami_sdk::{GameCommon, GameData, GameLibraryRefOwned, GameMetadataScanner};
 use gami_sdk::{GameLibrary, GameLibraryRef};
 use iced::futures::{SinkExt, Stream};
 use iced::stream::channel;
+use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
     ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
@@ -227,6 +230,19 @@ pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     raw.into_iter().map(Into::into).collect()
 }
 
+pub async fn update_game_played(id: i32) -> DateTime<Utc> {
+    let mut conn = db::connect().await;
+    let curr = Local::now().into();
+    GameEntity::update(game::ActiveModel {
+        id: ActiveValue::Unchanged(id),
+        last_played: ActiveValue::Set(Some(curr)),
+        ..Default::default()
+    })
+    .exec(&mut conn)
+    .await
+    .unwrap();
+    curr
+}
 pub async fn update_game(game: GameData) {
     let mut conn = db::connect().await;
     GameEntity::update(ActiveModel {
