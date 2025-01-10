@@ -108,6 +108,7 @@ impl LibraryPage {
             curr_index: 0,
             table: LibraryTable::new(),
             filters: GamesFilters::default(),
+            sync_state: LibrarySyncState::Done,
         };
         me
     }
@@ -457,7 +458,8 @@ impl LibraryPage {
                 return self.table.update(tbl).map(Message::Table);
             }
             Message::RefreshGames => {
-                return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
+                return Task::stream(db::ops::sync_library())
+                    .map(Message::LibrarySyncStatusChanged);
             }
             Message::SearchChanged(query) => {
                 self.filters.search = query;

@@ -1,6 +1,6 @@
+use crate::db::game;
 use crate::db::game::{ActiveModel, Column};
 use crate::{db, LibrarySyncState, ADDONS};
-use crate::db::game;
 use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
@@ -53,7 +53,7 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .await
                     .unwrap();
                 let mut items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
-                let total_rows = Arc::new( AtomicU32::new(items.len() as u32));
+                let total_rows = Arc::new(AtomicU32::new(items.len() as u32));
                 let existing_query = GameEntity::find()
                     .select_column(Column::LibraryId)
                     .filter(Column::LibraryType.eq(key))
@@ -94,21 +94,24 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     .get_game_metadata(key)
                     .map(|scanner| {
                         let listener: Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>>> =
-                            Box::new(|| {
+                            Box::new(move || {
                                 let total_processed = Arc::new(AtomicU32::new(0));
                                 let my_total = total_processed.clone();
+                                let total_rows = total_rows.clone();
                                 Box::pin(async move {
+                                    let total_items = total_rows.clone().load(Ordering::Relaxed);
                                     let curr = my_total.load(Ordering::Relaxed) + 1;
                                     my_total.store(curr, Ordering::Relaxed);
-                                    log::info!("Process metadata: {} / {}", curr, total_rows.clone().load(Ordering::Relaxed));
-                                    /*
-                                    output
-                                        .send(LibrarySyncState::FetchingMetadata {
-                                            total: total_items,
-                                            current: curr,
-                                        })
-                                        .await
-                                        .unwrap();*/
+                                    log::info!("Process metadata: {} / {}", curr, total_items);
+                                    /*output
+                                       .send(LibrarySyncState::FetchingMetadata {
+                                           total: total_items,
+                                           current: curr,
+                                       })
+                                       .await
+                                       .unwrap();
+
+                                    */
                                 })
                             });
                         scanner.get_metadatas(
