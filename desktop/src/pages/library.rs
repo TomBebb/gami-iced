@@ -450,7 +450,17 @@ impl LibraryPage {
         } else {
             items.into()
         };
-        column![toolbar, wrapped_items].into()
+        let inner = column![toolbar, wrapped_items].into();
+        if self.sync_state == LibrarySyncState::Done {
+            inner
+        } else {
+            column![
+                row![
+                    text!("Loading metadata: {}", self.sync_state),
+                ],
+                inner,
+            ].into()
+        }
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
