@@ -230,7 +230,7 @@ impl fmt::Display for CompletionStatus {
             CompletionStatus::Backlog => "Backlog",
             CompletionStatus::Playing => "Playing",
             CompletionStatus::Played => "Played",
-            CompletionStatus::OnHold => "OnHold",
+            CompletionStatus::OnHold => "On Hold",
         })
     }
 }
