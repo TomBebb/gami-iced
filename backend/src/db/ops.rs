@@ -93,11 +93,13 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                 let metadatas = ADDONS
                     .get_game_metadata(key)
                     .map(|scanner| {
+                        let output = output.clone();
+                        let total_processed = Arc::new(AtomicU32::new(0));
                         let listener: Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>>> =
                             Box::new(move || {
-                                let total_processed = Arc::new(AtomicU32::new(0));
                                 let my_total = total_processed.clone();
                                 let total_rows = total_rows.clone();
+                                let mut output = output.clone();
                                 Box::pin(async move {
                                     let total_items = total_rows.clone().load(Ordering::Relaxed);
                                     let curr = my_total.load(Ordering::Relaxed) + 1;
