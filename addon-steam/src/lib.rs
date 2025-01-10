@@ -108,7 +108,7 @@ impl SteamLibrary {
     async fn get_owned_games(&self, conf: &Config) -> models::OwnedGamesResponse {
         let steam_id = self.auto_get_id().await;
         let mut url =
-            Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/").unwrap();
+            Url::parse("https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001").unwrap();
         url.query_pairs_mut()
             .append_pair("key", conf.api_key.as_str())
             .append_pair("steamid", steam_id.as_str())
