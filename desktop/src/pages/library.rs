@@ -149,6 +149,37 @@ impl LibraryPage {
         .into()
     }
 
+    fn filter_row_pick_list<'a, TEnum>(
+        &'a self,
+        name: &'a str,
+        value: Option<TEnum>,
+        map: impl Fn(Option<TEnum>) -> FilterMessage + 'a,
+    ) -> Column<'a, Message>
+    where
+        TEnum: EditableEnum + Clone,
+    {
+        column![
+            text(name),
+            row![
+                pick_list(TEnum::ALL, value.clone(), move |v| Message::Filter(map(
+                    Some(v)
+                )))
+                .width(Length::FillPortion(4)),
+                button(
+                    Svg::new(Handle::from_memory(include_bytes!(
+                        "../icons/tabler--backspace.svg"
+                    )))
+                    .content_fit(ContentFit::Contain)
+                )
+                .width(Length::FillPortion(1))
+                .on_press_maybe(
+                    value.map(|_| Message::Filter(FilterMessage::SetCompletionStatus(None)))
+                )
+                .height(30),
+            ]
+            .width(Fill)
+        ]
+    }
     fn filter_view(&self) -> Element<Message> {
         let filter = &self.filter;
         column![
@@ -156,29 +187,11 @@ impl LibraryPage {
                 .on_toggle(|v| Message::Filter(FilterMessage::SetInstalled(v))),
             checkbox("Not installed", filter.not_installed)
                 .on_toggle(|v| Message::Filter(FilterMessage::SetNotInstalled(v))),
-            column![
-                text("Completion Status"),
-                row![
-                    pick_list(CompletionStatus::ALL, self.filter.completion_status, |v| {
-                        Message::Filter(FilterMessage::SetCompletionStatus(Some(v)))
-                    })
-                    .width(Length::FillPortion(4)),
-                    button(
-                        Svg::new(Handle::from_memory(include_bytes!(
-                            "../icons/tabler--backspace.svg"
-                        )))
-                        .content_fit(ContentFit::Contain)
-                    )
-                    .width(Length::FillPortion(1))
-                    .on_press_maybe(
-                        self.filter
-                            .completion_status
-                            .map(|_| Message::Filter(FilterMessage::SetCompletionStatus(None)))
-                    )
-                    .height(30),
-                ]
-                .width(Fill)
-            ]
+            self.filter_row_pick_list(
+                "Completion Status",
+                self.filter.completion_status,
+                FilterMessage::SetCompletionStatus
+            ),
         ]
         .padding(2)
         .spacing(3)
