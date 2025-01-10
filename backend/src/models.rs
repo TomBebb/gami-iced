@@ -1,3 +1,5 @@
+use gami_sdk::CompletionStatus;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GameTextField {
     Name,
@@ -21,4 +23,9 @@ pub enum Direction {
     Right,
     Up,
     Down,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
+pub struct GameFilter {
+    completion_status: Option<CompletionStatus>,
 }

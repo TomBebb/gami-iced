@@ -176,11 +176,11 @@ pub struct Sort {
     pub order: SortOrder,
 }
 #[derive(Debug, Default, Clone)]
-pub struct GamesFilters {
+pub struct GameSyncArgs {
     pub search: String,
     pub sort: Sort,
 }
-pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
+pub async fn get_games(filters: GameSyncArgs) -> Vec<GameData> {
     let conn = db::connect().await;
     let mut query = GameEntity::find();
     if !filters.search.is_empty() {

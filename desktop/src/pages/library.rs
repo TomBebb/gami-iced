@@ -2,8 +2,8 @@ use crate::models::PostLaunchAction;
 use crate::settings;
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
-use gami_backend::db::ops::{GamesFilters, SortField, SortOrder};
-use gami_backend::{db, get_actions, Direction, GameAction, GameTextField, ADDONS};
+use gami_backend::db::ops::{GameSyncArgs, SortField, SortOrder};
+use gami_backend::{db, get_actions, Direction, GameAction, GameFilter, GameTextField, ADDONS};
 use gami_sdk::{
     CompletionStatus, EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary,
 };
@@ -59,7 +59,9 @@ pub struct LibraryPage {
     view_type: LibraryViewType,
     games: Vec<GameData>,
     table: LibraryTable,
-    filters: GamesFilters,
+    args: GameSyncArgs,
+    filter: GameFilter,
+    display_filter: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -80,6 +82,7 @@ pub enum Message {
     EditorCompletionStatusChanged(CompletionStatus),
     SaveEditor,
     MoveInDir(Direction),
+    ToggleFilterDisplay,
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -103,7 +106,9 @@ impl LibraryPage {
             games: Vec::new(),
             curr_index: 0,
             table: LibraryTable::new(),
-            filters: GamesFilters::default(),
+            args: GameSyncArgs::default(),
+            filter: GameFilter::default(),
+            display_filter: false,
         };
         me
     }
@@ -128,6 +133,11 @@ impl LibraryPage {
         .into()
     }
 
+    fn filter_view(&self) -> Element<Message> {
+        let filter = &self.filter;
+        column![text("TODO: Filters")].into()
+    }
+
     fn toolbar(&self) -> Element<'_, Message> {
         Element::from(
             row![
@@ -138,6 +148,7 @@ impl LibraryPage {
                         )))
                         .content_fit(ContentFit::Contain)
                     )
+                    .on_press(Message::ToggleFilterDisplay)
                     .style(button::secondary)
                     .height(30),
                     container(text("Filter games"))
@@ -145,7 +156,7 @@ impl LibraryPage {
                         .style(container::rounded_box),
                     tooltip::Position::Bottom,
                 ),
-                text_input("Enter search", &self.filters.search)
+                text_input("Enter search", &self.args.search)
                     .on_input(Message::SearchChanged)
                     .width(Length::FillPortion(7)),
                 Container::new(
@@ -168,7 +179,7 @@ impl LibraryPage {
                 .width(Length::FillPortion(3)),
                 row![
                     button(
-                        Svg::new(if self.filters.sort.order == SortOrder::Ascending {
+                        Svg::new(if self.args.sort.order == SortOrder::Ascending {
                             Handle::from_memory(include_bytes!(
                                 "../icons/tabler--sort-descending.svg"
                             ))
@@ -183,7 +194,7 @@ impl LibraryPage {
                     .on_press(Message::ToggleSortDirection),
                     pick_list(
                         &SortField::ALL[..],
-                        Some(self.filters.sort.field),
+                        Some(self.args.sort.field),
                         Message::SortFieldChanged
                     )
                 ]
@@ -450,7 +461,7 @@ impl LibraryPage {
             None
         };
 
-        let wrapped_items: Element<Message> = if let Some(side) = raw_side_content {
+        let mut wrapped_items: Element<Message> = if let Some(side) = raw_side_content {
             row![
                 items.width(Length::FillPortion(3)),
                 scrollable(side).width(Length::FillPortion(7)),
@@ -459,6 +470,9 @@ impl LibraryPage {
         } else {
             items.into()
         };
+        if self.display_filter {
+            wrapped_items = row![self.filter_view(), wrapped_items].into();
+        }
         column![toolbar, wrapped_items].into()
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
@@ -470,12 +484,12 @@ impl LibraryPage {
                 return Task::perform(db::ops::sync_library(), |_| Message::ReloadCache);
             }
             Message::SearchChanged(query) => {
-                self.filters.search = query;
+                self.args.search = query;
                 return self.update(Message::ReloadCache);
             }
             Message::ReloadCache => {
                 return Task::perform(
-                    db::ops::get_games(self.filters.clone()),
+                    db::ops::get_games(self.args.clone()),
                     Message::CacheReloaded,
                 );
             }
@@ -559,11 +573,11 @@ impl LibraryPage {
                 self.curr_index = index;
             }
             Message::SortFieldChanged(field) => {
-                self.filters.sort.field = field;
+                self.args.sort.field = field;
                 return self.update(Message::ReloadCache);
             }
             Message::ToggleSortDirection => {
-                self.filters.sort.order = match self.filters.sort.order {
+                self.args.sort.order = match self.args.sort.order {
                     SortOrder::Ascending => SortOrder::Descending,
                     SortOrder::Descending => SortOrder::Ascending,
                 };
@@ -583,6 +597,9 @@ impl LibraryPage {
                     }
                     LibraryViewType::Grid => todo!(),
                 }
+            }
+            Message::ToggleFilterDisplay => {
+                self.display_filter = !self.display_filter;
             }
             v => println!("{:?}", v),
         }
