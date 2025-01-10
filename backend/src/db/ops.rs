@@ -80,15 +80,6 @@ pub fn sync_library() -> impl Stream<Item = LibrarySyncState> {
                     })
                     .await
                     .unwrap();
-                log::info!("Scanning {} games metadata ", items.len());
-
-                output
-                    .send(LibrarySyncState::FetchingMetadata {
-                        total: items.len() as u32,
-                        current: 0,
-                    })
-                    .await
-                    .unwrap();
 
                 let metadatas = ADDONS
                     .get_game_metadata(key)
