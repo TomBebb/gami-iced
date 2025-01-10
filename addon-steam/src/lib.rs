@@ -2,15 +2,11 @@ mod conf;
 mod kv;
 mod local_scanner;
 mod models;
-mod response_handler;
 mod store;
 mod store_models;
 
 use crate::conf::Config;
-use crate::response_handler::ResponseHandler;
 use crate::store::StoreMetadataScanner;
-use async_curl::{Actor, CurlActor};
-use curl::easy::Easy2;
 use gami_sdk::{
     register_plugin, ConfigSchemaKind, ConfigSchemaMetadata, GameLibrary, PluginRegistrar,
 };
@@ -36,7 +32,7 @@ pub struct SteamLibrary {
 const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     runtime::Builder::new_multi_thread()
         .enable_time()
-        //.enable_io()
+        .enable_io()
         .build()
         .unwrap()
 });
@@ -72,7 +68,6 @@ fn map_open_url_command(url: &str) -> Command {
     cmd
 }
 const CREATE_NO_WINDOW: u32 = 0x08000000;
-pub const CURL_ACTOR: Lazy<CurlActor<ResponseHandler>> = Lazy::new(|| CurlActor::new());
 fn run_cmd(cmd: &'static str, id: &str) {
     let raw = format!("steam://{}/{}", cmd, id);
     let mut cmd = map_open_url_command(&raw);
@@ -119,10 +114,12 @@ impl SteamLibrary {
             .append_pair("steamid", steam_id.as_str())
             .append_pair("include_appinfo", "1")
             .append_pair("format", "json");
-        let mut req = Easy2::new(ResponseHandler::default());
-        req.url(url.as_str()).unwrap();
-        let raw_res = CURL_ACTOR.send_request(req).await.unwrap();
-        raw_res.get_ref().json::<OwnedGamesResponse>().unwrap()
+        reqwest::get(url)
+            .await
+            .unwrap()
+            .json::<models::OwnedGamesResponse>()
+            .await
+            .unwrap()
     }
 }
 impl GameLibrary for SteamLibrary {

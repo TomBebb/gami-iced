@@ -1,9 +1,6 @@
-use crate::response_handler::ResponseHandler;
 use crate::store_models::AppDetails;
-use crate::{CURL_ACTOR, RUNTIME};
-use async_curl::Actor;
+use crate::RUNTIME;
 use chrono::NaiveDate;
-use curl::easy::Easy2;
 use gami_sdk::{BoxFuture, GameLibraryRef, GameLibraryRefOwned, GameMetadata, GameMetadataScanner};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -63,11 +60,12 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         .append_pair("appids", &*game.library_id);
 
     log::info!("Fetch URL: {}", url);
-    let mut req = Easy2::new(ResponseHandler::default());
-    req.url(url.as_str()).unwrap();
-    req.get(true).unwrap();
-    let res = (&*CURL_ACTOR).send_request(req).await.unwrap();
-    let raw_res: Option<HashMap<String, AppDetails>> = res.get_ref().json().unwrap();
+    let raw_res = reqwest::get(url)
+        .await
+        .unwrap()
+        .json::<Option<HashMap<String, AppDetails>>>()
+        .await
+        .unwrap();
     let res = if let Some(res) = raw_res {
         res
     } else {
