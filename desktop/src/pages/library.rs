@@ -11,8 +11,8 @@ use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
 use iced::font::Weight;
 use iced::widget::{
-    button, column, container, image, pick_list, row, scrollable, text, text_input, tooltip,
-    Button, Column, Container, Row, Scrollable, Svg,
+    button, checkbox, column, container, image, pick_list, row, scrollable, text, text_input,
+    tooltip, Button, Column, Container, Row, Scrollable, Svg,
 };
 use iced::{window, ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
@@ -65,6 +65,12 @@ pub struct LibraryPage {
 }
 
 #[derive(Debug, Clone)]
+pub enum FilterMessage {
+    SetInstalled(bool),
+    SetNotInstalled(bool),
+}
+
+#[derive(Debug, Clone)]
 pub enum Message {
     Table(TableMessage),
     ViewSelected(LibraryViewType),
@@ -83,6 +89,14 @@ pub enum Message {
     SaveEditor,
     MoveInDir(Direction),
     ToggleFilterDisplay,
+    Filter(FilterMessage),
+}
+
+fn update_filter(filter: &mut GameFilter, message: FilterMessage) {
+    match message {
+        FilterMessage::SetInstalled(v) => filter.installed = v,
+        FilterMessage::SetNotInstalled(v) => filter.not_installed = v,
+    }
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {
@@ -135,7 +149,13 @@ impl LibraryPage {
 
     fn filter_view(&self) -> Element<Message> {
         let filter = &self.filter;
-        column![text("TODO: Filters")].into()
+        column![
+            checkbox("Installed", filter.installed)
+                .on_toggle(|v| Message::Filter(FilterMessage::SetInstalled(v))),
+            checkbox("Not installed", filter.not_installed)
+                .on_toggle(|v| Message::Filter(FilterMessage::SetNotInstalled(v))),
+        ]
+        .into()
     }
 
     fn toolbar(&self) -> Element<'_, Message> {
@@ -475,6 +495,7 @@ impl LibraryPage {
         }
         column![toolbar, wrapped_items].into()
     }
+
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Table(tbl) => {
@@ -601,6 +622,7 @@ impl LibraryPage {
             Message::ToggleFilterDisplay => {
                 self.display_filter = !self.display_filter;
             }
+            Message::Filter(filter) => update_filter(&mut self.filter, filter),
             v => println!("{:?}", v),
         }
 
