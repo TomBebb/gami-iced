@@ -8,10 +8,12 @@ use crate::pages::tools::ToolsPage;
 use crate::widgets::nav_view::NavView;
 use crate::{pages, widgets};
 use gami_backend::Direction;
+use iced::advanced::graphics::image::image_rs::ImageFormat;
 use iced::application::Title;
 use iced::keyboard::key::Named;
 use iced::widget::Row;
-use iced::{keyboard, Element, Task};
+use iced::window::{icon, Icon, Id};
+use iced::{keyboard, window, Element, Task};
 
 #[derive(Clone, Default)]
 pub struct App {
@@ -43,6 +45,20 @@ impl App {
                         .update(library::Message::ReloadCache)
                         .map(PageMessage::Library)
                         .map(Message::Page)
+                        .then(|p| {
+                            window::get_oldest().and_then(move |id: Id| {
+                                let my_p = p.clone();
+                                window::change_icon::<Icon>(
+                                    id,
+                                    icon::from_file_data(
+                                        include_bytes!("icons/icon.png"),
+                                        Some(ImageFormat::Png),
+                                    )
+                                    .unwrap(),
+                                )
+                                .map(move |_| my_p.clone())
+                            })
+                        })
                 } else {
                     Task::none()
                 }
