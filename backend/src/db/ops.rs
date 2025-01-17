@@ -11,6 +11,7 @@ use gami_sdk::{
 use gami_sdk::{GameLibrary, GameLibraryRef};
 use sea_orm::{
     ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
+    TransactionTrait,
 };
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -105,6 +106,8 @@ pub async fn sync_library() {
                 .collect();
             log::info!("Genres to skip: {:?}", existing_genres_by_lib_id);
             log::info!("Pushing genres: {:?}", raw_genres);
+
+            let mut txn = conn.begin().await.unwrap();
             for g in raw_genres {
                 let res = GenreEntity::insert(genre::ActiveModel {
                     id: ActiveValue::NotSet,
@@ -112,7 +115,7 @@ pub async fn sync_library() {
                     metadata_id: ActiveValue::Set(g.library_id.clone().into()),
                     metadata_source: ActiveValue::Set(key.into()),
                 })
-                .exec(&mut conn)
+                .exec(&mut txn)
                 .await
                 .unwrap();
                 existing_genres_by_lib_id.insert(g.library_id.into(), res.last_insert_id);
@@ -135,7 +138,7 @@ pub async fn sync_library() {
                     release_date: ActiveValue::Set(item.release_date),
                     ..Default::default()
                 })
-                .exec(&mut conn)
+                .exec(&mut txn)
                 .await
                 .unwrap();
                 log::info!("Got game metadata genres: {:?}", item.genres);
@@ -156,11 +159,12 @@ pub async fn sync_library() {
                 );
                 if !to_insert.is_empty() {
                     GameGenresEntity::insert_many(to_insert)
-                        .exec(&mut conn)
+                        .exec(&mut txn)
                         .await
                         .unwrap();
                 }
             }
+            txn.commit().await.unwrap();
             log::info!("Pushed games to DB");
         }
     }
