@@ -83,7 +83,15 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         } else {
             TaggedOption::Some(data.detailed_description.into())
         },
-        //   developers: data.developers.map(FfiString::from).collect::<Vec<FfiString>>().into(),
+        developers: data
+            .developers
+            .map(|v| {
+                v.into_iter()
+                    .map(FfiString::from)
+                    .collect::<Vec<FfiString>>()
+            })
+            .map(FfiVec::from)
+            .unwrap_or(FfiVec::EMPTY),
         icon_url: TaggedOption::None,
         header_url: data.header_image.map(String::into).into(),
         cover_url: data.capsule_image.map(String::into).into(),
