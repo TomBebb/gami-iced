@@ -1,5 +1,5 @@
+use crate::db::game;
 use crate::db::game::Column;
-use crate::db::{game, Game};
 use crate::{db, ADDONS};
 use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
@@ -7,10 +7,8 @@ use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
 use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
 use gami_sdk::{GameLibrary, GameLibraryRef};
-use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
-    ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
-    SelectColumns,
+    ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
 use std::collections::HashSet;
 use std::fmt;
