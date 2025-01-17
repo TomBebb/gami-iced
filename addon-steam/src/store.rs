@@ -64,12 +64,15 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         .await
         .unwrap()
         .json::<Option<HashMap<String, AppDetails>>>()
-        .await
-        .unwrap();
-    let res = if let Some(res) = raw_res {
-        res
-    } else {
-        return None;
+        .await;
+    log::debug!("Fetched JSON: {} {:?}", url, raw_res);
+    let res = match raw_res {
+        Err(err) => {
+            log::error!("Failed to fetch metadata @ {}: {}", url, err);
+            return None;
+        }
+        Ok(None) => return None,
+        Ok(Some(map)) => map,
     };
 
     let AppDetails { data, .. } = res.into_iter().map(|v| v.1).next().unwrap();
@@ -106,10 +109,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
 
 async fn get_metadatas<'a>(
     games: &[GameLibraryRef<'a>],
-    on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
 ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
-    let (tx, mut rx) = mpsc::channel(32);
-    let total_games = games.len();
     let games: Vec<GameLibraryRefOwned> = games
         .into_iter()
         .cloned()
@@ -118,26 +118,19 @@ async fn get_metadatas<'a>(
     let data = Arc::new(Mutex::new(
         HashMap::<GameLibraryRefOwned, GameMetadata>::new(),
     ));
+    let mut tasks = JoinSet::new();
     for game in games {
         let my_data = data.clone();
-        let tx = tx.clone();
-        tokio::spawn(async move {
-            let game_ref: GameLibraryRef = game.as_ref();
-            if let Some(metadata) = get_metadata(game_ref).await {
+
+        tasks.spawn(async move {
+            if let Some(metadata) = get_metadata(game.as_ref()).await {
                 let mut curr = my_data.lock().unwrap();
                 curr.insert(game, metadata);
             }
-            tx.send(()).await.unwrap();
         });
     }
-    let mut index = 0;
-    while let Some(message) = rx.recv().await {
-        println!("GOT = {:?}", message);
-        on_process_one().await;
-        index += 1;
-        if index >= total_games {
-            break;
-        }
+    while let Some(res) = tasks.join_next().await {
+        res.unwrap();
     }
     let my_data = data.clone().lock().unwrap().clone();
 
@@ -146,14 +139,13 @@ async fn get_metadatas<'a>(
 }
 impl GameMetadataScanner for StoreMetadataScanner {
     fn get_metadata(&self, game: GameLibraryRef) -> Option<GameMetadata> {
-        RUNTIME.block_on(async move { get_metadata(game.into()).await })
+        RUNTIME.block_on(async move { get_metadata(game).await })
     }
 
     fn get_metadatas<'a>(
         &self,
         games: &[GameLibraryRef<'a>],
-        on_process_one: Box<dyn Fn() -> BoxFuture<'a, ()>>,
     ) -> HashMap<GameLibraryRefOwned, GameMetadata> {
-        RUNTIME.block_on(async move { get_metadatas(games, on_process_one).await })
+        RUNTIME.block_on(async move { get_metadatas(games).await })
     }
 }
