@@ -60,15 +60,16 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         .append_pair("appids", &*game.library_id);
 
     println!("Fetch URL: {}", url);
-    let raw_res = reqwest::get(url.clone())
-        .await
-        .unwrap()
-        .json::<Option<HashMap<String, AppDetails>>>()
-        .await;
-    log::debug!("Fetched JSON: {} {:?}", url, raw_res);
-    let res = match raw_res {
+    let pre_res = match reqwest::get(url.clone()).await {
+        Ok(res) => res,
         Err(err) => {
             log::error!("Failed to fetch metadata @ {}: {}", url, err);
+            return None;
+        }
+    };
+    let res = match pre_res.json::<Option<HashMap<String, AppDetails>>>().await {
+        Err(err) => {
+            log::error!("Failed to parse metadata @ {}: {}", url, err);
             return None;
         }
         Ok(None) => return None,
