@@ -175,10 +175,17 @@ impl GameCommon for ScannedGameLibraryMetadata {
 #[derive_ReprC]
 #[repr(C)]
 #[derive(Debug, Clone)]
+pub struct GenreData {
+    pub name: String,
+    pub library_id: String
+}
+#[derive_ReprC]
+#[repr(C)]
+#[derive(Debug, Clone)]
 pub struct GameMetadata {
     pub description: TaggedOption<String>,
     pub developers: Vec<String>,
-    pub genres: Vec<String>,
+    pub genres: Vec<GenreData>,
     pub platforms: Vec<String>,
     pub publishers: Vec<String>,
     pub series: Vec<String>,
