@@ -80,6 +80,7 @@ pub enum Message {
     SaveEditor,
     MoveInDir(Direction),
     UpdateLastPlayed(i32, DateTime<Utc>),
+    NoOp,
 }
 impl LibraryPage {
     fn auto_installer_icon(status: GameInstallStatus) -> Handle {

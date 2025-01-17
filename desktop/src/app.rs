@@ -39,30 +39,28 @@ impl App {
     }
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Startup => {
+            Message::Startup1 => {
                 if let AppPage::Library(inner_lib) = &mut self.page {
                     inner_lib
                         .update(library::Message::ReloadCache)
                         .map(PageMessage::Library)
                         .map(Message::Page)
-                        .then(|p| {
-                            window::get_oldest().and_then(move |id: Id| {
-                                let my_p = p.clone();
-                                window::change_icon::<Icon>(
-                                    id,
-                                    icon::from_file_data(
-                                        include_bytes!("icons/icon.png"),
-                                        Some(ImageFormat::Png),
-                                    )
-                                    .unwrap(),
-                                )
-                                .map(move |_| my_p.clone())
-                            })
-                        })
                 } else {
                     Task::none()
                 }
             }
+            Message::Startup2 => window::get_oldest()
+                .and_then(move |id: Id| {
+                    window::change_icon::<Icon>(
+                        id,
+                        icon::from_file_data(
+                            include_bytes!("icons/icon.png"),
+                            Some(ImageFormat::Png),
+                        )
+                        .unwrap(),
+                    )
+                })
+                .map(|_| Message::Page(PageMessage::Library(library::Message::NoOp))),
             Message::NavView(v) => {
                 self.nav.update(v);
                 match v {
@@ -109,10 +107,11 @@ impl App {
 
 #[derive(Clone, Debug)]
 pub enum Message {
-    Startup,
+    Startup1,
     Page(PageMessage),
     NavView(widgets::nav_view::Message),
     KeyDown(keyboard::Key, keyboard::Modifiers),
+    Startup2,
 }
 
 pub struct AppTitle;
