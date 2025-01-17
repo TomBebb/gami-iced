@@ -1,5 +1,5 @@
 use crate::db::game::Column;
-use crate::db::{game, genre};
+use crate::db::{game, game_genres, genre};
 use crate::{db, ADDONS};
 use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
@@ -71,6 +71,7 @@ pub async fn sync_library() {
                 .unwrap_or_default();
 
             log::debug!("Got metadatas: {:?}", metadatas);
+            log::info!("Scanned items metadata: {:?}", metadatas);
             fn get_genres(
                 metadatas: &HashMap<GameLibraryRefOwned, GameMetadata>,
             ) -> impl Iterator<Item = &str> {
@@ -85,7 +86,7 @@ pub async fn sync_library() {
                 .filter(genre::Column::MetadataSource.eq(key))
                 .filter(genre::Column::MetadataId.is_in(get_genres(&metadatas)));
 
-            let existing_genres_by_lib_id: HashMap<String, i32> = existing_genres_query
+            let mut existing_genres_by_lib_id: HashMap<String, i32> = existing_genres_query
                 .all(&conn)
                 .await
                 .unwrap()
@@ -102,26 +103,27 @@ pub async fn sync_library() {
                     })
                 })
                 .collect();
+            log::info!("Genres to skip: {:?}", existing_genres_by_lib_id);
             log::info!("Pushing genres: {:?}", raw_genres);
-            if !raw_genres.is_empty() {
-                GenreEntity::insert_many(raw_genres.into_iter().map(|g| genre::ActiveModel {
+            for g in raw_genres {
+                let res = GenreEntity::insert(genre::ActiveModel {
                     id: ActiveValue::NotSet,
                     name: ActiveValue::Set(g.name.clone().into()),
                     metadata_id: ActiveValue::Set(g.library_id.clone().into()),
                     metadata_source: ActiveValue::Set(key.into()),
-                }))
+                })
                 .exec(&mut conn)
                 .await
                 .unwrap();
+                existing_genres_by_lib_id.insert(g.library_id.into(), res.last_insert_id);
             }
-            log::info!("Scanned items metadata: {:?}", metadatas);
-            log::info!("Genres to skip: {:?}", existing_genres_by_lib_id);
-            GameEntity::insert_many(items.iter().cloned().map(|mut item| {
-                if let Some(metadata) = metadatas.get(&GameCommon::get_owned_ref(&item)) {
-                    item.extend(metadata.clone());
-                }
-
-                game::ActiveModel {
+            for mut item in items.iter().cloned() {
+                let metadata: GameMetadata = metadatas
+                    .get(&GameCommon::get_owned_ref(&item))
+                    .cloned()
+                    .unwrap_or_default();
+                item.extend(metadata);
+                let res = GameEntity::insert(game::ActiveModel {
                     library_type: ActiveValue::Set(item.library_type),
                     library_id: ActiveValue::Set(item.library_id),
                     name: ActiveValue::Set(item.name),
@@ -132,11 +134,33 @@ pub async fn sync_library() {
                     icon_url: ActiveValue::Set(item.icon_url),
                     release_date: ActiveValue::Set(item.release_date),
                     ..Default::default()
+                })
+                .exec(&mut conn)
+                .await
+                .unwrap();
+                log::info!("Got game metadata genres: {:?}", item.genres);
+                let to_insert = item
+                    .genres
+                    .iter()
+                    .map(|gg| game_genres::ActiveModel {
+                        game_id: ActiveValue::Set(res.last_insert_id),
+                        genre_id: ActiveValue::Set(
+                            existing_genres_by_lib_id[gg.library_id.trim_end()],
+                        ),
+                    })
+                    .collect::<Vec<game_genres::ActiveModel>>();
+                log::info!(
+                    "Inserted game metadata: {:?}; GameGenres: {:?}",
+                    res.last_insert_id,
+                    to_insert
+                );
+                if !to_insert.is_empty() {
+                    GameGenresEntity::insert_many(to_insert)
+                        .exec(&mut conn)
+                        .await
+                        .unwrap();
                 }
-            }))
-            .exec(&mut conn)
-            .await
-            .unwrap();
+            }
             log::info!("Pushed games to DB");
         }
     }

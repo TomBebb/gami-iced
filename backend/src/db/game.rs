@@ -95,6 +95,7 @@ impl Into<GameData> for Model {
             release_date: self.release_date,
             play_time: Duration::seconds(self.play_time_secs),
             completion_status: self.completion_status.into(),
+            genres: Vec::new(),
         }
     }
 }

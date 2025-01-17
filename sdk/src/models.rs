@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
 use std::string::String as RString;
+use std::vec::Vec as RVec;
 
 pub trait IsGameLibraryRef {
     fn get_name(&self) -> &str;
@@ -179,6 +180,28 @@ pub struct GenreData {
     pub name: String,
     pub library_id: String,
 }
+
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
+pub struct RGenreData {
+    pub name: RString,
+    pub library_id: RString,
+}
+impl From<GenreData> for RGenreData {
+    fn from(genre_data: GenreData) -> Self {
+        Self {
+            name: genre_data.name.into(),
+            library_id: genre_data.library_id.into(),
+        }
+    }
+}
+impl From<RGenreData> for GenreData {
+    fn from(genre_data: RGenreData) -> Self {
+        Self {
+            name: genre_data.name.into(),
+            library_id: genre_data.library_id.into(),
+        }
+    }
+}
 impl PartialEq for GenreData {
     fn eq(&self, other: &Self) -> bool {
         self.name.trim_end() == other.name.trim_end()
@@ -254,11 +277,13 @@ impl fmt::Display for CompletionStatus {
         })
     }
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct GameData {
     pub id: i32,
     pub name: RString,
     pub description: RString,
+    pub genres: RVec<GenreData>,
     pub play_time: Duration,
     pub install_status: GameInstallStatus,
     pub release_date: Option<NaiveDate>,
@@ -272,6 +297,11 @@ pub struct GameData {
 }
 impl GameData {
     pub fn extend(&mut self, metadata: GameMetadata) {
+        self.genres = metadata
+            .genres
+            .into_iter()
+            .map(|v| v.clone().into())
+            .collect();
         if let TaggedOption::Some(description) = metadata.description {
             self.description = description.into();
         }
