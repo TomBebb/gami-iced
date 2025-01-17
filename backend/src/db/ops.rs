@@ -1,16 +1,18 @@
-use crate::db::game;
 use crate::db::game::Column;
+use crate::db::{game, genre};
 use crate::{db, ADDONS};
 use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
+use gami_sdk::{
+    GameCommon, GameData, GameLibraryRefOwned, GameMetadata, GameMetadataScanner, GenreData,
+};
 use gami_sdk::{GameLibrary, GameLibraryRef};
 use sea_orm::{
     ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 pub async fn delete_game(game_id: i32) {
@@ -67,6 +69,53 @@ pub async fn sync_library() {
                     )
                 })
                 .unwrap_or_default();
+
+            log::debug!("Got metadatas: {:?}", metadatas);
+            fn get_genres(
+                metadatas: &HashMap<GameLibraryRefOwned, GameMetadata>,
+            ) -> impl Iterator<Item = &str> {
+                metadatas
+                    .values()
+                    .flat_map(|v| v.genres.iter().map(|g| g.library_id.trim_ascii()))
+            }
+
+            let existing_genres_query = GenreEntity::find()
+                .select_column(genre::Column::MetadataId)
+                .select_column(genre::Column::Id)
+                .filter(genre::Column::MetadataSource.eq(key))
+                .filter(genre::Column::MetadataId.is_in(get_genres(&metadatas)));
+
+            let existing_genres_by_lib_id: HashMap<String, i32> = existing_genres_query
+                .all(&conn)
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|v| (v.metadata_id, v.id))
+                .collect();
+
+            let raw_genres: HashSet<GenreData> = metadatas
+                .values()
+                .into_iter()
+                .flat_map(|m| {
+                    m.genres.iter().cloned().filter(|gen| {
+                        !existing_genres_by_lib_id.contains_key(gen.library_id.trim_end())
+                    })
+                })
+                .collect();
+            log::info!("Pushing genres: {:?}", raw_genres);
+            if !raw_genres.is_empty() {
+                GenreEntity::insert_many(raw_genres.into_iter().map(|g| genre::ActiveModel {
+                    id: ActiveValue::NotSet,
+                    name: ActiveValue::Set(g.name.clone().into()),
+                    metadata_id: ActiveValue::Set(g.library_id.clone().into()),
+                    metadata_source: ActiveValue::Set(key.into()),
+                }))
+                .exec(&mut conn)
+                .await
+                .unwrap();
+            }
+            log::info!("Scanned items metadata: {:?}", metadatas);
+            log::info!("Genres to skip: {:?}", existing_genres_by_lib_id);
             GameEntity::insert_many(items.iter().cloned().map(|mut item| {
                 if let Some(metadata) = metadatas.get(&GameCommon::get_owned_ref(&item)) {
                     item.extend(metadata.clone());

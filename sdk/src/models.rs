@@ -177,7 +177,20 @@ impl GameCommon for ScannedGameLibraryMetadata {
 #[derive(Debug, Clone)]
 pub struct GenreData {
     pub name: String,
-    pub library_id: String
+    pub library_id: String,
+}
+impl PartialEq for GenreData {
+    fn eq(&self, other: &Self) -> bool {
+        self.name.trim_end() == other.name.trim_end()
+            && self.library_id.trim_end() == other.library_id.trim_end()
+    }
+}
+impl Eq for GenreData {}
+impl Hash for GenreData {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.library_id.hash(state);
+    }
 }
 #[derive_ReprC]
 #[repr(C)]
