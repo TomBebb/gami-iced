@@ -8,9 +8,10 @@ mod pages;
 mod settings;
 mod widgets;
 
-fn startup_msg_worker() -> impl Stream<Item = ()> {
+fn startup_msg_worker() -> impl Stream<Item = Message> {
     stream::channel(100, |mut output| async move {
-        output.send(()).await.unwrap();
+        output.send(Message::Startup1).await.unwrap();
+        output.send(Message::Startup2).await.unwrap();
     })
 }
 #[tokio::main]
@@ -25,7 +26,7 @@ pub async fn main() -> iced::Result {
         .subscription(|_| {
             Subscription::batch([
                 keyboard::on_key_press(|key, mods| Some(Message::KeyDown(key, mods))),
-                Subscription::run(startup_msg_worker).map(|_| Message::Startup),
+                Subscription::run(startup_msg_worker),
             ])
         })
         .theme(move |_| settings.appearance.theme.into())

@@ -7,10 +7,8 @@ use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
 use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
 use gami_sdk::{GameLibrary, GameLibraryRef};
-use sea_orm::sea_query::{OnConflict, Query, SqliteQueryBuilder};
 use sea_orm::{
-    ActiveValue, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
-    SelectColumns,
+    ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
 };
 use std::collections::HashSet;
 use std::fmt;
@@ -35,7 +33,7 @@ pub async fn clear_all() {
 }
 
 pub async fn sync_library() {
-    let conn = db::connect().await;
+    let mut conn = db::connect().await;
     for key in ADDONS.get_keys() {
         if let Some(lib) = ADDONS.get_game_library(key) {
             let mut items: Vec<GameData> = lib.scan().into_iter().map(|v| v.into()).collect();
@@ -57,25 +55,6 @@ pub async fn sync_library() {
                 .into_iter()
                 .filter(|v| !existing_items.contains(&v.library_id))
                 .collect();
-
-            let mut raw = Query::insert();
-            let mut query_raw = raw
-                .into_table(GameEntity)
-                .columns(vec![
-                    Column::LibraryType,
-                    Column::LibraryId,
-                    Column::Name,
-                    Column::Description,
-                    Column::InstallStatus,
-                    Column::PlayTimeSecs,
-                    Column::LastPlayed,
-                    Column::IconUrl,
-                    Column::ReleaseDate,
-                ])
-                .on_conflict(OnConflict::columns([
-                    Column::LibraryType,
-                    Column::LibraryId,
-                ]));
             log::info!("Scanning {} games metadata ", items.len());
             let metadatas = ADDONS
                 .get_game_metadata(key)
@@ -88,30 +67,27 @@ pub async fn sync_library() {
                     )
                 })
                 .unwrap_or_default();
-            for mut item in items.iter().cloned() {
+            GameEntity::insert_many(items.iter().cloned().map(|mut item| {
                 if let Some(metadata) = metadatas.get(&GameCommon::get_owned_ref(&item)) {
                     item.extend(metadata.clone());
                 }
 
-                query_raw = query_raw.values_panic(vec![
-                    item.library_type.to_string().into(),
-                    item.library_id.to_string().into(),
-                    item.name.to_string().into(),
-                    item.description.into(),
-                    (item.install_status as u8).into(),
-                    item.play_time.num_seconds().into(),
-                    item.last_played
-                        .map(|v: DateTime<Utc>| v.timestamp())
-                        .into(),
-                    item.icon_url.into(),
-                    item.release_date.into(),
-                ]);
-            }
-            let mut query = query_raw.to_string(SqliteQueryBuilder);
-            if query.ends_with(')') {
-                query.push_str(" DO NOTHING");
-            }
-            conn.execute_unprepared(&query).await.unwrap();
+                game::ActiveModel {
+                    library_type: ActiveValue::Set(item.library_type),
+                    library_id: ActiveValue::Set(item.library_id),
+                    name: ActiveValue::Set(item.name),
+                    description: ActiveValue::Set(item.description),
+                    install_status: ActiveValue::Set(item.install_status.into()),
+                    play_time_secs: ActiveValue::Set(item.play_time.num_seconds()),
+                    last_played: ActiveValue::Set(item.last_played),
+                    icon_url: ActiveValue::Set(item.icon_url),
+                    release_date: ActiveValue::Set(item.release_date),
+                    ..Default::default()
+                }
+            }))
+            .exec(&mut conn)
+            .await
+            .unwrap();
             log::info!("Pushed games to DB");
         }
     }

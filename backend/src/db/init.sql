@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS "games"
     NOT
     NULL,
     "name"
-    BLOB
-    NOT
-    NULL,
+    TEXT
+NOT NULL
+    DEFAULT "",
     "library_id"
     TEXT
     NOT

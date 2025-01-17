@@ -91,6 +91,7 @@ pub enum Message {
     UpdateLastPlayed(i32, DateTime<Utc>),
     ToggleFilterDisplay,
     Filter(FilterMessage),
+    NoOp,
 }
 
 fn update_filter(filter: &mut GameFilter, message: FilterMessage) {
