@@ -243,6 +243,9 @@ pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> 
     let conn = db::connect().await;
     let mut query = GameEntity::find().find_with_related(GenreEntity);
 
+    let sort_field: Column = args.sort.field.into();
+    let sort_ord: Order = args.sort.order.into();
+    query = query.order_by(sort_field, sort_ord);
     if let Some(genre_id) = filter.genre_id {
         query = query.filter(genre::Column::Id.eq(genre_id));
     }
