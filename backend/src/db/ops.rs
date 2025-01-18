@@ -235,7 +235,7 @@ pub struct GamesFilters {
 }
 pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     let conn = db::connect().await;
-    let mut query = GameEntity::find();
+    let mut query = GameEntity::find().find_with_related(GenreEntity);
     if !filters.search.is_empty() {
         query = query.filter(Column::Name.contains(&filters.search));
     }
@@ -243,7 +243,12 @@ pub async fn get_games(filters: GamesFilters) -> Vec<GameData> {
     let sort_ord: Order = filters.sort.order.into();
     query = query.order_by(sort_field, sort_ord);
     let raw = query.all(&conn).await.unwrap();
-    raw.into_iter().map(Into::into).collect()
+    raw.into_iter()
+        .map(|(game, genres)| GameData {
+            genres: genres.into_iter().map(|v| v.into()).collect(),
+            ..game.into()
+        })
+        .collect()
 }
 
 pub async fn update_game_played(id: i32) -> DateTime<Utc> {
