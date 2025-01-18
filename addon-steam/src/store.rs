@@ -1,7 +1,7 @@
 use crate::store_models::AppDetails;
 use crate::RUNTIME;
 use chrono::NaiveDate;
-use gami_sdk::{GameLibraryRef, GameLibraryRefOwned, GameMetadata, GameMetadataScanner};
+use gami_sdk::{GameLibraryRef, GameLibraryRefOwned, GameMetadata, GameMetadataScanner, GenreData};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use safer_ffi::option::TaggedOption;
@@ -83,7 +83,15 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
         } else {
             TaggedOption::Some(data.detailed_description.into())
         },
-        //   developers: data.developers.map(FfiString::from).collect::<Vec<FfiString>>().into(),
+        developers: data
+            .developers
+            .map(|v| {
+                v.into_iter()
+                    .map(FfiString::from)
+                    .collect::<Vec<FfiString>>()
+            })
+            .map(FfiVec::from)
+            .unwrap_or(FfiVec::EMPTY),
         icon_url: TaggedOption::None,
         header_url: data.header_image.map(String::into).into(),
         cover_url: data.capsule_image.map(String::into).into(),
@@ -91,8 +99,11 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
             .genres
             .map(|v| {
                 v.into_iter()
-                    .map(|v| FfiString::from(v.description))
-                    .collect::<Vec<FfiString>>()
+                    .map(|v| GenreData {
+                        name: FfiString::from(v.description),
+                        library_id: v.id.into(),
+                    })
+                    .collect::<Vec<_>>()
             })
             .map(FfiVec::from)
             .unwrap_or(FfiVec::EMPTY),

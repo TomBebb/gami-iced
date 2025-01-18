@@ -455,6 +455,11 @@ impl LibraryPage {
                     .map(|v| v.format("%Y-%m-%d").to_string())
                     .unwrap_or("None".into())
             ),
+            detail_row(
+                "Genres",
+                Row::with_children(curr.genres.iter().map(|g| text(g.name.trim_end()).into()))
+                    .spacing(2),
+            ),
         ]
     }
     pub fn view(&self) -> Element<Message> {

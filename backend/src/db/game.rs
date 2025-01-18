@@ -95,6 +95,7 @@ impl Into<GameData> for Model {
             release_date: self.release_date,
             play_time: Duration::seconds(self.play_time_secs),
             completion_status: self.completion_status.into(),
+            genres: Vec::new(),
         }
     }
 }
@@ -128,6 +129,14 @@ pub enum Relation {
 impl Related<super::game_genres::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::GameGenres.def()
+    }
+}
+impl Related<super::genre::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::game_genres::Relation::Genre.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::game_genres::Relation::Game.def().rev())
     }
 }
 impl ActiveModelBehavior for ActiveModel {}

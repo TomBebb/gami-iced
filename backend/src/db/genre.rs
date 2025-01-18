@@ -1,3 +1,4 @@
+use gami_sdk::GenreData;
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
@@ -14,10 +15,22 @@ pub enum Relation {
     #[sea_orm(has_many = "super::game_genres::Entity")]
     GameGenres,
 }
-impl Related<super::game_genres::Entity> for Entity {
+impl Related<super::game::Entity> for Entity {
     fn to() -> RelationDef {
-        super::game::Relation::GameGenres.def()
+        super::game_genres::Relation::Game.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::game_genres::Relation::Genre.def().rev())
     }
 }
 impl ActiveModelBehavior for ActiveModel {}
 pub type Genre = Model;
+
+impl Into<GenreData> for Model {
+    fn into(self) -> GenreData {
+        GenreData {
+            library_id: self.metadata_id.into(),
+            name: self.name.into(),
+        }
+    }
+}

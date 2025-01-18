@@ -1,16 +1,19 @@
-use crate::db::game;
+use crate::db::{game, game_genres, genre};
 use crate::db::game::{Column, DbGameCompletionStatus, DbGameInstallStatus};
 use crate::{db, GameFilter, ADDONS};
 use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
 use db::game_genres::Entity as GameGenresEntity;
 use db::genre::Entity as GenreEntity;
-use gami_sdk::{GameCommon, GameData, GameMetadataScanner};
+use gami_sdk::{
+    GameCommon, GameData, GameLibraryRefOwned, GameMetadata, GameMetadataScanner, GenreData,
+};
 use gami_sdk::{GameLibrary, GameLibraryRef};
 use sea_orm::{
     ActiveValue, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder, SelectColumns,
+    TransactionTrait,
 };
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 pub async fn delete_game(game_id: i32) {
@@ -67,12 +70,63 @@ pub async fn sync_library() {
                     )
                 })
                 .unwrap_or_default();
-            GameEntity::insert_many(items.iter().cloned().map(|mut item| {
-                if let Some(metadata) = metadatas.get(&GameCommon::get_owned_ref(&item)) {
-                    item.extend(metadata.clone());
-                }
 
-                game::ActiveModel {
+            log::debug!("Got metadatas: {:?}", metadatas);
+            log::info!("Scanned items metadata: {:?}", metadatas);
+            fn get_genres(
+                metadatas: &HashMap<GameLibraryRefOwned, GameMetadata>,
+            ) -> impl Iterator<Item = &str> {
+                metadatas
+                    .values()
+                    .flat_map(|v| v.genres.iter().map(|g| g.library_id.trim_ascii()))
+            }
+
+            let existing_genres_query = GenreEntity::find()
+                .select_column(genre::Column::MetadataId)
+                .select_column(genre::Column::Id)
+                .filter(genre::Column::MetadataSource.eq(key))
+                .filter(genre::Column::MetadataId.is_in(get_genres(&metadatas)));
+
+            let mut existing_genres_by_lib_id: HashMap<String, i32> = existing_genres_query
+                .all(&conn)
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|v| (v.metadata_id, v.id))
+                .collect();
+
+            let raw_genres: HashSet<GenreData> = metadatas
+                .values()
+                .into_iter()
+                .flat_map(|m| {
+                    m.genres.iter().cloned().filter(|gen| {
+                        !existing_genres_by_lib_id.contains_key(gen.library_id.trim_end())
+                    })
+                })
+                .collect();
+            log::info!("Genres to skip: {:?}", existing_genres_by_lib_id);
+            log::info!("Pushing genres: {:?}", raw_genres);
+
+            let mut txn = conn.begin().await.unwrap();
+            for g in raw_genres {
+                let res = GenreEntity::insert(genre::ActiveModel {
+                    id: ActiveValue::NotSet,
+                    name: ActiveValue::Set(g.name.clone().into()),
+                    metadata_id: ActiveValue::Set(g.library_id.clone().into()),
+                    metadata_source: ActiveValue::Set(key.into()),
+                })
+                .exec(&mut txn)
+                .await
+                .unwrap();
+                existing_genres_by_lib_id.insert(g.library_id.into(), res.last_insert_id);
+            }
+            for mut item in items.iter().cloned() {
+                let metadata: GameMetadata = metadatas
+                    .get(&GameCommon::get_owned_ref(&item))
+                    .cloned()
+                    .unwrap_or_default();
+                item.extend(metadata);
+                let res = GameEntity::insert(game::ActiveModel {
                     library_type: ActiveValue::Set(item.library_type),
                     library_id: ActiveValue::Set(item.library_id),
                     name: ActiveValue::Set(item.name),
@@ -83,11 +137,34 @@ pub async fn sync_library() {
                     icon_url: ActiveValue::Set(item.icon_url),
                     release_date: ActiveValue::Set(item.release_date),
                     ..Default::default()
+                })
+                .exec(&mut txn)
+                .await
+                .unwrap();
+                log::info!("Got game metadata genres: {:?}", item.genres);
+                let to_insert = item
+                    .genres
+                    .iter()
+                    .map(|gg| game_genres::ActiveModel {
+                        game_id: ActiveValue::Set(res.last_insert_id),
+                        genre_id: ActiveValue::Set(
+                            existing_genres_by_lib_id[gg.library_id.trim_end()],
+                        ),
+                    })
+                    .collect::<Vec<game_genres::ActiveModel>>();
+                log::info!(
+                    "Inserted game metadata: {:?}; GameGenres: {:?}",
+                    res.last_insert_id,
+                    to_insert
+                );
+                if !to_insert.is_empty() {
+                    GameGenresEntity::insert_many(to_insert)
+                        .exec(&mut txn)
+                        .await
+                        .unwrap();
                 }
-            }))
-            .exec(&mut conn)
-            .await
-            .unwrap();
+            }
+            txn.commit().await.unwrap();
             log::info!("Pushed games to DB");
         }
     }
@@ -158,7 +235,7 @@ pub struct GameSyncArgs {
 }
 pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> {
     let conn = db::connect().await;
-    let mut query = GameEntity::find();
+    let mut query = GameEntity::find().find_with_related(GenreEntity);
     if !args.search.is_empty() {
         query = query.filter(Column::Name.contains(&args.search));
     }
@@ -185,7 +262,12 @@ pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> 
     let sort_ord: Order = args.sort.order.into();
     query = query.order_by(sort_field, sort_ord);
     let raw = query.all(&conn).await.unwrap();
-    raw.into_iter().map(Into::into).collect()
+    raw.into_iter()
+        .map(|(game, genres)| GameData {
+            genres: genres.into_iter().map(|v| v.into()).collect(),
+            ..game.into()
+        })
+        .collect()
 }
 
 pub async fn update_game_played(id: i32) -> DateTime<Utc> {

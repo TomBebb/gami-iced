@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS "genres"
     "name"
     TEXT
     NOT
-    NULL,
+    NULL
+    DEFAULT "",
     "metadata_source"
     TEXT
     NOT
