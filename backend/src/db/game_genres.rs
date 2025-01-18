@@ -17,9 +17,9 @@ pub enum Relation {
     )]
     Game,
     #[sea_orm(
-        belongs_to = "super::game::Entity",
-        from = "Column::GameId",
-        to = "super::game::Column::Id"
+        belongs_to = "super::genre::Entity",
+        from = "Column::GenreId",
+        to = "super::genre::Column::Id"
     )]
     Genre,
 }
