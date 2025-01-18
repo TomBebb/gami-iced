@@ -1,5 +1,6 @@
-use crate::db::{game, game_genres, genre};
 use crate::db::game::{Column, DbGameCompletionStatus, DbGameInstallStatus};
+use crate::db::genre::Genre;
+use crate::db::{game, game_genres, genre};
 use crate::{db, GameFilter, ADDONS};
 use chrono::{DateTime, Local, Utc};
 use db::game::Entity as GameEntity;
@@ -232,6 +233,11 @@ pub struct Sort {
 pub struct GameSyncArgs {
     pub search: String,
     pub sort: Sort,
+}
+
+pub async fn get_genres() -> Vec<Genre> {
+    let conn = db::connect().await;
+    GenreEntity::find().all(&conn).await.unwrap()
 }
 pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> {
     let conn = db::connect().await;
