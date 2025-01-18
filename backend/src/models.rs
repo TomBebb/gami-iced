@@ -1,3 +1,4 @@
+use crate::db::genre::Genre;
 use gami_sdk::CompletionStatus;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -25,9 +26,11 @@ pub enum Direction {
     Down,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct GameFilter {
     pub completion_status: Option<CompletionStatus>,
     pub installed: bool,
     pub not_installed: bool,
+    pub genres: Vec<Genre>,
+    pub genre_metadata_id: Option<String>,
 }

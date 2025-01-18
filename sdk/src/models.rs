@@ -180,6 +180,11 @@ pub struct GenreData {
     pub name: String,
     pub library_id: String,
 }
+impl fmt::Display for GenreData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.name)
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct RGenreData {

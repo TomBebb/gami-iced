@@ -1,10 +1,12 @@
 use crate::widgets::library_table::{LibraryTable, TableMessage};
 use crate::widgets::number_input::number_input;
 use chrono::{DateTime, Utc};
+use gami_backend::db::genre::Genre;
+use gami_backend::db::ops;
 use gami_backend::db::ops::{GameSyncArgs, SortField, SortOrder};
 use gami_backend::{db, get_actions, Direction, GameAction, GameFilter, GameTextField, ADDONS};
 use gami_sdk::{
-    CompletionStatus, EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary,
+    CompletionStatus, EditableEnum, GameCommon, GameData, GameInstallStatus, GameLibrary, GenreData,
 };
 use iced::advanced::svg::Handle;
 use iced::alignment::Vertical;
@@ -61,6 +63,7 @@ pub struct LibraryPage {
     args: GameSyncArgs,
     filter: GameFilter,
     display_filter: bool,
+    all_genres: Vec<Genre>,
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +71,7 @@ pub enum FilterMessage {
     SetInstalled(bool),
     SetNotInstalled(bool),
     SetCompletionStatus(Option<CompletionStatus>),
+    SetGenreLibraryId(Option<GenreData>),
 }
 
 #[derive(Debug, Clone)]
@@ -92,6 +96,7 @@ pub enum Message {
     ToggleFilterDisplay,
     Filter(FilterMessage),
     NoOp,
+    OnGenresLoad(Vec<Genre>),
 }
 
 fn update_filter(filter: &mut GameFilter, message: FilterMessage) {
@@ -99,6 +104,9 @@ fn update_filter(filter: &mut GameFilter, message: FilterMessage) {
         FilterMessage::SetInstalled(v) => filter.installed = v,
         FilterMessage::SetNotInstalled(v) => filter.not_installed = v,
         FilterMessage::SetCompletionStatus(v) => filter.completion_status = v,
+        FilterMessage::SetGenreLibraryId(v) => {
+            filter.genre_metadata_id = v.map(|g| g.library_id.into())
+        }
     }
 }
 impl LibraryPage {
@@ -126,6 +134,7 @@ impl LibraryPage {
             args: GameSyncArgs::default(),
             filter: GameFilter::default(),
             display_filter: false,
+            all_genres: Vec::new(),
         };
         me
     }
@@ -149,18 +158,24 @@ impl LibraryPage {
         })
         .into()
     }
-
+    fn filter_row<'a>(
+        &'a self,
+        name: &'a str,
+        elem: impl Into<Element<'a, Message>>,
+    ) -> Element<'a, Message> {
+        column![text(name), elem.into()].into()
+    }
     fn filter_row_pick_list<'a, TEnum>(
         &'a self,
         name: &'a str,
         value: Option<TEnum>,
         map: impl Fn(Option<TEnum>) -> FilterMessage + 'a,
-    ) -> Column<'a, Message>
+    ) -> Element<'a, Message>
     where
         TEnum: EditableEnum + Clone,
     {
-        column![
-            text(name),
+        self.filter_row(
+            name,
             row![
                 pick_list(TEnum::ALL, value.clone(), move |v| Message::Filter(map(
                     Some(v)
@@ -179,8 +194,8 @@ impl LibraryPage {
                 )
                 .height(30),
             ]
-            .width(Fill)
-        ]
+            .width(Fill),
+        )
     }
     fn filter_view(&self) -> Element<Message> {
         let filter = &self.filter;
@@ -194,6 +209,42 @@ impl LibraryPage {
                 self.filter.completion_status,
                 FilterMessage::SetCompletionStatus
             ),
+            self.filter_row(
+                "Genres",
+                row![
+                    pick_list(
+                        self.all_genres
+                            .iter()
+                            .map(|v| GenreData {
+                                library_id: v.metadata_id.clone().into(),
+                                name: v.name.clone().into()
+                            })
+                            .collect::<Box<[GenreData]>>(),
+                        filter.genre_metadata_id.clone().map(|mid| GenreData {
+                            library_id: mid.into(),
+                            name: "".into()
+                        }),
+                        move |v| Message::Filter(FilterMessage::SetGenreLibraryId(Some(v)))
+                    )
+                    .width(Length::FillPortion(4)),
+                    button(
+                        Svg::new(Handle::from_memory(include_bytes!(
+                            "../icons/tabler--backspace.svg"
+                        )))
+                        .content_fit(ContentFit::Contain)
+                    )
+                    .style(button::danger)
+                    .width(Length::FillPortion(1))
+                    .on_press_maybe(
+                        filter
+                            .genre_metadata_id
+                            .clone()
+                            .map(|_| Message::Filter(FilterMessage::SetGenreLibraryId(None)))
+                    )
+                    .height(30),
+                ]
+                .width(Fill),
+            )
         ]
         .padding(2)
         .spacing(3)
@@ -686,7 +737,11 @@ impl LibraryPage {
             }
             Message::ToggleFilterDisplay => {
                 self.display_filter = !self.display_filter;
+                if self.display_filter {
+                    return Task::perform(ops::get_genres(), Message::OnGenresLoad);
+                }
             }
+            Message::OnGenresLoad(genres) => self.all_genres = genres,
             Message::Filter(filter) => {
                 update_filter(&mut self.filter, filter);
                 return self.update(Message::ReloadCache);

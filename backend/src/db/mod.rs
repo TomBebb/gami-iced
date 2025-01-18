@@ -1,6 +1,6 @@
-mod game;
-mod game_genres;
-mod genre;
+pub mod game;
+pub mod game_genres;
+pub mod genre;
 pub mod ops;
 
 pub use game::Game;
