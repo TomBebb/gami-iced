@@ -133,10 +133,10 @@ impl Related<super::game_genres::Entity> for Entity {
 }
 impl Related<super::genre::Entity> for Entity {
     fn to() -> RelationDef {
-        super::game_genres::Relation::Game.def()
+        super::game_genres::Relation::Genre.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::game_genres::Relation::Genre.def().rev())
+        Some(super::game_genres::Relation::Game.def().rev())
     }
 }
 impl ActiveModelBehavior for ActiveModel {}

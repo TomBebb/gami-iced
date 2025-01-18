@@ -17,10 +17,10 @@ pub enum Relation {
 }
 impl Related<super::game::Entity> for Entity {
     fn to() -> RelationDef {
-        super::game_genres::Relation::Genre.def()
+        super::game_genres::Relation::Game.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::game_genres::Relation::Game.def().rev())
+        Some(super::game_genres::Relation::Genre.def().rev())
     }
 }
 impl ActiveModelBehavior for ActiveModel {}
