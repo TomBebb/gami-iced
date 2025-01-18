@@ -131,6 +131,14 @@ impl Related<super::game_genres::Entity> for Entity {
         Relation::GameGenres.def()
     }
 }
+impl Related<super::genre::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::game_genres::Relation::Game.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::game_genres::Relation::Genre.def().rev())
+    }
+}
 impl ActiveModelBehavior for ActiveModel {}
 
 impl IsGameLibraryRef for Game {

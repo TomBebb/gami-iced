@@ -8,18 +8,20 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub genre_id: i32,
 }
-#[derive(Copy, Clone, Debug, EnumIter)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::game::Entity",
+        from = "Column::GameId",
+        to = "super::game::Column::Id"
+    )]
     Game,
+    #[sea_orm(
+        belongs_to = "super::game::Entity",
+        from = "Column::GameId",
+        to = "super::game::Column::Id"
+    )]
     Genre,
-}
-impl RelationTrait for Relation {
-    fn def(&self) -> RelationDef {
-        match self {
-            Relation::Game => Entity::has_one(super::game::Entity).into(),
-            Relation::Genre => Entity::has_one(super::genre::Entity).into(),
-        }
-    }
 }
 
 impl Related<super::game::Entity> for Entity {
