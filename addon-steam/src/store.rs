@@ -102,6 +102,7 @@ async fn get_metadata<'a>(game: GameLibraryRef<'a>) -> Option<GameMetadata> {
                     .map(|v| GenreData {
                         name: FfiString::from(v.description),
                         library_id: v.id.into(),
+                        id: TaggedOption::None
                     })
                     .collect::<Vec<_>>()
             })

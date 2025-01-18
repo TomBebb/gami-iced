@@ -17,6 +17,7 @@ use iced::widget::{
 };
 use iced::{ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
+use safer_ffi::option::TaggedOption;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
@@ -64,7 +65,7 @@ pub struct LibraryPage {
     args: GameSyncArgs,
     filter: GameFilter,
     display_filter: bool,
-    all_genres_by_meta_id: HashMap<String, Genre>,
+    all_genres_by_id: HashMap<i32, Genre>,
 }
 
 #[derive(Debug, Clone)]
@@ -106,7 +107,7 @@ fn update_filter(filter: &mut GameFilter, message: FilterMessage) {
         FilterMessage::SetNotInstalled(v) => filter.not_installed = v,
         FilterMessage::SetCompletionStatus(v) => filter.completion_status = v,
         FilterMessage::SetGenreLibraryId(v) => {
-            filter.genre_metadata_id = v.map(|g| g.library_id.into())
+            filter.genre_id = v.map(|g| g.id.unwrap_or_else(|| panic!("Invalid genre id")))
         }
     }
 }
@@ -135,7 +136,7 @@ impl LibraryPage {
             args: GameSyncArgs::default(),
             filter: GameFilter::default(),
             display_filter: false,
-            all_genres_by_meta_id: HashMap::new(),
+            all_genres_by_id: HashMap::new(),
         };
         me
     }
@@ -214,19 +215,18 @@ impl LibraryPage {
                 "Genres",
                 row![
                     pick_list(
-                        self.all_genres_by_meta_id
+                        self.all_genres_by_id
                             .values()
                             .map(|v| GenreData {
                                 library_id: v.metadata_id.clone().into(),
-                                name: v.name.clone().into()
+                                name: v.name.clone().into(),
+                                id: v.id.into()
                             })
                             .collect::<Box<[GenreData]>>(),
-                        filter.genre_metadata_id.as_ref().map(|mid| GenreData {
-                            library_id: mid.to_owned().into(),
-                            name: self.all_genres_by_meta_id[mid.trim_end()]
-                                .name
-                                .clone()
-                                .into()
+                        filter.genre_id.as_ref().map(|gid| GenreData {
+                            id: TaggedOption::Some(*gid),
+                            library_id: "".into(),
+                            name: self.all_genres_by_id[gid].name.clone().into()
                         }),
                         move |v| Message::Filter(FilterMessage::SetGenreLibraryId(Some(v)))
                     )
@@ -241,7 +241,7 @@ impl LibraryPage {
                     .width(Length::FillPortion(1))
                     .on_press_maybe(
                         filter
-                            .genre_metadata_id
+                            .genre_id
                             .clone()
                             .map(|_| Message::Filter(FilterMessage::SetGenreLibraryId(None)))
                     )
@@ -746,10 +746,7 @@ impl LibraryPage {
                 }
             }
             Message::OnGenresLoad(genres) => {
-                self.all_genres_by_meta_id = genres
-                    .into_iter()
-                    .map(move |g| (g.metadata_id.clone(), g))
-                    .collect()
+                self.all_genres_by_id = genres.into_iter().map(move |g| (g.id, g)).collect()
             }
             Message::Filter(filter) => {
                 update_filter(&mut self.filter, filter);

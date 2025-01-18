@@ -1749,6 +1749,7 @@ dependencies = [
  "iced_aw",
  "iced_table",
  "log",
+ "safer-ffi",
  "serde_json",
  "tokio",
  "url",

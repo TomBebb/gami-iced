@@ -1,9 +1,10 @@
+use std::ffi::c_short;
 use crate::GameCommon;
 use ::safer_ffi::prelude::*;
 use chrono::{DateTime, Duration, NaiveDate, TimeDelta, Utc};
 use safer_ffi::option::TaggedOption;
 use safer_ffi::string::str_ref;
-use safer_ffi::{String, Vec};
+use safer_ffi::{String, Vec, c_int};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
@@ -179,6 +180,7 @@ impl GameCommon for ScannedGameLibraryMetadata {
 pub struct GenreData {
     pub name: String,
     pub library_id: String,
+    pub id: TaggedOption<i32>
 }
 impl fmt::Display for GenreData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -190,12 +192,14 @@ impl fmt::Display for GenreData {
 pub struct RGenreData {
     pub name: RString,
     pub library_id: RString,
+    pub id: Option<i32>
 }
 impl From<GenreData> for RGenreData {
     fn from(genre_data: GenreData) -> Self {
         Self {
             name: genre_data.name.into(),
             library_id: genre_data.library_id.into(),
+            id: TaggedOption::into_rust(genre_data.id),
         }
     }
 }
@@ -204,13 +208,14 @@ impl From<RGenreData> for GenreData {
         Self {
             name: genre_data.name.into(),
             library_id: genre_data.library_id.into(),
+            id:  genre_data.id.into()
         }
     }
 }
 impl PartialEq for GenreData {
     fn eq(&self, other: &Self) -> bool {
         self.name.trim_end() == other.name.trim_end()
-            && self.library_id.trim_end() == other.library_id.trim_end()
+            && self.library_id.trim_end() == other.library_id.trim_end() && self.id == other.id
     }
 }
 impl Eq for GenreData {}

@@ -32,5 +32,5 @@ pub struct GameFilter {
     pub installed: bool,
     pub not_installed: bool,
     pub genres: Vec<Genre>,
-    pub genre_metadata_id: Option<String>,
+    pub genre_id: Option<i32>,
 }

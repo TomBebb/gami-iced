@@ -1,3 +1,4 @@
+use safer_ffi::option::TaggedOption;
 use gami_sdk::GenreData;
 use sea_orm::entity::prelude::*;
 
@@ -31,6 +32,7 @@ impl Into<GenreData> for Model {
         GenreData {
             library_id: self.metadata_id.into(),
             name: self.name.into(),
+            id: TaggedOption::Some(self.id)
         }
     }
 }

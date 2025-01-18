@@ -243,8 +243,8 @@ pub async fn get_games(args: GameSyncArgs, filter: GameFilter) -> Vec<GameData> 
     let conn = db::connect().await;
     let mut query = GameEntity::find().find_with_related(GenreEntity);
 
-    if let Some(lib_id) = filter.genre_metadata_id.as_ref() {
-        query = query.filter(genre::Column::MetadataId.eq(lib_id));
+    if let Some(genre_id) = filter.genre_id {
+        query = query.filter(genre::Column::Id.eq(genre_id));
     }
 
     if !args.search.is_empty() {
