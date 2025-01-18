@@ -19,6 +19,7 @@ use iced::{ContentFit, Element, Fill, Font, Length, Task, Theme};
 use iced_aw::ContextMenu;
 use std::cell::LazyCell;
 use std::cmp::PartialEq;
+use std::collections::HashMap;
 use url::Url;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -63,7 +64,7 @@ pub struct LibraryPage {
     args: GameSyncArgs,
     filter: GameFilter,
     display_filter: bool,
-    all_genres: Vec<Genre>,
+    all_genres_by_meta_id: HashMap<String, Genre>,
 }
 
 #[derive(Debug, Clone)]
@@ -134,7 +135,7 @@ impl LibraryPage {
             args: GameSyncArgs::default(),
             filter: GameFilter::default(),
             display_filter: false,
-            all_genres: Vec::new(),
+            all_genres_by_meta_id: HashMap::new(),
         };
         me
     }
@@ -213,16 +214,19 @@ impl LibraryPage {
                 "Genres",
                 row![
                     pick_list(
-                        self.all_genres
-                            .iter()
+                        self.all_genres_by_meta_id
+                            .values()
                             .map(|v| GenreData {
                                 library_id: v.metadata_id.clone().into(),
                                 name: v.name.clone().into()
                             })
                             .collect::<Box<[GenreData]>>(),
-                        filter.genre_metadata_id.clone().map(|mid| GenreData {
-                            library_id: mid.into(),
-                            name: "".into()
+                        filter.genre_metadata_id.as_ref().map(|mid| GenreData {
+                            library_id: mid.to_owned().into(),
+                            name: self.all_genres_by_meta_id[mid.trim_end()]
+                                .name
+                                .clone()
+                                .into()
                         }),
                         move |v| Message::Filter(FilterMessage::SetGenreLibraryId(Some(v)))
                     )
@@ -741,7 +745,12 @@ impl LibraryPage {
                     return Task::perform(ops::get_genres(), Message::OnGenresLoad);
                 }
             }
-            Message::OnGenresLoad(genres) => self.all_genres = genres,
+            Message::OnGenresLoad(genres) => {
+                self.all_genres_by_meta_id = genres
+                    .into_iter()
+                    .map(move |g| (g.metadata_id.clone(), g))
+                    .collect()
+            }
             Message::Filter(filter) => {
                 update_filter(&mut self.filter, filter);
                 return self.update(Message::ReloadCache);
