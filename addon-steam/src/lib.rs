@@ -32,7 +32,7 @@ pub struct SteamLibrary {
 const RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     runtime::Builder::new_multi_thread()
         .enable_time()
-        .enable_io()
+        //.enable_io()
         .build()
         .unwrap()
 });
@@ -114,12 +114,10 @@ impl SteamLibrary {
             .append_pair("steamid", steam_id.as_str())
             .append_pair("include_appinfo", "1")
             .append_pair("format", "json");
-        reqwest::get(url)
-            .await
-            .unwrap()
-            .json::<models::OwnedGamesResponse>()
-            .await
-            .unwrap()
+
+        let mut body = chttp::get_async(url.as_str()).await.unwrap().into_body();
+        let text = body.text_async().await.unwrap();
+        serde_json::from_str::<models::OwnedGamesResponse>(&text).unwrap()
     }
 }
 impl GameLibrary for SteamLibrary {
