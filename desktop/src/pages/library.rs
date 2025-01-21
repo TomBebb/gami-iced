@@ -357,7 +357,7 @@ impl LibraryPage {
             .height(30)
             .spacing(2),
             text(&curr.name),
-            gami_ui_shared::show_html(curr.description.clone()),
+            gami_ui_shared::show_html(&curr.description),
             detail_row_text("ID", curr.id.to_string()),
             detail_row_text("Last Played", last_played),
             detail_row_text("Install Status", curr.install_status.to_string()),
