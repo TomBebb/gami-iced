@@ -1,7 +1,7 @@
-use forest_ds::tree::Tree;
-pub use html_parse::html::{Html, Node};
+use ego_tree::Tree;
 use iced::widget::{text, Column};
 use iced::Element;
+pub use scraper::{Html, Node};
 
 fn from_html<'a: 'b, 'b, TMessage: 'b>(node: &'a Node) -> Element<'b, TMessage> {
     match node {
@@ -9,7 +9,7 @@ fn from_html<'a: 'b, 'b, TMessage: 'b>(node: &'a Node) -> Element<'b, TMessage> 
             "el: {:?}; attrs: {:?}; full : {:?}",
             element.name.local,
             element.attrs,
-            element
+            element.name()
         )
         .into(),
         &Node::Text(ref val) => text(val.text.chars().as_str()).into(),
@@ -27,11 +27,11 @@ fn from_html_children<'a: 'b, 'b, TMessage: 'b>(children: &'a [&'a Node]) -> Ele
 
 pub fn show_dom_ref<'a, TMessage: 'a>(tree: &'a Tree<Node>) -> Element<'a, TMessage> {
     let mut items = Column::with_capacity(8);
-    for child in tree {
-        items = items.push(from_html(child));
+    for child in tree.nodes() {
+        items = items.push(from_html(child.value()));
     }
     items.into()
 }
 pub fn parse_html(text: &str) -> Html {
-    Html::parse_document(text)
+    Html::parse_fragment(text)
 }

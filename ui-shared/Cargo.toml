@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 iced = "^0.13.1"
-forest-ds="1.1.7"
-html_parse =  { git = "https://github.com/TomBebb/html_parse", rev = "c6225be" }
+ego-tree = "0.10.0"
+scraper = "0.22.0"
+html5ever = "0.29.0"
+html_parse =  { git = "https://github.com/TomBebb/html_parse", rev = "3470b8e36d" }
