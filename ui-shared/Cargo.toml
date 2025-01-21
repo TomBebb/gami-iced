@@ -1,0 +1,8 @@
+[package]
+name = "ui-shared"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = "^0.13.1"
+tl = "^0.7.8"
