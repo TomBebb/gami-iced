@@ -1,37 +1,23 @@
-use ego_tree::Tree;
-use iced::widget::{text, Column};
+use html5gum::{Token, Tokenizer};
+use iced::widget::{text, Column, Text};
 use iced::Element;
-pub use scraper::{Html, Node};
+use std::fmt::Write;
 
-fn from_html<'a: 'b, 'b, TMessage: 'b>(node: &'a Node) -> Element<'b, TMessage> {
-    match node {
-        &Node::Element(ref element) => text!(
-            "el: {:?}; attrs: {:?}; full : {:?}",
-            element.name.local,
-            element.attrs,
-            element.name()
-        )
-        .into(),
-        &Node::Text(ref val) => text(val.text.chars().as_str()).into(),
-        &Node::Document => text("document").into(),
-        _ => text!("unsupported node type: {:?}", node).into(),
+pub fn draw_html<'a, TMessage>(html: &'a str) -> Element<'a, TMessage> {
+    let mut new_html = String::new();
+    for Ok(token) in Tokenizer::new(html) {
+        match token {
+            Token::StartTag(tag) => {
+                write!(new_html, "<{}>", String::from_utf8_lossy(&tag.name)).unwrap();
+            }
+            Token::String(hello_world) => {
+                write!(new_html, "{}", String::from_utf8_lossy(&hello_world)).unwrap();
+            }
+            Token::EndTag(tag) => {
+                write!(new_html, "</{}>", String::from_utf8_lossy(&tag.name)).unwrap();
+            }
+            _ => panic!("unexpected input"),
+        }
     }
-}
-fn from_html_children<'a: 'b, 'b, TMessage: 'b>(children: &'a [&'a Node]) -> Element<'b, TMessage> {
-    let mut items = Column::with_capacity(children.len());
-    for child in children {
-        items = items.push(from_html(*child));
-    }
-    items.into()
-}
-
-pub fn show_dom_ref<'a, TMessage: 'a>(tree: &'a Tree<Node>) -> Element<'a, TMessage> {
-    let mut items = Column::with_capacity(8);
-    for child in tree.nodes() {
-        items = items.push(from_html(child.value()));
-    }
-    items.into()
-}
-pub fn parse_html(text: &str) -> Html {
-    Html::parse_fragment(text)
+    text(new_html).into()
 }
