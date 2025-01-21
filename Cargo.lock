@@ -1745,6 +1745,7 @@ dependencies = [
  "env_logger",
  "gami-backend",
  "gami-sdk",
+ "gami-ui-shared",
  "iced",
  "iced_aw",
  "iced_table",
@@ -1767,6 +1768,14 @@ dependencies = [
  "serde_json",
  "tokio-stream",
  "url",
+]
+
+[[package]]
+name = "gami-ui-shared"
+version = "0.1.0"
+dependencies = [
+ "iced",
+ "tl",
 ]
 
 [[package]]
@@ -5572,14 +5581,6 @@ dependencies = [
  "memoffset",
  "tempfile",
  "winapi",
-]
-
-[[package]]
-name = "ui-shared"
-version = "0.1.0"
-dependencies = [
- "iced",
- "tl",
 ]
 
 [[package]]

@@ -17,6 +17,7 @@ iced_aw = { version = "0.11.0", default-features = false, features = [
 ] }
 gami-sdk = { path = "../sdk" }
 gami-backend = { path = "../backend" }
+gami-ui-shared =  { path = "../ui-shared" }
 tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros"] }
 env_logger = "0.11.5"
 log = "0.4.22"
