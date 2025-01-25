@@ -3,7 +3,6 @@ use gami_sdk::{
     GameMetadata, GameMetadataScanner, PluginDeclaration, PluginMetadata,
     ScannedGameLibraryMetadata, ADDONS_DIR,
 };
-use libloading::Library;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::sync::Arc;
