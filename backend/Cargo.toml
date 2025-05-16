@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sea-orm = { version = "1.1.1", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros", "chrono"] }
+sea-orm = { version = "1.1.2", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros", "chrono"] }
 gami-sdk = { path = "../sdk" }
-chrono = "0.4.39"
-libloading = "0.8.6"
-log = "0.4.22"
-safer-ffi = { version = "0.1.13", features = ["alloc"] }
-iced="0.13.1"
+chrono = "0.4.41"
+libloading = "0.8.7"
+log = "0.4.27"
+iced = "0.13.1"
