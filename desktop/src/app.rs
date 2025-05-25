@@ -12,11 +12,18 @@ use iced::advanced::graphics::image::image_rs::ImageFormat;
 use iced::application::Title;
 use iced::keyboard::key::Named;
 use iced::widget::Row;
-use iced::window::{icon, Icon, Id};
+use iced::window::{icon, Icon, Id, Mode};
 use iced::{keyboard, window, Element, Task};
 
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+pub enum AppState {
+    Fullscreen,
+    #[default]
+    Desktop,
+}
 #[derive(Clone, Default)]
 pub struct App {
+    pub state: AppState,
     pub nav: NavView,
     pub page: AppPage,
 }
@@ -25,7 +32,11 @@ impl App {
     pub fn view(&self) -> Row<Message> {
         let nav = Element::new(self.nav.view()).map(Message::NavView);
         let page = self.page.view().map(Message::Page);
-        iced::widget::row![nav, page]
+        if self.state == AppState::Desktop {
+            iced::widget::row![nav, page]
+        } else {
+            iced::widget::row![page]
+        }
     }
     pub fn move_dir_auto(&mut self, dir: Direction) -> Task<Message> {
         if let AppPage::Library(inner_lib) = &mut self.page {
@@ -91,11 +102,22 @@ impl App {
                 }
             }
             Message::Page(p) => self.page.update(p).map(Message::Page),
+            Message::KeyDown(keyboard::Key::Named(Named::F11), _) => {
+                self.update(Message::SwitchState(if self.state == AppState::Desktop {
+                    AppState::Fullscreen
+                } else {
+                    AppState::Desktop
+                }))
+            }
             Message::KeyDown(keyboard::Key::Named(Named::ArrowUp), _) => {
                 self.move_dir_auto(Direction::Up)
             }
             Message::KeyDown(keyboard::Key::Named(Named::ArrowDown), _) => {
                 self.move_dir_auto(Direction::Down)
+            }
+            Message::SwitchState(state) => {
+                self.state = state;
+                Task::none()
             }
             msg => {
                 println!("{:?}", msg);
@@ -111,6 +133,7 @@ pub enum Message {
     Page(PageMessage),
     NavView(widgets::nav_view::Message),
     KeyDown(keyboard::Key, keyboard::Modifiers),
+    SwitchState(AppState),
     Startup2,
 }
 
